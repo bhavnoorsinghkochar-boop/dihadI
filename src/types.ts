@@ -1,0 +1,215 @@
+export type AppRole = 'select_role' | 'worker' | 'customer' | 'admin' | 'pitch_deck';
+
+export type Language = 'en' | 'hi' | 'pa';
+
+export type TradeType = 
+  | 'Mason' 
+  | 'Painter' 
+  | 'Plumber' 
+  | 'Carpenter' 
+  | 'Electrician' 
+  | 'Construction Helper' 
+  | 'Tile Worker' 
+  | 'Welder' 
+  | 'Loader/Mover';
+
+export type JobStatus = 
+  | 'broadcast' 
+  | 'accepted' 
+  | 'in_progress' 
+  | 'completed_pending_payment' 
+  | 'paid_and_closed' 
+  | 'cancelled';
+
+export interface GpsCoordinates {
+  lat: number;
+  lng: number;
+  area: string;
+  city: string;
+  address?: string;
+  accuracyMeters?: number;
+  heading?: number;
+  speedKmh?: number;
+  lastUpdated?: string;
+}
+
+export interface WorkerProfile {
+  id: string;
+  name: string;
+  phone: string;
+  avatar: string;
+  primaryTrade: TradeType;
+  secondaryTrades: TradeType[];
+  dailyRate: number; // in INR
+  experienceYears: number;
+  rating: number;
+  reviewCount: number;
+  completedJobsCount: number;
+  isOnline: boolean;
+  location: {
+    area: string;
+    city: string;
+    distanceKm: number;
+  };
+  gpsLocation: GpsCoordinates;
+  isSharingLiveGps: boolean;
+  aadhaarNumberMasked: string;
+  isVerified: boolean;
+  todayEarnings: number;
+  totalEarnings: number;
+  walletBalance: number;
+  badge: string;
+  // UPI & Banking Details
+  upiId: string; // e.g. 9810155678@paytm or ramesh@upi
+  bankName: string;
+  accountNumberMasked: string;
+  ifscCode: string;
+}
+
+export interface CustomerProfile {
+  id: string;
+  name: string;
+  phone: string;
+  area: string;
+  city: string;
+  address: string;
+  gpsLocation: GpsCoordinates;
+  upiId: string;
+}
+
+export interface AdminProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export interface Job {
+  id: string;
+  title: string;
+  trade: TradeType;
+  description: string;
+  customerName: string;
+  customerPhone: string;
+  locationAddress: string;
+  area: string;
+  distanceKm: number;
+  jobGps: GpsCoordinates;
+  dailyWage: number;
+  durationDays: number;
+  status: JobStatus;
+  assignedWorkerId?: string;
+  assignedWorkerName?: string;
+  assignedWorkerPhone?: string;
+  assignedWorkerTrade?: TradeType;
+  assignedWorkerUpi?: string;
+  workerGps?: GpsCoordinates;
+  createdAt?: string;
+  otpCode: string;
+  postedAt: string;
+  platformFee: number; // 20%
+  workerPayout: number; // 80%
+  isPaid: boolean;
+  paidVia?: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH';
+  transactionRef?: string;
+  rating?: number;
+  review?: string;
+}
+
+export interface CallSession {
+  id: string;
+  callerName: string;
+  callerRole: 'worker' | 'customer' | 'admin';
+  callerPhone: string;
+  receiverName: string;
+  receiverRole: 'worker' | 'customer' | 'admin';
+  receiverPhone: string;
+  jobTitle?: string;
+  status: 'calling' | 'connected' | 'ended';
+  startedAt: number;
+  durationSeconds: number;
+  isMuted: boolean;
+  isSpeaker: boolean;
+}
+
+export interface VerificationRequest {
+  id: string;
+  workerName: string;
+  trade: TradeType;
+  phone: string;
+  aadhaarNumber: string;
+  experienceYears: number;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface CityInfo {
+  id: string;
+  name: string;
+  state: string;
+  lat: number;
+  lng: number;
+  defaultArea: string;
+}
+
+export interface DisputeItem {
+  id: string;
+  jobId: string;
+  workerName: string;
+  customerName: string;
+  reason: string;
+  status: 'open' | 'resolved';
+  amount: number;
+  reportedAt: string;
+}
+
+export interface HyperlocalMatchResult {
+  worker: WorkerProfile;
+  distanceKm: number;
+  isWithin10Km: boolean;
+  skillMatch: 'exact_primary' | 'secondary' | 'related';
+  availability: boolean;
+  matchScore: number; // 0 - 100
+  aiReasoning: string;
+  etaMinutes: number;
+  rank: number;
+}
+
+export interface MultiChannelAlertPayload {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  trade: TradeType;
+  dailyWage: number;
+  locationArea: string;
+  targetWorker: {
+    id: string;
+    name: string;
+    phone: string;
+    trade: TradeType;
+  };
+  channels: {
+    whatsapp: {
+      status: 'sent' | 'delivered' | 'read' | 'accepted';
+      message: string;
+      timestamp: string;
+    };
+    voiceCall: {
+      status: 'dialing' | 'ringing' | 'connected' | 'completed' | 'accepted';
+      transcript: string;
+      durationSeconds: number;
+      keypadResponse?: '1_ACCEPTED' | '2_REJECTED';
+    };
+    sms: {
+      status: 'sent' | 'delivered';
+      message: string;
+    };
+    appPush: {
+      status: 'sent' | 'delivered' | 'opened';
+      title: string;
+      body: string;
+    };
+  };
+  initiatedAt: string;
+  overallStatus: 'broadcasting' | 'received' | 'accepted' | 'declined';
+}

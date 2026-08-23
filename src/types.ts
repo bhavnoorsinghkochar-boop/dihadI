@@ -37,6 +37,9 @@ export interface WorkerProfile {
   id: string;
   name: string;
   phone: string;
+  email?: string;
+  isPhoneVerified?: boolean;
+  isEmailVerified?: boolean;
   avatar: string;
   primaryTrade: TradeType;
   secondaryTrades: TradeType[];
@@ -70,6 +73,9 @@ export interface CustomerProfile {
   id: string;
   name: string;
   phone: string;
+  email?: string;
+  isPhoneVerified?: boolean;
+  isEmailVerified?: boolean;
   area: string;
   city: string;
   address: string;
@@ -114,6 +120,43 @@ export interface Job {
   transactionRef?: string;
   rating?: number;
   review?: string;
+  customerRating?: number;
+  customerReview?: string;
+  ratingTags?: string[];
+  ratedAt?: string;
+  completedAt?: string;
+  completionDate?: string;
+  ratingGiven?: number;
+  reviewGiven?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  jobId: string;
+  senderRole: 'worker' | 'customer' | 'admin';
+  senderName: string;
+  senderPhone?: string;
+  text: string;
+  timestamp: string; // e.g. "10:45 AM"
+  createdAt: number; // Date.now()
+  status: 'sent' | 'delivered' | 'read';
+  isQuickReply?: boolean;
+}
+
+export interface ChatNotificationItem {
+  id: string;
+  senderRole: 'worker' | 'customer' | 'admin';
+  senderName: string;
+  senderPhone?: string;
+  recipientRole?: 'worker' | 'customer' | 'admin';
+  recipientName?: string;
+  text: string;
+  timestamp: string;
+  jobTitle?: string;
+  jobId?: string;
+  job?: Job | null;
+  targetPerson?: any;
+  isSender?: boolean;
 }
 
 export interface CallSession {
@@ -203,6 +246,12 @@ export interface MultiChannelAlertPayload {
     sms: {
       status: 'sent' | 'delivered';
       message: string;
+    };
+    email?: {
+      status: 'sent' | 'delivered' | 'queued';
+      recipient: string;
+      subject: string;
+      body: string;
     };
     appPush: {
       status: 'sent' | 'delivered' | 'opened';

@@ -18,7 +18,8 @@ import {
   CheckCheck,
   Building2,
   AlertTriangle,
-  Award
+  Award,
+  MessageSquare
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 
@@ -28,6 +29,7 @@ interface Top5ShortlistModalProps {
   job: Job | null;
   onOpenMultiChannel: (job: Job, worker: WorkerProfile) => void;
   onOpenRadar: (job: Job) => void;
+  onOpenChat?: (job: Job, worker: WorkerProfile) => void;
 }
 
 export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
@@ -36,6 +38,7 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
   job,
   onOpenMultiChannel,
   onOpenRadar,
+  onOpenChat,
 }) => {
   const { workers, currentCustomer, currentCity, currentLanguage, startCall, showNotification, acceptJobByWorker } = useApp();
   const [maxRadius, setMaxRadius] = useState<number>(10.0);
@@ -64,17 +67,54 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
     onClose();
   };
 
-  const handleBlastAllTop5 = () => {
+  const handleBlastAllTop5 = async () => {
     setIsBlastingAll(true);
     playSound('incoming_job');
-    showNotification(`Multi-Channel Alert dispatched to Top ${top5List.length} candidates via WhatsApp, Voice Call & SMS!`);
+    showNotification(`⚡ Multi-Channel Alert blasted to Top ${top5List.length} verified ${job.trade}s via WhatsApp, Mail, SMS & Radar!`);
     
-    // Trigger modal for the #1 candidate
+    // Attempt Browser System Notification
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(`⚡ 4-Channel Alert Broadcasted`, {
+          body: `Sent instant job notifications to ${top5List.length} nearby ${job.trade}s.`,
+          icon: '/icon.png',
+        });
+      } catch (e) {
+        console.debug('Notification note:', e);
+      }
+    }
+
+    // Trigger backend multi-channel alert dispatch for the top candidates
     if (top5List.length > 0) {
+      try {
+        const topWorker = top5List[0].worker;
+        fetch('/api/send-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workerName: topWorker.name,
+            workerPhone: topWorker.phone,
+            workerEmail: topWorker.email || 'bhavnoorsinghkochar@gmail.com',
+            customerName: job.customerName,
+            jobTitle: job.title,
+            trade: job.trade,
+            dailyWage: job.dailyWage,
+            area: job.area || job.locationAddress,
+            distanceKm: job.distanceKm,
+            durationDays: job.durationDays || 1,
+            channels: ['whatsapp', 'email', 'mail', 'sms', 'push', 'voice']
+          }),
+        }).catch(err => console.debug('Blast API note:', err));
+      } catch (err) {
+        console.debug('Blast dispatch note:', err);
+      }
+
       setTimeout(() => {
         setIsBlastingAll(false);
         onOpenMultiChannel(job, top5List[0].worker);
-      }, 900);
+      }, 700);
+    } else {
+      setIsBlastingAll(false);
     }
   };
 
@@ -258,14 +298,28 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
                   </div>
 
                   {/* Action Buttons Toolbar */}
-                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                     {/* Direct Hire */}
                     <button
                       onClick={() => handleHireDirect(worker)}
                       className="py-2 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Instant Hire</span>
+                      <span>Hire Now</span>
+                    </button>
+
+                    {/* Quick Chat */}
+                    <button
+                      onClick={() => {
+                        if (onOpenChat) {
+                          onOpenChat(job, worker);
+                        }
+                      }}
+                      className="py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs"
+                      title="Open Quick Chat with Candidate"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Chat</span>
                     </button>
 
                     {/* Multi-Channel Alert Dispatch */}
@@ -274,10 +328,10 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
                         onOpenMultiChannel(job, worker);
                       }}
                       className="py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 transition flex items-center justify-center gap-1.5"
-                      title="Send WhatsApp, IVR Voice Call & SMS alert"
+                      title="Send WhatsApp, Mail, SMS & IVR Alert"
                     >
                       <Send className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>4-Channel Alert</span>
+                      <span>4-Channel</span>
                     </button>
 
                     {/* Direct Phone Call */}
@@ -290,7 +344,7 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
                       className="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl border border-emerald-200 transition flex items-center justify-center gap-1.5"
                     >
                       <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Call Phone</span>
+                      <span>Call</span>
                     </button>
 
                     {/* GPS Radar Track */}
@@ -307,7 +361,7 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
                       className="py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl border border-slate-200 transition flex items-center justify-center gap-1.5"
                     >
                       <Radio className="w-3.5 h-3.5 text-blue-600" />
-                      <span>GPS Radar</span>
+                      <span>Radar</span>
                     </button>
                   </div>
                 </div>

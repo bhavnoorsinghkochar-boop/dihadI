@@ -1,6 +1,6 @@
 // Audio utility using Web Audio API synthesis for reliable sound cues
 
-export const playSound = (type: 'incoming_job' | 'success' | 'cash' | 'click' | 'alert' | 'ring' | 'call_connect' | 'call_end' | 'gps_ping') => {
+export const playSound = (type: 'incoming_job' | 'success' | 'cash' | 'click' | 'alert' | 'ring' | 'call_connect' | 'call_end' | 'gps_ping' | 'message' | 'chat_sent') => {
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -8,7 +8,44 @@ export const playSound = (type: 'incoming_job' | 'success' | 'cash' | 'click' | 
     const ctx = new AudioContextClass();
     const now = ctx.currentTime;
 
-    if (type === 'incoming_job') {
+    if (type === 'message') {
+      // Modern pleasant double bell chime (F#5 -> C#6)
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      const gain2 = ctx.createGain();
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(739.99, now); // F#5
+      gain1.gain.setValueAtTime(0.18, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.22);
+
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1108.73, now + 0.09); // C#6
+      gain2.gain.setValueAtTime(0.2, now + 0.09);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.09);
+      osc2.stop(now + 0.35);
+    } else if (type === 'chat_sent') {
+      // Swift ascending pop sound (whoosh / sent pop)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(450, now);
+      osc.frequency.exponentialRampToValueAtTime(950, now + 0.12);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } else if (type === 'incoming_job') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sawtooth';

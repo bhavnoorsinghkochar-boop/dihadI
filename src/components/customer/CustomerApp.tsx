@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getT } from '../../utils/translations';
 import { TradeType, Job, WorkerProfile } from '../../types';
@@ -25,9 +25,33 @@ import {
   LocateFixed,
   Navigation,
   Compass,
-  Crosshair
+  Crosshair,
+  Star,
+  Mail,
+  ThumbsUp,
+  MessageSquare,
+  Search,
+  Paintbrush,
+  Wrench,
+  Zap,
+  Hammer,
+  RotateCcw,
+  CheckCircle2,
+  SlidersHorizontal,
+  ChevronRight,
+  HelpCircle,
+  Bell,
+  ArrowRight,
+  KeyRound,
+  Copy,
+  ExternalLink,
+  MessageCircle,
+  Check
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
+import { SecurityVerificationModal, GmailOtpVerificationModal, GmailOtpVerificationSection } from '../common/SecurityVerificationModal';
+import { RateEmployeeModal } from '../common/RateEmployeeModal';
+import { QuickChatModal, ChatTarget } from '../common/QuickChatModal';
 
 interface CustomerAppProps {
   isEmbedded?: boolean;
@@ -52,6 +76,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     workers,
     postJob,
     releasePaymentByCustomer,
+    rateWorkerJob,
     setCurrentRole,
     currentLanguage,
     startCall,
@@ -59,12 +84,33 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     openUpiPayment,
     openMultiChannelModal,
     openTop5Shortlist,
+    showNotification,
+    acceptJobByWorker,
+    dispatchJobStartOtp,
   } = useApp();
+
+  // Navigation Sub-Tabs: 'find_workers' | 'my_bookings' | 'support'
+  const [activeTab, setActiveTab] = useState<'find_workers' | 'my_bookings' | 'support'>('find_workers');
 
   // Auth Tab Mode: 'login' | 'register'
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
   const [workerViewMode, setWorkerViewMode] = useState<'list' | 'radar'>('list');
   const [selectedRadarWorker, setSelectedRadarWorker] = useState<WorkerProfile | null>(null);
+
+  // Search & Filters State
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedTradeFilter, setSelectedTradeFilter] = useState<string>('All');
+  const [locationQuery, setLocationQuery] = useState<string>('');
+  const [minRating, setMinRating] = useState<number>(1.0);
+  const [minWage, setMinWage] = useState<string>('');
+  const [maxWage, setMaxWage] = useState<string>('');
+  const [strict10kmOnly, setStrict10kmOnly] = useState<boolean>(true);
+
+  // Direct Worker Booking Modal State
+  const [bookingWorker, setBookingWorker] = useState<WorkerProfile | null>(null);
+  const [directJobTitle, setDirectJobTitle] = useState<string>('');
+  const [directJobDuration, setDirectJobDuration] = useState<number>(1);
+  const [directJobDescription, setDirectJobDescription] = useState<string>('');
 
   // Login form states
   const [loginId, setLoginId] = useState('pooja');
@@ -76,20 +122,67 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
   const [regUserId, setRegUserId] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regPhone, setRegPhone] = useState('+91 99100 88221');
+  const [regEmail, setRegEmail] = useState('bhavnoorsinghkochar@gmail.com');
   const [regArea, setRegArea] = useState(() => currentCity?.defaultArea || 'Model Town');
   const [regAddress, setRegAddress] = useState(() => `House 142, ${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}, ${currentCity?.state || 'Punjab'}`);
   const [regUpi, setRegUpi] = useState('pooja.verma@okhdfcbank');
 
-  useEffect(() => {
-    if (currentCity) {
-      setRegArea(currentCity.defaultArea);
-      setRegAddress(`House 142, ${currentCity.defaultArea}, ${currentCity.name}, ${currentCity.state}`);
+  // Security Verification Modal State
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showGmailVerifyModal, setShowGmailVerifyModal] = useState(false);
+
+  // Rating Modal State
+  const [ratingJob, setRatingJob] = useState<Job | null>(null);
+
+  // Quick Chat Modal State
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [activeChatJob, setActiveChatJob] = useState<Job | null>(null);
+  const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
+
+  // OTP Dispatch & Copy State
+  const [copiedOtpJobId, setCopiedOtpJobId] = useState<string | null>(null);
+  const [dispatchedEmailOtpJobs, setDispatchedEmailOtpJobs] = useState<Record<string, boolean>>({});
+  const [isDispatchingOtp, setIsDispatchingOtp] = useState<Record<string, boolean>>({});
+
+  const handleSendOtpEmail = async (job: Job) => {
+    setIsDispatchingOtp(prev => ({ ...prev, [job.id]: true }));
+    try {
+      const email = currentCustomer?.email || 'bhavnoorsinghkochar@gmail.com';
+      const success = await dispatchJobStartOtp(job, email);
+      setDispatchedEmailOtpJobs(prev => ({ ...prev, [job.id]: true }));
+      if (success) {
+        playSound('success');
+      }
+    } finally {
+      setIsDispatchingOtp(prev => ({ ...prev, [job.id]: false }));
     }
-  }, [currentCity]);
+  };
+
+  const handleSendOtpSms = (job: Job) => {
+    const targetPhone = (job.assignedWorkerPhone || currentCustomer?.phone || '+919910088221').replace(/[^0-9]/g, '');
+    const body = encodeURIComponent(`🔑 Dihadi Start-of-Work Passcode: ${job.otpCode} for "${job.title}". Enter this 4-digit code in your app upon arrival to start work.`);
+    window.location.href = `sms:${targetPhone}?body=${body}`;
+  };
+
+  const handleShareOtpWhatsApp = (job: Job) => {
+    const targetPhone = (job.assignedWorkerPhone || currentCustomer?.phone || '9910088221').replace(/[^0-9]/g, '');
+    const phoneWithCountry = targetPhone.length === 10 ? `91${targetPhone}` : targetPhone;
+    const msg = encodeURIComponent(
+      `*🔑 DIHADI WORKER START OTP*\n\nJob: *${job.title}*\nStart Passcode: *${job.otpCode}*\nAgreed Daily Wage: ₹${job.dailyWage}\n\nEnter this 4-digit code in your Dihadi app upon arrival to start the work clock!`
+    );
+    window.open(`https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${msg}`, '_blank');
+  };
+
+  const handleCopyOtp = (job: Job) => {
+    navigator.clipboard?.writeText(job.otpCode);
+    setCopiedOtpJobId(job.id);
+    playSound('click');
+    showNotification(`Copied Start OTP: ${job.otpCode}`);
+    setTimeout(() => setCopiedOtpJobId(null), 2500);
+  };
 
   // Job Posting modal state
   const [showPostModal, setShowPostModal] = useState(false);
-  const [selectedTradeFilter, setSelectedTradeFilter] = useState<string>('All');
 
   // Form State for Post Job
   const [title, setTitle] = useState('');
@@ -97,6 +190,16 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
   const [description, setDescription] = useState('');
   const [dailyWage, setDailyWage] = useState<number>(850);
   const [durationDays, setDurationDays] = useState<number>(1);
+
+  useEffect(() => {
+    if (currentCity) {
+      setRegArea(currentCity.defaultArea);
+      setRegAddress(`House 142, ${currentCity.defaultArea}, ${currentCity.name}, ${currentCity.state}`);
+      if (!locationQuery) {
+        setLocationQuery(currentCity.name);
+      }
+    }
+  }, [currentCity]);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,11 +221,24 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
       setAuthError('Please enter your full name');
       return;
     }
+    setShowSecurityModal(true);
+  };
+
+  const handleVerificationSuccess = (verifiedData: {
+    verifiedPhone: string;
+    verifiedEmail?: string;
+    isEmailVerified: boolean;
+    isPhoneVerified: boolean;
+  }) => {
+    setShowSecurityModal(false);
     registerCustomerWithAuth({
       userId: regUserId || regPhone.replace(/[^0-9]/g, ''),
       password: regPassword || '123',
       name: regName,
-      phone: regPhone,
+      phone: verifiedData.verifiedPhone || regPhone,
+      email: verifiedData.verifiedEmail || regEmail,
+      isPhoneVerified: verifiedData.isPhoneVerified,
+      isEmailVerified: verifiedData.isEmailVerified,
       area: regArea,
       address: regAddress,
       upiId: regUpi || `${regName.toLowerCase().replace(/\s+/g, '.')}@upi`,
@@ -136,7 +252,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     loginCustomerWithAuth(userId, pass);
   };
 
-  const getTradeName = (t: TradeType) => {
+  const getTradeName = (t: TradeType | string) => {
     if (currentLanguage === 'hi') {
       const map: Record<string, string> = {
         'Mason': 'राजमिस्त्री',
@@ -172,11 +288,12 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     e.preventDefault();
     if (!currentCustomer) return;
     if (!title.trim()) {
-      alert('Please specify the work needed');
+      showNotification('Missing Details', 'Please specify the work needed for this job.');
+      playSound('click');
       return;
     }
 
-    postJob({
+    const createdJob = postJob({
       title,
       trade,
       description: description || `Need verified ${trade} for daily work.`,
@@ -191,7 +308,119 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     setTitle('');
     setDescription('');
     setShowPostModal(false);
+    setActiveTab('my_bookings');
+    playSound('success');
+
+    // Automatically open Top 5 Shortlist modal for the newly posted job
+    if (createdJob) {
+      setTimeout(() => {
+        openTop5Shortlist(createdJob);
+      }, 300);
+    }
   };
+
+  const handleConfirmDirectBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentCustomer || !bookingWorker) return;
+
+    const workerTrade = bookingWorker.primaryTrade;
+    const workerDailyWage = bookingWorker.dailyRate;
+    const jobTitle = directJobTitle.trim() || `Hired ${bookingWorker.name} for ${workerTrade}`;
+
+    const createdJob = postJob({
+      title: jobTitle,
+      trade: workerTrade,
+      description: directJobDescription || `Direct booking for ${bookingWorker.name} (${workerTrade}).`,
+      customerName: currentCustomer.name,
+      customerPhone: currentCustomer.phone,
+      locationAddress: currentCustomer.address,
+      area: currentCustomer.area,
+      dailyWage: Number(workerDailyWage) || 850,
+      durationDays: Number(directJobDuration) || 1,
+    });
+
+    if (createdJob) {
+      // Direct accept by chosen worker
+      acceptJobByWorker(createdJob.id);
+      playSound('success');
+      showNotification(`Booked ${bookingWorker.name}! Start OTP is ${createdJob.otpCode}`);
+    }
+
+    setBookingWorker(null);
+    setDirectJobTitle('');
+    setDirectJobDescription('');
+    setActiveTab('my_bookings');
+  };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedTradeFilter('All');
+    setLocationQuery('');
+    setMinRating(1.0);
+    setMinWage('');
+    setMaxWage('');
+    setStrict10kmOnly(true);
+  };
+
+  const custLat = currentCustomer?.gpsLocation?.lat || 30.8926;
+  const custLng = currentCustomer?.gpsLocation?.lng || 75.8415;
+
+  // Filter workers based on query, selected trade, rating, price, and strict 10km radar (Must be before any conditional early return!)
+  const filteredWorkers = useMemo(() => {
+    return workers.filter((w) => {
+      const workerLat = w.gpsLocation?.lat || custLat;
+      const workerLng = w.gpsLocation?.lng || custLng;
+      const distance = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
+
+      // Strict 10km hyperlocal constraint
+      if (strict10kmOnly && distance > 10.0) {
+        return false;
+      }
+
+      // Trade filter
+      if (selectedTradeFilter !== 'All' && w.primaryTrade !== selectedTradeFilter) {
+        return false;
+      }
+
+      // Search Query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesTrade = (w.primaryTrade || '').toLowerCase().includes(q);
+        const matchesName = (w.name || '').toLowerCase().includes(q);
+        const workerSkills = (w as any).skills || w.secondaryTrades || [];
+        const matchesSkills = Array.isArray(workerSkills) && workerSkills.some((s: string) => (s || '').toLowerCase().includes(q));
+        const matchesArea = (w.location?.area || '').toLowerCase().includes(q);
+        if (!matchesTrade && !matchesName && !matchesSkills && !matchesArea) {
+          return false;
+        }
+      }
+
+      // Location query filter
+      if (locationQuery.trim()) {
+        const loc = locationQuery.toLowerCase().trim();
+        const matchesCity = (w.location?.city || '').toLowerCase().includes(loc);
+        const matchesArea = (w.location?.area || '').toLowerCase().includes(loc);
+        if (!matchesCity && !matchesArea) {
+          // If searching for distance/radar, keep within radius
+        }
+      }
+
+      // Min Rating
+      if (w.rating < minRating) {
+        return false;
+      }
+
+      // Price filter
+      if (minWage && w.dailyRate < Number(minWage)) {
+        return false;
+      }
+      if (maxWage && w.dailyRate > Number(maxWage)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [workers, selectedTradeFilter, searchQuery, locationQuery, minRating, minWage, maxWage, strict10kmOnly, custLat, custLng]);
 
   // IF NOT LOGGED IN: Show Customer Login
   if (!currentCustomer) {
@@ -359,17 +588,42 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  {getT(currentLanguage, 'employer_phone_label')}
-                </label>
-                <input
-                  type="text"
-                  value={regPhone}
-                  onChange={(e) => setRegPhone(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-blue-600"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    {getT(currentLanguage, 'employer_phone_label')}
+                  </label>
+                  <input
+                    type="text"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-blue-600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                    <span>Gmail / Email</span>
+                    <span className="text-[9px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded">Security OTP</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="name@gmail.com"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-blue-600"
+                    required
+                  />
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setRegEmail('bhavnoorsinghkochar@gmail.com')}
+                      className="text-[10px] text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold px-2 py-0.5 rounded-md border border-blue-200"
+                    >
+                      Use bhavnoorsinghkochar@gmail.com
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -404,32 +658,30 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     value={regArea}
                     onChange={(e) => setRegArea(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    {getT(currentLanguage, 'employer_upi_label')}
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">UPI ID for Payouts</label>
                   <input
                     type="text"
                     value={regUpi}
                     onChange={(e) => setRegUpi(e.target.value)}
-                    placeholder="e.g. name@okhdfc"
+                    placeholder="e.g. name@okhdfcbank"
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-blue-600"
+                    required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  {getT(currentLanguage, 'employer_address_label')}
-                </label>
-                <textarea
-                  rows={2}
+                <label className="font-bold text-slate-700 block mb-1">Full Delivery / Site Address</label>
+                <input
+                  type="text"
                   value={regAddress}
                   onChange={(e) => setRegAddress(e.target.value)}
-                  placeholder="Street / House No., Area, City, State"
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  required
                 />
               </div>
 
@@ -437,12 +689,23 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-2xl shadow-md text-xs transition flex items-center justify-center gap-2 mt-3"
               >
-                <CheckCircle className="w-4 h-4" />
-                <span>{getT(currentLanguage, 'auth_register_btn')}</span>
+                <ShieldCheck className="w-4 h-4 text-amber-300" />
+                <span>Verify Gmail / SMS & Register</span>
               </button>
             </form>
           )}
         </div>
+
+        {/* Security Verification Modal for registration */}
+        <SecurityVerificationModal
+          isOpen={showSecurityModal}
+          onClose={() => setShowSecurityModal(false)}
+          targetName={regName}
+          email={regEmail}
+          phone={regPhone}
+          role="customer"
+          onVerificationComplete={handleVerificationSuccess}
+        />
       </div>
     );
   }
@@ -452,648 +715,1151 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
   const activeRequests = myCustomerJobs.filter((j) => j.status !== 'paid_and_closed');
   const pastPaidJobs = myCustomerJobs.filter((j) => j.status === 'paid_and_closed');
 
-  const custLat = currentCustomer.gpsLocation?.lat || 30.8926;
-  const custLng = currentCustomer.gpsLocation?.lng || 75.8415;
-
-  const totalAvailableWorkers = workers.filter((w) => {
-    if (selectedTradeFilter === 'All') return true;
-    return w.primaryTrade === selectedTradeFilter;
-  });
-
-  // STRICT 10KM HYPERLOCAL ENFORCEMENT: Filter and block any worker beyond 10.0km
-  const filteredWorkers = totalAvailableWorkers.filter((w) => {
-    const workerLat = w.gpsLocation?.lat || custLat;
-    const workerLng = w.gpsLocation?.lng || custLng;
-    const distance = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
-    return distance <= 10.0;
-  });
-
-  const blockedDistantWorkersCount = totalAvailableWorkers.length - filteredWorkers.length;
+  const popularServiceCategories = [
+    { trade: 'Mason' as TradeType, label: 'Mason', iconName: 'Building2', subtitle: 'Architecture & Brickwork' },
+    { trade: 'Painter' as TradeType, label: 'Painter', iconName: 'Paintbrush', subtitle: 'Wall & Texture Paint' },
+    { trade: 'Plumber' as TradeType, label: 'Plumber', iconName: 'Wrench', subtitle: 'Pipes, Taps & Motors' },
+    { trade: 'Electrician' as TradeType, label: 'Electrician', iconName: 'Zap', subtitle: 'Wiring & Appliances' },
+    { trade: 'Carpenter' as TradeType, label: 'Carpenter', iconName: 'Hammer', subtitle: 'Woodwork & Furniture' },
+    { trade: 'Construction Helper' as TradeType, label: 'Cleaner', iconName: 'Sparkles', subtitle: 'Site Cleaning & Help' },
+  ];
 
   return (
-    <div className={`bg-white flex flex-col h-full overflow-hidden select-none ${isEmbedded ? 'w-full' : 'max-w-md mx-auto rounded-3xl border border-slate-200 shadow-xl'}`}>
-      {/* Top Header Card */}
-      <div className="bg-blue-600 text-white p-4 shrink-0 rounded-t-3xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center font-black text-lg border border-white/30">
-              {currentCustomer.name.charAt(0)}
+    <div className="bg-slate-50 min-h-screen flex flex-col font-sans select-none rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
+      {/* 1. Customer Navigation Bar */}
+      <nav className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-xs">
+        <div className="flex items-center gap-6 sm:gap-8">
+          {/* Logo */}
+          <div 
+            onClick={() => setActiveTab('find_workers')}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 font-black flex items-center justify-center text-lg italic shadow-xs group-hover:scale-105 transition">
+              D
             </div>
-            <div>
-              <span className="text-[11px] text-blue-100 font-medium block">
-                {getT(currentLanguage, 'employer_welcome')}
-              </span>
-              <p className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-                {currentCustomer.name}
-                <span className="text-xs font-normal text-blue-200">({currentCustomer.area})</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setShowPostModal(true)}
-              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{getT(currentLanguage, 'employer_post_daily_job')}</span>
-            </button>
-
-            <button
-              onClick={logoutCustomer}
-              className="p-1.5 bg-blue-700 hover:bg-blue-800 text-blue-100 rounded-lg transition"
-              title={getT(currentLanguage, 'auth_logout_btn')}
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Scrollable Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Hyperlocal AI Matching & 10km Engine Banner */}
-        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-4 border border-indigo-500/30 shadow-lg space-y-3 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-sm">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.2 bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase rounded-full border border-amber-400/30">
-                    AI Matching Active
-                  </span>
-                  <span className="text-[10px] text-indigo-200">Strict 10km Radius</span>
-                </div>
-                <h4 className="text-xs font-black text-white">Hyperlocal Auto-Dispatch & Shortlisting</h4>
-              </div>
-            </div>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
-              100% Hyperlocal
+            <span className="text-lg font-black tracking-tight text-slate-900">
+              Dihadi<span className="text-amber-500">.Co</span>
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-300 leading-relaxed">
-            Instantly match nearest trades within 10km and trigger automated alerts across <b>WhatsApp</b>, <b>IVR Voice Call</b>, <b>SMS</b>, and <b>App Push</b>.
-          </p>
-
-          <div className="flex items-center gap-2 pt-0.5">
+          {/* Sub Navigation Tabs */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
             <button
-              onClick={() => {
-                const sampleJob = activeRequests[0] || jobs[0] || {
-                  id: `job_quick_${Date.now()}`,
-                  title: `Masonry & Brickwork at ${currentCustomer.area}`,
-                  trade: 'Mason' as TradeType,
-                  customerName: currentCustomer.name,
-                  customerPhone: currentCustomer.phone,
-                  locationAddress: currentCustomer.address,
-                  area: currentCustomer.area,
-                  dailyWage: 850,
-                  workerPayout: 680,
-                  platformFee: 170,
-                  distanceKm: 0.9,
-                  status: 'open',
-                  otpCode: '3341',
-                  postedAt: 'Just now',
-                  durationDays: 1,
-                  isPaid: false,
-                  jobGps: currentCustomer.gpsLocation,
-                };
-                openTop5Shortlist(sampleJob);
-              }}
-              className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md"
+              onClick={() => setActiveTab('find_workers')}
+              className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                activeTab === 'find_workers'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>View Top-5 AI Matches</span>
+              <span>Find Workers</span>
             </button>
 
             <button
-              onClick={() => {
-                const sampleJob = activeRequests[0] || jobs[0] || {
-                  id: `job_quick_${Date.now()}`,
-                  title: `Painting Work at ${currentCustomer.area}`,
-                  trade: 'Painter' as TradeType,
-                  customerName: currentCustomer.name,
-                  customerPhone: currentCustomer.phone,
-                  locationAddress: currentCustomer.address,
-                  area: currentCustomer.area,
-                  dailyWage: 900,
-                  workerPayout: 720,
-                  platformFee: 180,
-                  distanceKm: 1.2,
-                  status: 'open',
-                  otpCode: '9921',
-                  postedAt: 'Just now',
-                  durationDays: 1,
-                  isPaid: false,
-                  jobGps: currentCustomer.gpsLocation,
-                };
-                openMultiChannelModal(sampleJob, workers[0]);
-              }}
-              className="px-3 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-md"
-              title="Test 4-channel alert simulation"
+              onClick={() => setActiveTab('my_bookings')}
+              className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                activeTab === 'my_bookings'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
             >
-              <Radio className="w-3.5 h-3.5" />
-              <span>4-Channel Alert</span>
+              <Building2 className="w-3.5 h-3.5" />
+              <span>My Bookings</span>
+              {activeRequests.length > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                  activeTab === 'my_bookings' ? 'bg-amber-400 text-slate-950' : 'bg-blue-600 text-white'
+                }`}>
+                  {activeRequests.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('support')}
+              className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                activeTab === 'support'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Support</span>
             </button>
           </div>
         </div>
 
-        {/* Active Requests Section */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
-              {getT(currentLanguage, 'employer_active_requests')} ({activeRequests.length})
-            </h3>
+        {/* Right User & Quick Post Job Actions */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowPostModal(true)}
+            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Post a Job</span>
+          </button>
+
+          <button
+            id="header-verify-gmail-btn"
+            onClick={() => setShowGmailVerifyModal(true)}
+            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-blue-200 cursor-pointer"
+            title="Verify Gmail with 6-digit OTP"
+          >
+            <Mail className="w-3.5 h-3.5 text-blue-600" />
+            <span className="hidden sm:inline">Verify Gmail</span>
+          </button>
+
+          <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
+
+          {/* User Profile & Sign Out */}
+          <div className="flex items-center gap-2.5">
+            <div className="text-right hidden md:block">
+              <p className="text-xs font-black text-slate-900 uppercase">{currentCustomer.name}</p>
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded-md border border-blue-100">
+                Customer ({currentCustomer.area})
+              </span>
+            </div>
+
+            <div className="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700">
+              {currentCustomer.name.charAt(0)}
+            </div>
+
+            <button
+              onClick={logoutCustomer}
+              className="px-2.5 py-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-200"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* 2. Main Content Area */}
+      {activeTab === 'find_workers' && (
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto w-full">
+          {/* A. Hero Search Banner (As shown in screenshot) */}
+          <div className="bg-[#0b192c] text-white rounded-3xl p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
+            {/* Background Decorative Rings */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="max-w-2xl space-y-5 z-10">
+              {/* Pill Tag */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-amber-300 text-xs font-bold">
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <span>Verified Local Daily Wage Workforce</span>
+              </div>
+
+              {/* Headline */}
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                Find Trusted Workers.<br />
+                <span className="text-amber-400">Get The Job Done With Dignity.</span>
+              </h2>
+
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
+                Connect directly with verified electricians, plumbers, carpenters, painters, and masons for daily wage or project work.
+              </p>
+
+              {/* Large Search Input & Action Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch gap-2.5 pt-2">
+                <div className="relative flex-1">
+                  <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search trade or skill (e.g. Electrician, Plumbing)..."
+                    className="w-full bg-white text-slate-900 pl-11 pr-4 py-3.5 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md placeholder:text-slate-400"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => playSound('click')}
+                  className="px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2 shrink-0"
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Search</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPostModal(true)}
+                  className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2 shrink-0 border border-blue-400/30"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Post a Job</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right Hero Image / Illustration */}
+            <div className="relative z-10 shrink-0 w-full sm:w-80 lg:w-96">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-slate-700/60 shadow-2xl bg-slate-900">
+                <img
+                  src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80"
+                  alt="Dihadi Verified Worker"
+                  className="w-full h-56 sm:h-64 object-cover object-center"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
+                  <span className="flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-1 rounded-lg text-emerald-300 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Strict 10km GPS Radar
+                  </span>
+                  <span className="bg-slate-900/80 px-2 py-1 rounded-lg font-mono text-[11px] text-slate-300">
+                    Aadhaar KYC Verified
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* B. Popular Services Category Chips (As shown in screenshot) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-amber-500" />
+                <span>Popular Services</span>
+              </h3>
+              {selectedTradeFilter !== 'All' && (
+                <button
+                  onClick={() => setSelectedTradeFilter('All')}
+                  className="text-xs text-blue-600 font-bold hover:underline"
+                >
+                  Clear Selection (Show All)
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {popularServiceCategories.map((cat) => {
+                const isSelected = selectedTradeFilter === cat.trade;
+                return (
+                  <button
+                    key={cat.trade}
+                    onClick={() => {
+                      setSelectedTradeFilter(isSelected ? 'All' : cat.trade);
+                      playSound('click');
+                    }}
+                    className={`p-4 rounded-2xl border transition text-center flex flex-col items-center justify-center gap-2 group ${
+                      isSelected
+                        ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-400 shadow-md'
+                        : 'bg-white hover:bg-slate-50 border-slate-200 shadow-xs'
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-base transition ${
+                      isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-100 text-slate-700 group-hover:bg-slate-200'
+                    }`}>
+                      {cat.trade === 'Mason' && <Building2 className="w-6 h-6" />}
+                      {cat.trade === 'Painter' && <Paintbrush className="w-6 h-6" />}
+                      {cat.trade === 'Plumber' && <Wrench className="w-6 h-6" />}
+                      {cat.trade === 'Electrician' && <Zap className="w-6 h-6" />}
+                      {cat.trade === 'Carpenter' && <Hammer className="w-6 h-6" />}
+                      {cat.trade === 'Construction Helper' && <Sparkles className="w-6 h-6" />}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-900">{cat.label}</p>
+                      <span className="text-[10px] text-slate-500 block truncate">{getTradeName(cat.trade)}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* C. 2-Column Catalog Layout: Left Filters, Right Workers Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+            {/* Left Column: Filters Sidebar */}
+            <div className="lg:col-span-1 bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-5 sticky top-20">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h4 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+                  <span>Filters</span>
+                </h4>
+                <button
+                  onClick={resetFilters}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
+              </div>
+
+              {/* Service Trade Dropdown */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Service Trade</label>
+                <select
+                  value={selectedTradeFilter}
+                  onChange={(e) => setSelectedTradeFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-blue-600"
+                >
+                  <option value="All">All Services & Trades</option>
+                  <option value="Mason">Mason (राजमिस्त्री)</option>
+                  <option value="Painter">Painter (पेंटर)</option>
+                  <option value="Plumber">Plumber (प्लंबर)</option>
+                  <option value="Electrician">Electrician (इलेक्ट्रीशियन)</option>
+                  <option value="Carpenter">Carpenter (बढ़ई)</option>
+                  <option value="Construction Helper">Helper / Cleaner (हेल्पर)</option>
+                  <option value="Tile Worker">Tile Worker (टाइल मिस्त्री)</option>
+                  <option value="Welder">Welder (वेल्डर)</option>
+                  <option value="Loader/Mover">Loader / Mover (लोडर)</option>
+                </select>
+              </div>
+
+              {/* Location Input & GPS Snap */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Location / Region</label>
+                  <button
+                    type="button"
+                    onClick={refreshCustomerGpsLocation}
+                    className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
+                    title="Refresh GPS location"
+                  >
+                    <Crosshair className="w-3 h-3" />
+                    <span>Live GPS</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    placeholder="e.g. Ludhiana or Delhi NCR"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold pl-8 focus:outline-blue-600"
+                  />
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                </div>
+              </div>
+
+              {/* Strict 10km Radar Toggle */}
+              <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-blue-950 flex items-center gap-1.5">
+                    <Radio className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                    Strict 10km Radar
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={strict10kmOnly}
+                    onChange={(e) => setStrict10kmOnly(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                  />
+                </div>
+                <p className="text-[10px] text-blue-800 leading-tight">
+                  Guarantees all shown workers are within 10 km of your live GPS coordinates.
+                </p>
+              </div>
+
+              {/* Min Rating Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-700">Min Rating</span>
+                  <span className="font-black text-amber-600 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    {minRating.toFixed(1)}+ Stars
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1.0"
+                  max="5.0"
+                  step="0.5"
+                  value={minRating}
+                  onChange={(e) => setMinRating(Number(e.target.value))}
+                  className="w-full accent-amber-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Daily Rate (₹) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Daily Rate (₹)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min ₹"
+                    value={minWage}
+                    onChange={(e) => setMinWage(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max ₹"
+                    value={maxWage}
+                    onChange={(e) => setMaxWage(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Sidebar Quick Action Buttons */}
+              <div className="pt-2 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sampleJob: Job = activeRequests[0] || jobs[0] || {
+                      id: `job_ai_${Date.now()}`,
+                      title: `Work for ${selectedTradeFilter !== 'All' ? selectedTradeFilter : 'Mason'} in ${currentCustomer.area}`,
+                      trade: (selectedTradeFilter !== 'All' ? selectedTradeFilter : 'Mason') as TradeType,
+                      description: 'On-demand trade task in local radius',
+                      customerName: currentCustomer.name,
+                      customerPhone: currentCustomer.phone,
+                      locationAddress: currentCustomer.address,
+                      area: currentCustomer.area,
+                      dailyWage: 850,
+                      workerPayout: 680,
+                      platformFee: 170,
+                      distanceKm: 0.9,
+                      status: 'broadcast',
+                      otpCode: '4481',
+                      postedAt: 'Just now',
+                      durationDays: 1,
+                      isPaid: false,
+                      jobGps: currentCustomer.gpsLocation,
+                    };
+                    openTop5Shortlist(sampleJob);
+                  }}
+                  className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Top-5 AI Shortlist</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPostModal(true)}
+                  className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Broadcast New Job</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Worker Catalog Grid & View Toggles */}
+            <div className="lg:col-span-3 space-y-4">
+              {/* Header Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">
+                    Showing <span className="text-blue-600">{filteredWorkers.length}</span> available workers
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    {strict10kmOnly ? 'All workers filtered within strict 10km GPS radius' : 'Showing all matched workers'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-bold">
+                    <button
+                      onClick={() => setWorkerViewMode('list')}
+                      className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                        workerViewMode === 'list'
+                          ? 'bg-white text-blue-600 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>Grid View</span>
+                    </button>
+                    <button
+                      onClick={() => setWorkerViewMode('radar')}
+                      className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                        workerViewMode === 'radar'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Radio className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+                      <span>10km GPS Radar</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* View 1: 10km GPS Radar View */}
+              {workerViewMode === 'radar' && (
+                <div className="bg-slate-950 text-white rounded-3xl p-6 border border-slate-800 space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                      <LocateFixed className="w-4 h-4 animate-spin text-emerald-400" />
+                      <span>LIVE HYPERLOCAL RADAR • {currentCustomer.area}</span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        ({currentCustomer.gpsLocation.lat.toFixed(4)}, {currentCustomer.gpsLocation.lng.toFixed(4)})
+                      </span>
+                    </div>
+                    <span className="text-xs text-emerald-300 font-mono bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/40">
+                      Range: Strict 10.0 KM
+                    </span>
+                  </div>
+
+                  {/* Circular Radar Sweep Display */}
+                  <div className="relative w-full aspect-square max-h-[380px] mx-auto bg-radial from-slate-900 to-slate-950 rounded-full border-2 border-emerald-500/30 flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-[15%] rounded-full border border-emerald-500/20" />
+                    <div className="absolute inset-[32%] rounded-full border border-emerald-500/20" />
+                    <div className="absolute inset-[50%] rounded-full border border-emerald-500/20" />
+                    <div className="absolute inset-[70%] rounded-full border border-emerald-500/20" />
+
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-full h-[1px] bg-emerald-500/20" />
+                      <div className="h-full w-[1px] bg-emerald-500/20 absolute" />
+                    </div>
+
+                    <div className="absolute inset-0 bg-conic-gradient from-emerald-500/20 via-transparent to-transparent animate-spin rounded-full pointer-events-none" style={{ animationDuration: '4s' }} />
+
+                    {/* Center Customer Marker */}
+                    <div className="relative z-10 w-9 h-9 rounded-full bg-blue-600 text-white border-2 border-white shadow-lg flex items-center justify-center text-xs font-black">
+                      YOU
+                    </div>
+
+                    {/* Worker Blips */}
+                    {filteredWorkers.map((w) => {
+                      const workerLat = w.gpsLocation?.lat || custLat;
+                      const workerLng = w.gpsLocation?.lng || custLng;
+                      const distanceKm = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
+                      const bearingDeg = calculateBearing(custLat, custLng, workerLat, workerLng);
+
+                      const radiusPercent = Math.min(42, Math.max(12, (distanceKm / 10.0) * 42));
+                      const rad = ((bearingDeg - 90) * Math.PI) / 180;
+                      const x = 50 + radiusPercent * Math.cos(rad);
+                      const y = 50 + radiusPercent * Math.sin(rad);
+                      const isSelected = selectedRadarWorker?.id === w.id;
+
+                      return (
+                        <button
+                          key={w.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedRadarWorker(w);
+                            playSound('click');
+                          }}
+                          style={{ left: `${x}%`, top: `${y}%` }}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 group z-20 transition-transform ${
+                            isSelected ? 'scale-125 z-30' : 'hover:scale-110'
+                          }`}
+                          title={`${w.name} (${w.primaryTrade}) - ${distanceKm} km away`}
+                        >
+                          <div className="relative">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border ${
+                              isSelected
+                                ? 'bg-amber-400 text-slate-950 border-white ring-2 ring-amber-400'
+                                : 'bg-slate-900 text-amber-300 border-emerald-400/80 shadow-md'
+                            }`}>
+                              {w.name.charAt(0)}
+                            </div>
+                            <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-slate-900 animate-pulse" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Selected Worker Panel */}
+                  {selectedRadarWorker ? (
+                    (() => {
+                      const workerLat = selectedRadarWorker.gpsLocation?.lat || custLat;
+                      const workerLng = selectedRadarWorker.gpsLocation?.lng || custLng;
+                      const trueDist = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
+
+                      return (
+                        <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 space-y-3 animate-in slide-in-from-bottom-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-full bg-amber-400 text-slate-950 font-black flex items-center justify-center text-lg">
+                                {selectedRadarWorker.name.charAt(0)}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
+                                  {selectedRadarWorker.name}
+                                  {selectedRadarWorker.isVerified && (
+                                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                  )}
+                                </h4>
+                                <p className="text-xs text-slate-400">
+                                  {getTradeName(selectedRadarWorker.primaryTrade)} • {selectedRadarWorker.phone}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="text-base font-black text-emerald-400">₹{selectedRadarWorker.dailyRate}/day</span>
+                              <span className="text-xs text-slate-400 block font-mono">{trueDist} km away</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <button
+                              onClick={() => startCall(
+                                { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
+                                { name: selectedRadarWorker.name, role: 'worker', phone: selectedRadarWorker.phone },
+                                `Hiring ${selectedRadarWorker.primaryTrade}`
+                              )}
+                              className="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                            >
+                              <Phone className="w-4 h-4" />
+                              <span>Call</span>
+                            </button>
+
+                            <button
+                              onClick={() => openGpsRadar({
+                                id: `job_quick_${Date.now()}`,
+                                title: `Work for ${selectedRadarWorker.primaryTrade}`,
+                                description: `Direct assignment for ${selectedRadarWorker.primaryTrade}`,
+                                customerName: currentCustomer.name,
+                                customerPhone: currentCustomer.phone,
+                                assignedWorkerId: selectedRadarWorker.id,
+                                assignedWorkerName: selectedRadarWorker.name,
+                                assignedWorkerPhone: selectedRadarWorker.phone,
+                                trade: selectedRadarWorker.primaryTrade,
+                                locationAddress: currentCustomer.address,
+                                area: currentCustomer.area,
+                                distanceKm: trueDist,
+                                dailyWage: selectedRadarWorker.dailyRate,
+                                workerPayout: Math.round(selectedRadarWorker.dailyRate * 0.8),
+                                platformFee: Math.round(selectedRadarWorker.dailyRate * 0.2),
+                                status: 'accepted',
+                                otpCode: '4412',
+                                postedAt: 'Just now',
+                                durationDays: 1,
+                                isPaid: false,
+                                jobGps: currentCustomer.gpsLocation,
+                                workerGps: selectedRadarWorker.gpsLocation,
+                              })}
+                              className="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                            >
+                              <Navigation className="w-4 h-4" />
+                              <span>GPS Track</span>
+                            </button>
+
+                            <button
+                              onClick={() => setBookingWorker(selectedRadarWorker)}
+                              className="py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl flex items-center justify-center gap-1.5 transition"
+                            >
+                              <Sparkles className="w-4 h-4" />
+                              <span>Book Now</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <p className="text-center text-xs text-slate-400 py-2">
+                      Tap any blip on the 10km radar to inspect distance, initiate calls, or book directly.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* View 2: Worker Cards Grid (As shown in screenshot) */}
+              {workerViewMode === 'list' && (
+                <div>
+                  {filteredWorkers.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-10 text-center space-y-3 border border-slate-200 shadow-sm">
+                      <HardHat className="w-12 h-12 text-slate-300 mx-auto" />
+                      <h4 className="text-base font-black text-slate-800">No Workers Found Matching Filter</h4>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        There are no workers matching your criteria within the strict 10km radar. Try resetting filters or broadcast a custom job.
+                      </p>
+                      <div className="flex items-center justify-center gap-3 pt-2">
+                        <button
+                          onClick={resetFilters}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition"
+                        >
+                          Reset Filters
+                        </button>
+                        <button
+                          onClick={() => setShowPostModal(true)}
+                          className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition"
+                        >
+                          Post a Job Broadcast
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredWorkers.map((worker) => {
+                        const workerLat = worker.gpsLocation?.lat || custLat;
+                        const workerLng = worker.gpsLocation?.lng || custLng;
+                        const distanceKm = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
+
+                        return (
+                          <div
+                            key={worker.id}
+                            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition flex flex-col justify-between space-y-4"
+                          >
+                            <div className="space-y-3">
+                              {/* Top Row: Avatar + Name + Verified Badge */}
+                              <div className="flex items-start gap-3">
+                                <div className="w-11 h-11 rounded-full bg-slate-800 text-amber-400 font-black flex items-center justify-center text-base shrink-0 border border-slate-700 shadow-xs">
+                                  {worker.name.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <h5 className="text-sm font-black text-slate-900 truncate">
+                                      {worker.name}
+                                    </h5>
+                                    {worker.isVerified && (
+                                      <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold text-[11px] shrink-0">
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                        <span>verified</span>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Rating & Jobs Count */}
+                                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                                    <span className="flex items-center gap-1 text-amber-600 font-bold">
+                                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                      {worker.rating.toFixed(1)}
+                                    </span>
+                                    <span>({worker.completedJobsCount} jobs)</span>
+                                  </div>
+
+                                  {/* Location with Radar Distance */}
+                                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span>{worker.location.city || currentCity.name}</span>
+                                    <span className="text-[10px] text-blue-600 font-semibold">({distanceKm} km away)</span>
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Trade / Skill Tags */}
+                              <div className="flex flex-wrap gap-1.5">
+                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100 uppercase tracking-wide">
+                                  {worker.primaryTrade}
+                                </span>
+                                {(((worker as any).skills || worker.secondaryTrades || []) as string[]).slice(0, 2).map((skill) => (
+                                  <span
+                                    key={skill}
+                                    className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-medium"
+                                  >
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Bottom Row: Rate + Book Now Button */}
+                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                              <div>
+                                <span className="text-[10px] text-slate-400 block uppercase font-bold">Daily Rate</span>
+                                <span className="text-sm font-black text-slate-900">
+                                  ₹{worker.dailyRate} <span className="text-[10px] font-normal text-slate-500">/ day</span>
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveChatJob(null);
+                                    setActiveChatTarget({
+                                      name: worker.name,
+                                      role: 'worker',
+                                      phone: worker.phone,
+                                      trade: worker.primaryTrade,
+                                      dailyRate: worker.dailyRate,
+                                      area: worker.location.area,
+                                    });
+                                    setShowChatModal(true);
+                                    playSound('click');
+                                  }}
+                                  className="p-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition shadow-2xs flex items-center justify-center cursor-pointer"
+                                  title={`Chat with ${worker.name}`}
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => startCall(
+                                    { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
+                                    { name: worker.name, role: 'worker', phone: worker.phone },
+                                    `Hire ${worker.primaryTrade}`
+                                  )}
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
+                                  title="Voice Call Worker"
+                                >
+                                  <Phone className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setBookingWorker(worker)}
+                                  className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl text-xs transition flex items-center gap-1 shadow-sm"
+                                >
+                                  <span>Book Now</span>
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. My Bookings Tab */}
+      {activeTab === 'my_bookings' && (
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto w-full">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-black text-slate-900">My Bookings & Active Work Orders</h3>
+              <p className="text-xs text-slate-500">
+                Track assigned workers, verify start OTPs, monitor 10km GPS routes, and release UPI payments.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPostModal(true)}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Post New Job</span>
+            </button>
           </div>
 
           {activeRequests.length === 0 ? (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center space-y-2">
-              <Building2 className="w-8 h-8 text-slate-300 mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">
-                {getT(currentLanguage, 'employer_no_jobs')}
+            <div className="bg-white rounded-3xl p-12 text-center space-y-3 border border-slate-200 shadow-sm">
+              <Building2 className="w-12 h-12 text-slate-300 mx-auto" />
+              <h4 className="text-base font-black text-slate-800">No Active Bookings</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                You haven&apos;t posted any job or booked a worker yet. Browse available workers or post a requirement.
               </p>
               <button
-                onClick={() => setShowPostModal(true)}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-1 mt-1"
+                onClick={() => setActiveTab('find_workers')}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition inline-flex items-center gap-1.5"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{getT(currentLanguage, 'employer_post_daily_job')}</span>
+                <Users className="w-4 h-4" />
+                <span>Find Workers Now</span>
               </button>
             </div>
           ) : (
-            activeRequests.map((job) => (
-              <div key={job.id} className="bg-blue-50/50 border border-blue-200 rounded-2xl p-4 space-y-3 shadow-xs">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded">
-                      {getTradeName(job.trade)}
-                    </span>
-                    <h4 className="font-black text-slate-900 text-sm mt-1">{job.title}</h4>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      {job.locationAddress}
-                    </p>
+            <div className="space-y-4">
+              {activeRequests.map((job) => (
+                <div key={job.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex flex-wrap justify-between items-start gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 bg-blue-600 text-white text-[11px] font-bold rounded-md uppercase">
+                          {getTradeName(job.trade)}
+                        </span>
+                        <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md ${
+                          job.status === 'broadcast' ? 'bg-amber-100 text-amber-800' :
+                          job.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                          job.status === 'completed_pending_payment' ? 'bg-emerald-100 text-emerald-800' :
+                          'bg-slate-100 text-slate-800'
+                        }`}>
+                          {job.status === 'broadcast' ? 'Broadcasting to 10km Radar' :
+                           job.status === 'accepted' ? 'Worker Assigned (Share Start OTP)' :
+                           job.status === 'completed_pending_payment' ? 'Work Completed (Payment Due)' :
+                           job.status}
+                        </span>
+                      </div>
+                      <h4 className="text-base font-black text-slate-900 mt-1.5">{job.title}</h4>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{job.locationAddress}</span>
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-lg font-black text-slate-900">₹{job.dailyWage}</span>
+                      <span className="text-[10px] text-slate-500 block">Total Daily Wage</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-base font-black text-slate-900">₹{job.dailyWage}</span>
-                    <span className="text-[10px] text-slate-500 block">Total Wage</span>
-                  </div>
-                </div>
 
-                {/* Quick Hyperlocal Top-5 and 4-Channel Action Row for each Job */}
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                  <button
-                    onClick={() => openTop5Shortlist(job)}
-                    className="py-1.5 px-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl font-bold transition flex items-center justify-center gap-1 border border-indigo-300"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Top-5 Shortlist</span>
-                  </button>
-
-                  <button
-                    onClick={() => openMultiChannelModal(job)}
-                    className="py-1.5 px-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl font-bold transition flex items-center justify-center gap-1 border border-amber-300"
-                  >
-                    <Radio className="w-3.5 h-3.5 text-amber-600" />
-                    <span>4-Channel Alert</span>
-                  </button>
-                </div>
-
-                {/* Worker Status Box */}
-                <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center">
+                  {/* Worker Assignment Card */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-900 text-amber-400 font-black text-sm flex items-center justify-center">
                         {job.assignedWorkerName ? job.assignedWorkerName.charAt(0) : 'W'}
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-900">
-                          {job.assignedWorkerName || 'Waiting for Worker to Accept'}
+                          {job.assignedWorkerName || 'Waiting for Nearest Worker to Accept'}
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          {job.assignedWorkerPhone || 'Broadcasting on live radar...'}
+                          {job.assignedWorkerPhone || 'Broadcasting across strict 10km radius...'}
                         </p>
                       </div>
                     </div>
 
-                    {job.assignedWorkerName && (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => openGpsRadar(job)}
-                          className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold flex items-center gap-1 border border-blue-200"
-                        >
-                          <Radio className="w-3 h-3 text-blue-600 animate-pulse" />
-                          <span>Radar</span>
-                        </button>
-                        <button
-                          onClick={() => startCall(
-                            { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
-                            { name: job.assignedWorkerName || 'Worker', role: 'worker', phone: job.assignedWorkerPhone || '+91 98101 55678' },
-                            job.title
-                          )}
-                          className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs transition"
-                          title="Call Worker"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openTop5Shortlist(job)}
+                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition border border-indigo-200 flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Top-5 Shortlist</span>
+                      </button>
+
+                      <button
+                        onClick={() => openMultiChannelModal(job)}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg text-xs transition border border-amber-200 flex items-center gap-1"
+                      >
+                        <Radio className="w-3.5 h-3.5 text-amber-600" />
+                        <span>4-Channel Alert</span>
+                      </button>
+
+                      {job.assignedWorkerName && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveChatJob(job);
+                              setShowChatModal(true);
+                              playSound('click');
+                            }}
+                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-2xs"
+                            title="Quick Chat with Worker"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-slate-950" />
+                            <span>Quick Chat</span>
+                          </button>
+                          <button
+                            onClick={() => openGpsRadar(job)}
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs transition border border-blue-200 flex items-center gap-1"
+                          >
+                            <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                            <span>GPS Radar</span>
+                          </button>
+                          <button
+                            onClick={() => startCall(
+                              { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
+                              { name: job.assignedWorkerName || 'Worker', role: 'worker', phone: job.assignedWorkerPhone || '+91 98101 55678' },
+                              job.title
+                            )}
+                            className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs transition"
+                            title="Call Worker"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  {/* OTP and Payment release actions */}
-                  {job.status === 'accepted' && (
-                    <div className="bg-amber-50 p-2 rounded-lg border border-amber-200 flex items-center justify-between text-xs">
-                      <span className="text-amber-900 font-medium">
-                        {getT(currentLanguage, 'employer_share_otp')}
-                      </span>
-                      <span className="px-2.5 py-1 bg-amber-500 text-slate-950 font-mono font-black text-sm rounded-md shadow-xs">
-                        {job.otpCode}
-                      </span>
+                  {/* Start-of-Work OTP Verification Hub */}
+                  {(job.status === 'accepted' || job.status === 'broadcast' || job.status === 'in_progress') && (
+                    <div className="bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent p-4 rounded-2xl border border-amber-300/80 shadow-xs space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/60 pb-3">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <KeyRound className="w-4 h-4 text-amber-700" />
+                            <span className="text-xs font-black text-slate-950 uppercase tracking-wide">
+                              Worker Verification Start-Passcode (OTP)
+                            </span>
+                            <span className="px-2 py-0.5 bg-amber-500 text-slate-950 font-black rounded-full text-[10px] uppercase">
+                              {job.status === 'in_progress' ? 'Verified & In-Progress' : 'Ready to Share'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-snug">
+                            Share this 4-digit code with the worker upon doorstep arrival. The worker enters it to begin the verified work clock.
+                          </p>
+                        </div>
+
+                        {/* Large High-Contrast 4-Digit Display */}
+                        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-950 text-amber-400 px-4 py-2 rounded-xl shadow-md border border-slate-800">
+                          {job.otpCode.split('').map((digit, i) => (
+                            <span key={i} className="font-mono font-black text-lg tracking-widest px-1">
+                              {digit}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Multi-Channel 1-Tap OTP Dispatch Controls */}
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => handleSendOtpEmail(job)}
+                          disabled={isDispatchingOtp[job.id]}
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl border border-slate-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-60"
+                          title="Dispatch OTP confirmation to your registered email"
+                        >
+                          {isDispatchingOtp[job.id] ? (
+                            <span className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                          ) : dispatchedEmailOtpJobs[job.id] ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                          )}
+                          <span>
+                            {dispatchedEmailOtpJobs[job.id] ? 'Sent to Email (Gmail)' : 'Send to my Email'}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleShareOtpWhatsApp(job)}
+                          className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl border border-emerald-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          title="Share OTP directly via WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Share on WhatsApp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSendOtpSms(job)}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold rounded-xl border border-blue-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          title="Send OTP via SMS text"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Send via SMS</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveChatJob(job);
+                            setActiveChatTarget(null);
+                            setShowChatModal(true);
+                            playSound('click');
+                          }}
+                          className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          title="Open In-App Chat & Send OTP"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Chat & Share OTP</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyOtp(job)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl border border-slate-200 transition flex items-center gap-1.5 cursor-pointer ml-auto"
+                          title="Copy 4-digit code"
+                        >
+                          {copiedOtpJobId === job.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="text-emerald-700 font-bold">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Copy Passcode</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
 
                   {job.status === 'completed_pending_payment' && (
-                    <button
-                      onClick={() => openUpiPayment(job)}
-                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      <span>{getT(currentLanguage, 'employer_mark_done')} (₹{job.workerPayout})</span>
-                    </button>
+                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h5 className="text-xs font-black text-emerald-950">Work Completed Successfully!</h5>
+                        <p className="text-[11px] text-emerald-800">Worker has requested wage release of ₹{job.workerPayout}.</p>
+                      </div>
+                      <button
+                        onClick={() => openUpiPayment(job)}
+                        className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Release UPI Payment (₹{job.workerPayout})</span>
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
+      )}
 
-        {/* Verified Workers Directory with GPS Radar & List Toggle */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
+      {/* 4. Support Tab */}
+      {activeTab === 'support' && (
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto w-full">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
             <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
-                {getT(currentLanguage, 'employer_verified_workers')}
-              </h3>
-              <span className="text-[10px] text-slate-500">Live GPS & Instant Connect</span>
+              <h3 className="text-xl font-black text-slate-900">Dihadi Customer Support & Safety Hub</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                24/7 dedicated support, dispute resolution, and hyperlocal safety assistance.
+              </p>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
-              <button
-                type="button"
-                onClick={() => setWorkerViewMode('list')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  workerViewMode === 'list'
-                    ? 'bg-white text-blue-600 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                📋 List ({workers.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setWorkerViewMode('radar')}
-                className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
-                  workerViewMode === 'radar'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <Radio className="w-3 h-3 animate-pulse text-amber-300" />
-                <span>📡 GPS Radar</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Trade Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-            {['All', 'Mason', 'Painter', 'Plumber', 'Carpenter', 'Electrician', 'Construction Helper'].map((t) => (
-              <button
-                key={t}
-                onClick={() => setSelectedTradeFilter(t)}
-                className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap transition text-[11px] ${
-                  selectedTradeFilter === t
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                }`}
-              >
-                {t === 'All' ? 'All Trades' : getTradeName(t as TradeType)}
-              </button>
-            ))}
-          </div>
-
-          {/* RADAR VIEW MODE */}
-          {workerViewMode === 'radar' && (
-            <div className="bg-slate-950 text-white rounded-3xl p-4 border border-slate-800 space-y-3 relative overflow-hidden shadow-xl">
-              {/* Radar Screen Header */}
-              <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-800/80">
-                <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                  <LocateFixed className="w-4 h-4 animate-spin text-emerald-400" />
-                  <span>LIVE RADAR • {currentCustomer.area}</span>
-                  <span className="text-[10px] text-slate-400 font-mono">({currentCustomer.gpsLocation.lat.toFixed(4)}, {currentCustomer.gpsLocation.lng.toFixed(4)})</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                  <Phone className="w-4 h-4" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={refreshCustomerGpsLocation}
-                    className="px-2 py-0.5 bg-emerald-600/80 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg transition flex items-center gap-1"
-                    title="Calibrate employer device GPS"
-                  >
-                    <Compass className="w-3 h-3" />
-                    <span>Calibrate GPS</span>
-                  </button>
-                  <span className="text-[10px] text-emerald-300 font-mono">Range: Strict 10.0 KM</span>
-                </div>
+                <h4 className="text-xs font-black text-slate-900">IVR Voice Helpline</h4>
+                <p className="text-[11px] text-slate-500">Toll-free voice assistance available in Hindi, Punjabi & English.</p>
+                <p className="text-xs font-mono font-bold text-blue-600">1800-DIHADI-HELP</p>
               </div>
 
-              {/* Interactive Radar Display Canvas */}
-              <div className="relative w-full aspect-square max-h-[300px] mx-auto bg-radial from-slate-900 to-slate-950 rounded-full border-2 border-emerald-500/30 flex items-center justify-center overflow-hidden">
-                {/* Distance Rings */}
-                <div className="absolute inset-[15%] rounded-full border border-emerald-500/20" />
-                <div className="absolute inset-[32%] rounded-full border border-emerald-500/20" />
-                <div className="absolute inset-[50%] rounded-full border border-emerald-500/20" />
-                <div className="absolute inset-[70%] rounded-full border border-emerald-500/20" />
-
-                {/* Crosshairs */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-full h-[1px] bg-emerald-500/20" />
-                  <div className="h-full w-[1px] bg-emerald-500/20 absolute" />
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
-
-                {/* Radar Sweep Effect */}
-                <div className="absolute inset-0 bg-conic-gradient from-emerald-500/20 via-transparent to-transparent animate-spin rounded-full pointer-events-none" style={{ animationDuration: '4s' }} />
-
-                {/* Center / Employer Marker */}
-                <div className="relative z-10 w-8 h-8 rounded-full bg-blue-600 text-white border-2 border-white shadow-lg flex items-center justify-center text-xs font-black">
-                  YOU
-                </div>
-
-                {/* Worker Blips on Radar using real GPS & Haversine distance */}
-                {filteredWorkers.map((w) => {
-                  const custLat = currentCustomer.gpsLocation.lat || 30.8926;
-                  const custLng = currentCustomer.gpsLocation.lng || 75.8415;
-                  const workerLat = w.gpsLocation?.lat || 30.8926;
-                  const workerLng = w.gpsLocation?.lng || 75.8415;
-
-                  const distanceKm = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
-                  const bearingDeg = calculateBearing(custLat, custLng, workerLat, workerLng);
-
-                  // Map distance (0 to 10km) to radius percentage (0% to 42% radius)
-                  const radiusPercent = Math.min(42, Math.max(12, (distanceKm / 10.0) * 42));
-                  const rad = ((bearingDeg - 90) * Math.PI) / 180;
-                  const x = 50 + radiusPercent * Math.cos(rad);
-                  const y = 50 + radiusPercent * Math.sin(rad);
-                  const isSelected = selectedRadarWorker?.id === w.id;
-
-                  return (
-                    <button
-                      key={w.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedRadarWorker(w);
-                        playSound('click');
-                      }}
-                      style={{ left: `${x}%`, top: `${y}%` }}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 group z-20 transition-transform ${
-                        isSelected ? 'scale-125 z-30' : 'hover:scale-110'
-                      }`}
-                      title={`${w.name} (${w.primaryTrade}) - ${distanceKm} km away`}
-                    >
-                      <div className="relative">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border ${
-                          isSelected
-                            ? 'bg-amber-400 text-slate-950 border-white ring-2 ring-amber-400'
-                            : 'bg-slate-900 text-amber-300 border-emerald-400/80 shadow-md'
-                        }`}>
-                          {w.name.charAt(0)}
-                        </div>
-                        <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-slate-900 animate-pulse" />
-                      </div>
-                    </button>
-                  );
-                })}
+                <h4 className="text-xs font-black text-slate-900">100% Aadhaar KYC Guarantee</h4>
+                <p className="text-[11px] text-slate-500">Every worker in the 10km radius is verified with physical trade proof.</p>
+                <span className="text-[10px] font-bold text-emerald-600">Active Protection</span>
               </div>
-
-              {/* Selected Worker Connect Sheet */}
-              {selectedRadarWorker ? (
-                (() => {
-                  const custLat = currentCustomer.gpsLocation.lat || 30.8926;
-                  const custLng = currentCustomer.gpsLocation.lng || 75.8415;
-                  const workerLat = selectedRadarWorker.gpsLocation?.lat || 30.8926;
-                  const workerLng = selectedRadarWorker.gpsLocation?.lng || 75.8415;
-                  const trueDist = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
-
-                  return (
-                    <div className="bg-slate-900 p-3 rounded-2xl border border-slate-700 space-y-2.5 animate-in slide-in-from-bottom-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-full bg-amber-400 text-slate-950 font-black flex items-center justify-center text-base">
-                            {selectedRadarWorker.name.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                              {selectedRadarWorker.name}
-                              {selectedRadarWorker.isVerified && (
-                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                              )}
-                            </h4>
-                            <p className="text-[11px] text-slate-400">
-                              {getTradeName(selectedRadarWorker.primaryTrade)} • {selectedRadarWorker.phone}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-sm font-black text-emerald-400">₹{selectedRadarWorker.dailyRate}/day</span>
-                          <span className="text-[10px] text-slate-400 block font-mono">{trueDist} km away</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-1.5 text-xs">
-                        <button
-                          onClick={() => startCall(
-                            { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
-                            { name: selectedRadarWorker.name, role: 'worker', phone: selectedRadarWorker.phone },
-                            `Hiring ${selectedRadarWorker.primaryTrade}`
-                          )}
-                          className="py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-1 transition"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>Call</span>
-                        </button>
-
-                        <button
-                          onClick={() => openGpsRadar({
-                            id: `job_quick_${Date.now()}`,
-                            title: `Work for ${selectedRadarWorker.primaryTrade}`,
-                            customerName: currentCustomer.name,
-                            customerPhone: currentCustomer.phone,
-                            assignedWorkerId: selectedRadarWorker.id,
-                            assignedWorkerName: selectedRadarWorker.name,
-                            assignedWorkerPhone: selectedRadarWorker.phone,
-                            trade: selectedRadarWorker.primaryTrade,
-                            locationAddress: currentCustomer.address,
-                            distanceKm: trueDist,
-                            dailyWage: selectedRadarWorker.dailyRate,
-                            workerPayout: Math.round(selectedRadarWorker.dailyRate * 0.8),
-                            platformFee: Math.round(selectedRadarWorker.dailyRate * 0.2),
-                            status: 'accepted',
-                            otpCode: '4412',
-                            postedAt: 'Just now',
-                            isPaid: false,
-                            jobGps: currentCustomer.gpsLocation,
-                            workerGps: selectedRadarWorker.gpsLocation,
-                          })}
-                          className="py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-1 transition"
-                        >
-                          <Navigation className="w-3.5 h-3.5" />
-                          <span>GPS Track</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setTitle(`Need ${selectedRadarWorker.primaryTrade} at ${currentCustomer.area}`);
-                            setTrade(selectedRadarWorker.primaryTrade);
-                            setDailyWage(selectedRadarWorker.dailyRate);
-                            setShowPostModal(true);
-                          }}
-                          className="py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl flex items-center justify-center gap-1 transition"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Hire</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()
-              ) : (
-                <p className="text-center text-[11px] text-slate-400 py-1">
-                  Tap any worker marker on the radar to view distance & connect instantly.
-                </p>
-              )}
             </div>
-          )}
 
-          {/* LIST VIEW MODE */}
-          {workerViewMode === 'list' && (
-            <div className="space-y-2">
-              {blockedDistantWorkersCount > 0 && (
-                <div className="flex items-center justify-between text-[11px] px-1 text-amber-700">
-                  <span className="font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Strict 10km Perimeter ({filteredWorkers.length} available)
-                  </span>
-                  <span className="bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    {blockedDistantWorkersCount} worker(s) &gt; 10km blocked
-                  </span>
-                </div>
-              )}
-
-              {filteredWorkers.length === 0 ? (
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-1 text-slate-500">
-                  <HardHat className="w-7 h-7 text-slate-300 mx-auto" />
-                  <p className="text-xs font-bold text-slate-700">No workers available within 10 km</p>
-                  <p className="text-[11px] text-slate-500">Workers beyond the strict 10km hyperlocal radius are blocked.</p>
-                </div>
-              ) : (
-                filteredWorkers.map((worker) => {
-                  const workerLat = worker.gpsLocation?.lat || custLat;
-                  const workerLng = worker.gpsLocation?.lng || custLng;
-                  const wDist = calculateDistanceKm(custLat, custLng, workerLat, workerLng);
-
-                  return (
-                    <div key={worker.id} className="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-xs hover:border-blue-300 transition">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-slate-800 text-amber-400 font-bold flex items-center justify-center text-sm">
-                          {worker.name.charAt(0)}
-                        </div>
-                        <div>
-                          <h5 className="font-bold text-xs text-slate-900 flex items-center gap-1">
-                            {worker.name}
-                            {worker.isVerified && <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />}
-                          </h5>
-                          <p className="text-[11px] text-slate-500">
-                            {getTradeName(worker.primaryTrade)} • ₹{worker.dailyRate}/day • {worker.location.area} ({wDist} km away)
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => openGpsRadar({
-                            id: `job_direct_${worker.id}`,
-                            title: `Hire ${worker.primaryTrade}`,
-                            customerName: currentCustomer.name,
-                            customerPhone: currentCustomer.phone,
-                            assignedWorkerId: worker.id,
-                            assignedWorkerName: worker.name,
-                            assignedWorkerPhone: worker.phone,
-                            trade: worker.primaryTrade,
-                            locationAddress: currentCustomer.address,
-                            distanceKm: wDist,
-                            dailyWage: worker.dailyRate,
-                            workerPayout: Math.round(worker.dailyRate * 0.8),
-                            platformFee: Math.round(worker.dailyRate * 0.2),
-                            status: 'accepted',
-                            otpCode: '5821',
-                            createdAt: new Date().toISOString(),
-                            jobGps: currentCustomer.gpsLocation,
-                            workerGps: worker.gpsLocation,
-                          })}
-                          className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition border border-blue-200 flex items-center gap-1"
-                          title="GPS Radar Preview"
-                        >
-                          <Radio className="w-3.5 h-3.5 text-blue-600" />
-                          <span className="hidden sm:inline">Radar</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setTitle(`Need ${worker.primaryTrade} in ${currentCustomer.area}`);
-                            setTrade(worker.primaryTrade);
-                            setDailyWage(worker.dailyRate);
-                            setShowPostModal(true);
-                          }}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs"
-                        >
-                          {getT(currentLanguage, 'employer_direct_hire')}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+            {/* Embedded Gmail OTP Verification Section */}
+            <div className="pt-2">
+              <GmailOtpVerificationSection 
+                initialEmail={currentCustomer?.email || 'bhavnoorsinghkochar@gmail.com'}
+                onVerified={(verifiedEmail) => {
+                  showNotification('Gmail Verified', `✓ Gmail (${verifiedEmail}) verified successfully!`);
+                }}
+              />
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Post Daily Job Modal */}
-      {showPostModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-5 space-y-4 border border-slate-200 shadow-2xl">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h4 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-blue-600" />
-                {getT(currentLanguage, 'employer_post_daily_job')}
-              </h4>
+      {/* Direct Worker Booking Modal */}
+      {bookingWorker && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-sm">
+                  {bookingWorker.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">Book {bookingWorker.name}</h4>
+                  <p className="text-[11px] text-slate-500">{bookingWorker.primaryTrade} • ₹{bookingWorker.dailyRate}/day</p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowPostModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                onClick={() => setBookingWorker(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handlePostJobSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleConfirmDirectBooking} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">{getT(currentLanguage, 'employer_job_title_label')}</label>
+                <label className="font-bold text-slate-700 block mb-1">Work Requirement / Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. Boundary wall plastering & brickwork"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={`e.g. Need ${bookingWorker.primaryTrade} for 1 day work`}
+                  value={directJobTitle}
+                  onChange={(e) => setDirectJobTitle(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
                   required
                 />
@@ -1101,70 +1867,257 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">{getT(currentLanguage, 'employer_trade_required')}</label>
-                  <select
-                    value={trade}
-                    onChange={(e) => setTrade(e.target.value as TradeType)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-blue-600"
-                  >
-                    <option value="Mason">{getTradeName('Mason')}</option>
-                    <option value="Painter">{getTradeName('Painter')}</option>
-                    <option value="Plumber">{getTradeName('Plumber')}</option>
-                    <option value="Carpenter">{getTradeName('Carpenter')}</option>
-                    <option value="Electrician">{getTradeName('Electrician')}</option>
-                    <option value="Tile Worker">{getTradeName('Tile Worker')}</option>
-                    <option value="Welder">{getTradeName('Welder')}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">{getT(currentLanguage, 'employer_daily_wage_label')}</label>
+                  <label className="font-bold text-slate-700 block mb-1">Duration (Days)</label>
                   <input
                     type="number"
-                    value={dailyWage}
-                    onChange={(e) => setDailyWage(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-blue-600"
+                    min="1"
+                    max="30"
+                    value={directJobDuration}
+                    onChange={(e) => setDirectJobDuration(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Daily Wage (₹)</label>
+                  <input
+                    type="number"
+                    value={bookingWorker.dailyRate}
+                    disabled
+                    className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-700"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">{getT(currentLanguage, 'employer_address_label')}</label>
-                <input
-                  type="text"
-                  value={currentCustomer.address}
-                  readOnly
-                  className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-600"
+                <label className="font-bold text-slate-700 block mb-1">Work Address / Instructions</label>
+                <textarea
+                  rows={2}
+                  value={directJobDescription}
+                  onChange={(e) => setDirectJobDescription(e.target.value)}
+                  placeholder="e.g. Bring standard tools, reach location by 9:00 AM."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
                 />
               </div>
 
-              {/* Economic Calculation Breakdown */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
-                <div className="flex justify-between text-slate-600">
-                  <span>Gross Job Wage</span>
-                  <span className="font-bold font-mono">₹{dailyWage}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Platform Operations (20%)</span>
-                  <span className="font-mono text-amber-700">₹{Math.round(dailyWage * 0.20)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1">
-                  <span>Direct Worker Payout</span>
-                  <span className="font-mono text-emerald-700">₹{dailyWage - Math.round(dailyWage * 0.20)}</span>
-                </div>
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBookingWorker(null)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Confirm Booking</span>
+                </button>
               </div>
-
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-2xl text-xs transition flex items-center justify-center gap-2 mt-2"
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Broadcast Job on Live Radar</span>
-              </button>
             </form>
           </div>
         </div>
       )}
+
+      {/* Post a Job Broadcast Modal */}
+      {showPostModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-4 animate-in fade-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-xs">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-slate-900">Post Daily Wage Requirement</h4>
+                  <p className="text-xs text-slate-500">Auto-broadcasts to all verified workers within 10 km.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPostModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePostJobSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">What work do you need done?</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Electrical rewiring for 3-BHK or Mason for wall repair"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Trade Category</label>
+                  <select
+                    value={trade}
+                    onChange={(e) => setTrade(e.target.value as TradeType)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                  >
+                    <option value="Mason">Mason (राजमिस्त्री)</option>
+                    <option value="Painter">Painter (पेंटर)</option>
+                    <option value="Plumber">Plumber (प्लंबर)</option>
+                    <option value="Electrician">Electrician (इलेक्ट्रीशियन)</option>
+                    <option value="Carpenter">Carpenter (बढ़ई)</option>
+                    <option value="Construction Helper">Helper (हेल्पर)</option>
+                    <option value="Tile Worker">Tile Worker (टाइल मिस्त्री)</option>
+                    <option value="Welder">Welder (वेल्डर)</option>
+                    <option value="Loader/Mover">Loader / Mover (लोडर)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Daily Wage Budget (₹)</label>
+                  <input
+                    type="number"
+                    min="400"
+                    step="50"
+                    value={dailyWage}
+                    onChange={(e) => setDailyWage(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-blue-600"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Duration (Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={durationDays}
+                    onChange={(e) => setDurationDays(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Work Location Area</label>
+                  <input
+                    type="text"
+                    value={currentCustomer.area}
+                    disabled
+                    className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Work Details & Site Instructions</label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g. Need worker on site by 8:30 AM. Cement and materials provided."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                />
+              </div>
+
+              <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-[11px] text-indigo-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>Our AI engine will instantly rank and alert the Top 5 nearest workers within 10 km.</span>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPostModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Broadcast Job (10km)</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Chat Modal */}
+      <QuickChatModal
+        isOpen={showChatModal}
+        onClose={() => { 
+          setShowChatModal(false); 
+          setActiveChatJob(null); 
+          setActiveChatTarget(null);
+        }}
+        job={activeChatJob}
+        targetPerson={activeChatTarget}
+        currentUserRole="customer"
+        currentUserName={currentCustomer.name}
+        currentUserPhone={currentCustomer.phone}
+        onStartCall={() => {
+          if (activeChatJob) {
+            startCall(
+              { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
+              { name: activeChatJob.assignedWorkerName || 'Worker', role: 'worker', phone: activeChatJob.assignedWorkerPhone || '+91 98101 55678' },
+              activeChatJob.title
+            );
+          } else if (activeChatTarget) {
+            startCall(
+              { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
+              { name: activeChatTarget.name, role: 'worker', phone: activeChatTarget.phone || '+91 98101 55678' },
+              `Direct Call with ${activeChatTarget.name}`
+            );
+          }
+        }}
+        onOpenRadar={() => {
+          if (activeChatJob) {
+            openGpsRadar(activeChatJob);
+          }
+        }}
+        currentLanguage={currentLanguage}
+      />
+
+      {/* Rating & Review Modal */}
+      {ratingJob && (
+        <RateEmployeeModal
+          isOpen={!!ratingJob}
+          onClose={() => setRatingJob(null)}
+          jobId={ratingJob.id}
+          jobTitle={ratingJob.title}
+          workerName={ratingJob.assignedWorkerName || 'Worker'}
+          workerTrade={ratingJob.trade}
+          existingRating={ratingJob.rating}
+          existingReview={ratingJob.review}
+          existingTags={ratingJob.ratingTags}
+          onSubmitRating={(jobId, stars, review, tags) => {
+            rateWorkerJob(jobId, stars, review, tags);
+            setRatingJob(null);
+          }}
+        />
+      )}
+
+      {/* Standalone Gmail OTP Verification Modal */}
+      <GmailOtpVerificationModal
+        isOpen={showGmailVerifyModal}
+        onClose={() => setShowGmailVerifyModal(false)}
+        initialEmail={currentCustomer?.email || 'bhavnoorsinghkochar@gmail.com'}
+        targetName={currentCustomer?.name || 'Customer'}
+        role="customer"
+        onVerified={(verifiedEmail) => {
+          showNotification('Gmail Verified', `✓ Gmail (${verifiedEmail}) verified successfully!`);
+        }}
+      />
     </div>
   );
 };

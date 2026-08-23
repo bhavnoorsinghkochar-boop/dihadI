@@ -403,28 +403,47 @@ export const PitchDeckViewer: React.FC = () => {
       </div>
 
       {/* Slide Navigation Footer */}
-      <div className="h-14 bg-white border-t border-slate-200 px-6 flex items-center justify-between">
-        <div className="flex gap-1.5">
+      <div className="h-14 bg-white border-t border-slate-200 px-4 sm:px-6 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            if (currentSlide > 0) {
+              setCurrentSlide(currentSlide - 1);
+            }
+          }}
+          disabled={currentSlide === 0}
+          className="text-xs font-bold text-slate-700 hover:text-slate-950 disabled:text-slate-300 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Previous</span>
+        </button>
+
+        <div className="flex gap-1.5 items-center">
           {slides.map((_, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => setCurrentSlide(idx)}
-              className={`h-2 rounded-full transition-all ${
+              className={`h-2 rounded-full transition-all cursor-pointer ${
                 currentSlide === idx ? 'w-6 bg-slate-900' : 'w-2 bg-slate-200 hover:bg-slate-300'
               }`}
+              title={`Jump to slide ${idx + 1}`}
             />
           ))}
         </div>
 
         <button
+          type="button"
           onClick={() => {
             if (currentSlide < slides.length - 1) {
               setCurrentSlide(currentSlide + 1);
+            } else {
+              setCurrentSlide(0);
             }
           }}
-          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
         >
-          {currentSlide === slides.length - 1 ? 'End of Pitch' : 'Next Slide'}
+          <span>{currentSlide === slides.length - 1 ? 'Restart Deck' : 'Next Slide'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

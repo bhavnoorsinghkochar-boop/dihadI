@@ -11,7 +11,8 @@ import {
   TradeType, 
   CallSession, 
   GpsCoordinates,
-  CityInfo
+  CityInfo,
+  ChatNotificationItem
 } from '../types';
 import { playSound, speakText } from '../utils/audio';
 import { 
@@ -23,6 +24,18 @@ import {
   reverseGeocodeLocation,
   ResolvedAddress
 } from '../utils/geo';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { 
+  COLLECTIONS, 
+  syncWorkerToFirestore, 
+  syncJobToFirestore, 
+  syncVerificationToFirestore, 
+  syncDisputeToFirestore,
+  handleFirestoreError,
+  OperationType 
+} from '../lib/firestoreSync';
+import { sendOtpToGmail } from '../lib/gmailService';
 
 export interface UserAccount {
   id: string; // login identifier e.g. 'ramesh' or '9810155678'
@@ -89,6 +102,14 @@ interface AppContextType {
   openTop5Shortlist: (job: Job) => void;
   closeTop5Shortlist: () => void;
 
+  // Real-time Chat Notifications & Global Chat Modal
+  chatNotifications: ChatNotificationItem[];
+  triggerChatNotification: (item: ChatNotificationItem) => void;
+  dismissChatNotification: (id: string) => void;
+  activeGlobalChat: { isOpen: boolean; job?: Job | null; targetPerson?: any; role?: 'worker' | 'customer' | 'admin' } | null;
+  openGlobalChat: (job?: Job | null, targetPerson?: any, role?: 'worker' | 'customer' | 'admin') => void;
+  closeGlobalChat: () => void;
+
   // Worker Auth & Actions
   loginWorkerWithAuth: (userIdOrPhone: string, password: string) => { success: boolean; error?: string };
   registerWorkerWithAuth: (data: {
@@ -96,6 +117,9 @@ interface AppContextType {
     password: string;
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     primaryTrade: TradeType;
     dailyRate: number;
     experienceYears: number;
@@ -106,6 +130,9 @@ interface AppContextType {
   loginWorker: (data: {
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     primaryTrade: TradeType;
     dailyRate: number;
     experienceYears: number;
@@ -117,6 +144,8 @@ interface AppContextType {
   toggleWorkerStatus: () => void;
   updateWorkerUpi: (upiId: string, bankName?: string, ifscCode?: string) => void;
   updateWorkerGps: (coords: Partial<GpsCoordinates>) => void;
+  updateWorkerAvatar: (avatarUrl: string) => void;
+  updateWorkerProfile: (updates: Partial<WorkerProfile>) => void;
   acceptJobByWorker: (jobId: string) => void;
   startJobWithOtp: (jobId: string, otp: string) => boolean;
   completeJobByWorker: (jobId: string) => void;
@@ -129,6 +158,9 @@ interface AppContextType {
     password: string;
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     area: string;
     address: string;
     upiId?: string;
@@ -136,6 +168,9 @@ interface AppContextType {
   loginCustomer: (data: {
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     area: string;
     address: string;
     upiId?: string;
@@ -153,14 +188,17 @@ interface AppContextType {
     area: string;
     dailyWage: number;
     durationDays: number;
-  }) => void;
+  }) => Job;
+  dispatchJobStartOtp: (job: Job, targetEmail?: string, targetPhone?: string) => Promise<boolean>;
   releasePaymentByCustomer: (
     jobId: string, 
     rating: number, 
     review: string, 
     paidVia?: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH',
-    txnRef?: string
+    txnRef?: string,
+    tags?: string[]
   ) => void;
+  rateWorkerJob: (jobId: string, rating: number, review: string, tags?: string[]) => void;
 
   // Admin Auth & Actions
   loginAdminWithAuth: (adminIdOrEmail: string, password: string) => { success: boolean; error?: string };
@@ -180,12 +218,19 @@ interface AppContextType {
   refreshWorkerGpsLocation: () => void;
   resolveDispute: (id: string) => void;
 
-  // Global Controls
+  // Global Controls & Firebase State
+  isFirebaseConnected: boolean;
+  connectedCluster: {
+    connectUrl: string;
+    controlUrl: string;
+    workUrl: string;
+  };
   resetToZero: () => void;
   seedSampleData: () => void;
   speak: (text: string) => void;
   notification: string | null;
   setNotification: (msg: string | null) => void;
+  showNotification: (msgOrTitle: string, maybeMessage?: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -664,7 +709,125 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeMultiChannelJob, setActiveMultiChannelJob] = useState<Job | null>(null);
   const [activeMultiChannelWorker, setActiveMultiChannelWorker] = useState<WorkerProfile | null>(null);
   const [activeShortlistJob, setActiveShortlistJob] = useState<Job | null>(null);
+  const [chatNotifications, setChatNotifications] = useState<ChatNotificationItem[]>([]);
+  const [pendingRoleNotifications, setPendingRoleNotifications] = useState<ChatNotificationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('dihadi_pending_chat_notifs_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [activeGlobalChat, setActiveGlobalChat] = useState<{
+    isOpen: boolean;
+    job?: Job | null;
+    targetPerson?: any;
+    role?: 'worker' | 'customer' | 'admin';
+  } | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
+
+  const connectedCluster = {
+    connectUrl: 'https://dihadi-connect.vercel.app/',
+    controlUrl: 'https://dihadi-control.vercel.app/',
+    workUrl: 'https://dihadi-work.vercel.app/',
+  };
+
+  // 1. Real-time Firestore synchronization for Workers
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, COLLECTIONS.WORKERS), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteWorkers: WorkerProfile[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as WorkerProfile;
+            if (data && data.id) {
+              remoteWorkers.push(data);
+            }
+          });
+          if (remoteWorkers.length > 0) {
+            setWorkers(remoteWorkers);
+            setIsFirebaseConnected(true);
+          }
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.WORKERS);
+      });
+      return () => unsub();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, COLLECTIONS.WORKERS);
+    }
+  }, []);
+
+  // 2. Real-time Firestore synchronization for Jobs
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, COLLECTIONS.JOBS), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteJobs: Job[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Job;
+            if (data && data.id) {
+              remoteJobs.push(data);
+            }
+          });
+          setJobs(remoteJobs);
+          setIsFirebaseConnected(true);
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.JOBS);
+      });
+      return () => unsub();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, COLLECTIONS.JOBS);
+    }
+  }, []);
+
+  // 3. Real-time Firestore synchronization for KYC Verifications
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, COLLECTIONS.VERIFICATIONS), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteVerifs: VerificationRequest[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as VerificationRequest;
+            if (data && data.id) {
+              remoteVerifs.push(data);
+            }
+          });
+          setVerifications(remoteVerifs);
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.VERIFICATIONS);
+      });
+      return () => unsub();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, COLLECTIONS.VERIFICATIONS);
+    }
+  }, []);
+
+  // 4. Real-time Firestore synchronization for Disputes
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, COLLECTIONS.DISPUTES), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteDisputes: DisputeItem[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as DisputeItem;
+            if (data && data.id) {
+              remoteDisputes.push(data);
+            }
+          });
+          setDisputes(remoteDisputes);
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.DISPUTES);
+      });
+      return () => unsub();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, COLLECTIONS.DISPUTES);
+    }
+  }, []);
 
   // Persistence hooks
   useEffect(() => {
@@ -785,10 +948,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentAdmin]);
 
-  const showNotification = (msg: string) => {
-    setNotification(msg);
+  const showNotification = (msgOrTitle: string, maybeMessage?: string) => {
+    const formatted = maybeMessage ? `${msgOrTitle}: ${maybeMessage}` : msgOrTitle;
+    setNotification(formatted);
     setTimeout(() => {
-      setNotification((curr) => (curr === msg ? null : curr));
+      setNotification((curr) => (curr === formatted ? null : curr));
     }, 4500);
   };
 
@@ -863,6 +1027,126 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeTop5Shortlist = () => {
     setActiveShortlistJob(null);
   };
+
+  // Real-time Chat Notifications System
+  const triggerChatNotification = (item: ChatNotificationItem) => {
+    const targetRecipientRole = (item.recipientRole || 'customer').toLowerCase();
+    const activeRole = (currentRole || '').toLowerCase();
+
+    // Only display popup if the user is currently viewing the recipient's screen
+    if (activeRole === targetRecipientRole) {
+      setChatNotifications((prev) => {
+        const filtered = prev.filter((p) => p.id !== item.id);
+        return [item, ...filtered].slice(0, 3);
+      });
+      playSound('message');
+    } else {
+      // Otherwise store in pending queue so it pops up when the user switches to the recipient side!
+      setPendingRoleNotifications((prev) => {
+        const updated = [item, ...prev.filter((p) => p.id !== item.id)].slice(0, 10);
+        try {
+          localStorage.setItem('dihadi_pending_chat_notifs_v1', JSON.stringify(updated));
+        } catch (err) {}
+        return updated;
+      });
+    }
+  };
+
+  const dismissChatNotification = (id: string) => {
+    setChatNotifications((prev) => prev.filter((item) => item.id !== id));
+    setPendingRoleNotifications((prev) => {
+      const remaining = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem('dihadi_pending_chat_notifs_v1', JSON.stringify(remaining));
+      } catch (err) {}
+      return remaining;
+    });
+  };
+
+  // Check and display pending notifications when the user switches role
+  useEffect(() => {
+    if (!currentRole || currentRole === 'select_role') return;
+    const activeRole = currentRole.toLowerCase();
+
+    setPendingRoleNotifications((prev) => {
+      const matching = prev.filter(
+        (item) => (item.recipientRole || '').toLowerCase() === activeRole
+      );
+
+      if (matching.length > 0) {
+        setChatNotifications((curr) => {
+          const combined = [...matching, ...curr];
+          const unique = Array.from(new Map(combined.map((m) => [m.id, m])).values()).slice(0, 3);
+          return unique;
+        });
+        playSound('message');
+
+        const remaining = prev.filter(
+          (item) => (item.recipientRole || '').toLowerCase() !== activeRole
+        );
+        try {
+          localStorage.setItem('dihadi_pending_chat_notifs_v1', JSON.stringify(remaining));
+        } catch (err) {}
+        return remaining;
+      }
+      return prev;
+    });
+  }, [currentRole]);
+
+  const openGlobalChat = (
+    job?: Job | null,
+    targetPerson?: any,
+    role?: 'worker' | 'customer' | 'admin'
+  ) => {
+    setActiveGlobalChat({
+      isOpen: true,
+      job: job || null,
+      targetPerson: targetPerson || null,
+      role:
+        role ||
+        (currentRole === 'customer'
+          ? 'customer'
+          : currentRole === 'worker'
+          ? 'worker'
+          : 'customer'),
+    });
+    playSound('click');
+  };
+
+  const closeGlobalChat = () => {
+    setActiveGlobalChat(null);
+  };
+
+  // Listen globally to all chat message dispatch events (worker, customer, or admin)
+  useEffect(() => {
+    const handleGlobalChatMsgEvent = (e: any) => {
+      const detail = e.detail;
+      if (!detail) return;
+
+      const notifItem: ChatNotificationItem = {
+        id: detail.id || `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        senderRole: detail.senderRole || 'worker',
+        senderName: detail.senderName || 'Contact',
+        senderPhone: detail.senderPhone || '+91 98100 00000',
+        recipientRole: detail.recipientRole || 'customer',
+        recipientName: detail.recipientName || 'You',
+        text: detail.text || 'New message received',
+        timestamp: detail.timestamp || 'Just now',
+        jobTitle: detail.jobTitle,
+        jobId: detail.jobId,
+        job: detail.job,
+        targetPerson: detail.targetPerson,
+        isSender: false,
+      };
+
+      triggerChatNotification(notifItem);
+    };
+
+    window.addEventListener('dihadi_chat_message_event', handleGlobalChatMsgEvent);
+    return () => {
+      window.removeEventListener('dihadi_chat_message_event', handleGlobalChatMsgEvent);
+    };
+  }, [currentRole]);
 
   // Completely Reset All Data to ZERO
   const resetToZero = () => {
@@ -1055,6 +1339,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     password: string;
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     primaryTrade: TradeType;
     dailyRate: number;
     experienceYears: number;
@@ -1075,6 +1362,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         area: data.area,
         aadhaar: data.aadhaarNumber,
         upi: data.upiId,
+        email: data.email,
+        isPhoneVerified: data.isPhoneVerified,
+        isEmailVerified: data.isEmailVerified,
       }
     };
     setWorkerAccounts((prev) => [...prev.filter(a => a.id !== newAcc.id), newAcc]);
@@ -1082,6 +1372,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loginWorker({
       name: data.name,
       phone: data.phone,
+      email: data.email,
+      isPhoneVerified: data.isPhoneVerified,
+      isEmailVerified: data.isEmailVerified,
       primaryTrade: data.primaryTrade,
       dailyRate: data.dailyRate,
       experienceYears: data.experienceYears,
@@ -1095,6 +1388,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginWorker = (data: {
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     primaryTrade: TradeType;
     dailyRate: number;
     experienceYears: number;
@@ -1125,14 +1421,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: existingWorker?.id || `w-${Date.now().toString().slice(-4)}`,
       name: data.name,
       phone: data.phone,
+      email: data.email || existingWorker?.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+      isPhoneVerified: data.isPhoneVerified ?? (existingWorker?.isPhoneVerified ?? true),
+      isEmailVerified: data.isEmailVerified ?? (existingWorker?.isEmailVerified ?? true),
       avatar: existingWorker?.avatar || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80',
       primaryTrade: data.primaryTrade,
       secondaryTrades: existingWorker?.secondaryTrades || ['Construction Helper'],
       dailyRate: data.dailyRate || existingWorker?.dailyRate || 850,
       experienceYears: data.experienceYears || existingWorker?.experienceYears || 3,
-      rating: existingWorker?.rating || 5.0,
-      reviewCount: existingWorker?.reviewCount || 0,
-      completedJobsCount: existingWorker?.completedJobsCount || 0,
+      rating: existingWorker ? existingWorker.rating : 0,
+      reviewCount: existingWorker ? existingWorker.reviewCount : 0,
+      completedJobsCount: existingWorker ? existingWorker.completedJobsCount : 0,
       isOnline: true,
       location: {
         area: data.area || existingWorker?.location.area || currentCity?.defaultArea || 'Model Town',
@@ -1184,8 +1483,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: isAlreadyVerified ? 'approved' : 'pending',
       };
       setVerifications((prev) => [newVerification, ...prev]);
+      syncVerificationToFirestore(newVerification);
     }
 
+    syncWorkerToFirestore(activeWorker);
     playSound('success');
     showNotification(`Welcome ${data.name}! Worker Portal Active.`);
   };
@@ -1207,6 +1508,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setCurrentWorker(updated);
     setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    syncWorkerToFirestore(updated);
     playSound('success');
     showNotification(`Worker UPI updated to: ${upiId}`);
   };
@@ -1246,6 +1548,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setCurrentWorker(updated);
     setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    syncWorkerToFirestore(updated);
   };
 
   // Toggle online/offline for current worker
@@ -1255,12 +1558,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = { ...currentWorker, isOnline: nextState };
     setCurrentWorker(updated);
     setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    syncWorkerToFirestore(updated);
     playSound('click');
     if (nextState) {
       showNotification(`${currentWorker.name} is ONLINE.`);
     } else {
       showNotification(`${currentWorker.name} is OFFLINE.`);
     }
+  };
+
+  // Update Worker Profile Photo / Avatar
+  const updateWorkerAvatar = (avatarUrl: string) => {
+    if (!currentWorker) return;
+    const updated: WorkerProfile = {
+      ...currentWorker,
+      avatar: avatarUrl,
+    };
+    setCurrentWorker(updated);
+    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    syncWorkerToFirestore(updated);
+    playSound('success');
+    showNotification('Worker profile photo updated successfully.');
+  };
+
+  // Update arbitrary Worker Profile properties
+  const updateWorkerProfile = (updates: Partial<WorkerProfile>) => {
+    if (!currentWorker) return;
+    const updated: WorkerProfile = {
+      ...currentWorker,
+      ...updates,
+    };
+    setCurrentWorker(updated);
+    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    syncWorkerToFirestore(updated);
+    playSound('success');
   };
 
   // Customer Login with Auth (ID & Password)
@@ -1310,6 +1641,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     password: string;
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     area: string;
     address: string;
     upiId?: string;
@@ -1324,6 +1658,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         area: data.area,
         address: data.address,
         upi: data.upiId,
+        email: data.email,
+        isPhoneVerified: data.isPhoneVerified,
+        isEmailVerified: data.isEmailVerified,
       }
     };
     setCustomerAccounts((prev) => [...prev.filter(a => a.id !== newAcc.id), newAcc]);
@@ -1331,6 +1668,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loginCustomer({
       name: data.name,
       phone: data.phone,
+      email: data.email,
+      isPhoneVerified: data.isPhoneVerified,
+      isEmailVerified: data.isEmailVerified,
       area: data.area,
       address: data.address,
       upiId: data.upiId,
@@ -1341,6 +1681,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginCustomer = (data: {
     name: string;
     phone: string;
+    email?: string;
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
     area: string;
     address: string;
     upiId?: string;
@@ -1350,6 +1693,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `c-${Date.now().toString().slice(-4)}`,
       name: data.name,
       phone: data.phone,
+      email: data.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+      isPhoneVerified: data.isPhoneVerified ?? true,
+      isEmailVerified: data.isEmailVerified ?? true,
       area: data.area || currentCity?.defaultArea || 'Model Town',
       city: currentCity?.name || 'Ludhiana',
       address: data.address || `${data.area || currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
@@ -1514,8 +1860,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setJobs((prev) => [newJob, ...prev]);
+    syncJobToFirestore(newJob);
     playSound('incoming_job');
     showNotification(`New ${newJob.trade} job broadcasted. OTP: ${otpCode}`);
+
+    // Auto-dispatch Start OTP to customer email & phone
+    dispatchJobStartOtp(newJob);
+    return newJob;
+  };
+
+  // Dispatch Job Start OTP to Customer Email & Phone
+  const dispatchJobStartOtp = async (job: Job, targetEmail?: string, targetPhone?: string): Promise<boolean> => {
+    const email = targetEmail || currentCustomer?.email || 'bhavnoorsinghkochar@gmail.com';
+    const phone = targetPhone || currentCustomer?.phone || '+91 99100 88221';
+
+    playSound('gps_ping');
+
+    // Trigger system notification
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('🔑 Worker Verification Start OTP', {
+          body: `Start Passcode: ${job.otpCode} for ${job.title}. Share with worker upon arrival.`,
+          icon: '/icon.png'
+        });
+      } catch (e) {}
+    }
+
+    try {
+      const res = await sendOtpToGmail({
+        recipient: email,
+        code: job.otpCode,
+        purpose: 'job_start_otp',
+        jobTitle: job.title,
+        trade: job.trade,
+        workerName: job.assignedWorkerName || 'Assigned Worker',
+        customerName: job.customerName || currentCustomer?.name || 'Customer',
+        location: job.locationAddress || job.area,
+        wage: job.dailyWage,
+        role: 'customer',
+      });
+
+      if (res.method === 'gmail_api_oauth') {
+        showNotification(`🔑 Start OTP #${job.otpCode} sent directly via Google Workspace to ${email}!`);
+      } else {
+        showNotification(`🔑 Start OTP #${job.otpCode} dispatched to Customer Email (${email})!`);
+      }
+      return true;
+    } catch (err) {
+      console.debug('OTP dispatch note:', err);
+      showNotification(`🔑 Start OTP: ${job.otpCode} (Share with worker upon arrival)`);
+      return false;
+    }
   };
 
   // Worker accepts a broadcast job
@@ -1537,22 +1932,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
+    let updatedAcceptedJob: Job | null = null;
     setJobs((prev) =>
       prev.map((job) => {
         if (job.id === jobId) {
-          return {
+          const updated = {
             ...job,
-            status: 'accepted',
+            status: 'accepted' as const,
             assignedWorkerId: currentWorker.id,
             assignedWorkerName: currentWorker.name,
             assignedWorkerPhone: currentWorker.phone,
             assignedWorkerTrade: currentWorker.primaryTrade,
             assignedWorkerUpi: currentWorker.upiId,
           };
+          updatedAcceptedJob = updated;
+          return updated;
         }
         return job;
       })
     );
+
+    if (updatedAcceptedJob) {
+      syncJobToFirestore(updatedAcceptedJob);
+      dispatchJobStartOtp(updatedAcceptedJob);
+    }
 
     playSound('success');
     showNotification(`Job accepted! Ask customer for 4-digit start OTP.`);
@@ -1564,9 +1967,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!targetJob) return false;
 
     if (targetJob.otpCode === inputOtp.trim()) {
+      const updated = { ...targetJob, status: 'in_progress' as const };
       setJobs((prev) =>
-        prev.map((j) => (j.id === jobId ? { ...j, status: 'in_progress' } : j))
+        prev.map((j) => (j.id === jobId ? updated : j))
       );
+      syncJobToFirestore(updated);
       playSound('success');
       showNotification('OTP Verified! Work status: In Progress.');
       return true;
@@ -1579,77 +1984,123 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Worker marks job finished
   const completeJobByWorker = (jobId: string) => {
+    const targetJob = jobs.find((j) => j.id === jobId);
+    const updated = targetJob ? { ...targetJob, status: 'completed_pending_payment' as const } : null;
+
     setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? { ...j, status: 'completed_pending_payment' } : j))
+      prev.map((j) => (j.id === jobId ? (updated || { ...j, status: 'completed_pending_payment' }) : j))
     );
+    if (updated) {
+      syncJobToFirestore(updated);
+    }
     playSound('success');
     showNotification('Job marked completed. Awaiting employer payout release.');
   };
 
-  // Customer releases payment via UPI
+    // Customer releases payment via UPI and rates worker
   const releasePaymentByCustomer = (
     jobId: string, 
     rating: number, 
     review: string, 
     paidVia: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH' = 'UPI_QR',
-    txnRef?: string
+    txnRef?: string,
+    tags?: string[]
   ) => {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
 
     const payout = job.workerPayout;
 
+    const updatedJob: Job = {
+      ...job,
+      status: 'paid_and_closed',
+      isPaid: true,
+      rating: rating,
+      review: review,
+      customerRating: rating,
+      customerReview: review,
+      ratingTags: tags || ['⚡ Punctual & On-Time', '🛠️ Expert Craftsmanship'],
+      ratedAt: new Date().toISOString(),
+      paidVia: paidVia,
+      transactionRef: txnRef || `UPI-DIHADI-${Date.now().toString().slice(-6)}`,
+    };
+
     setJobs((prev) =>
-      prev.map((j) => {
-        if (j.id === jobId) {
-          return {
-            ...j,
-            status: 'paid_and_closed',
-            isPaid: true,
-            customerRating: rating,
-            customerReview: review,
-            paymentMethod: paidVia,
-            upiTransactionRef: txnRef || `UPI-DIHADI-${Date.now().toString().slice(-6)}`,
-          };
-        }
-        return j;
-      })
+      prev.map((j) => (j.id === jobId ? updatedJob : j))
     );
+    syncJobToFirestore(updatedJob);
 
-    // Update worker earnings and wallet
+    // Update worker earnings, wallet, and compute dynamic average rating
     if (job.assignedWorkerId) {
-      setWorkers((prev) =>
-        prev.map((w) => {
-          if (w.id === job.assignedWorkerId) {
-            return {
-              ...w,
-              todayEarnings: w.todayEarnings + payout,
-              totalEarnings: w.totalEarnings + payout,
-              walletBalance: w.walletBalance + payout,
-              completedJobsCount: w.completedJobsCount + 1,
-            };
-          }
-          return w;
-        })
-      );
+      const targetWorker = workers.find((w) => w.id === job.assignedWorkerId);
+      if (targetWorker) {
+        const prevReviews = targetWorker.reviewCount || 0;
+        const newCount = prevReviews + 1;
+        const newRating = prevReviews === 0 ? rating : Number((((targetWorker.rating || rating) * prevReviews + rating) / newCount).toFixed(1));
 
-      if (currentWorker && currentWorker.id === job.assignedWorkerId) {
-        setCurrentWorker((curr) =>
-          curr
-            ? {
-                ...curr,
-                todayEarnings: curr.todayEarnings + payout,
-                totalEarnings: curr.totalEarnings + payout,
-                walletBalance: curr.walletBalance + payout,
-                completedJobsCount: curr.completedJobsCount + 1,
-              }
-            : null
-        );
+        const updatedWorker: WorkerProfile = {
+          ...targetWorker,
+          todayEarnings: targetWorker.todayEarnings + payout,
+          totalEarnings: targetWorker.totalEarnings + payout,
+          walletBalance: targetWorker.walletBalance + payout,
+          completedJobsCount: targetWorker.completedJobsCount + 1,
+          reviewCount: newCount,
+          rating: Math.min(5.0, Math.max(1.0, newRating)),
+        };
+
+        setWorkers((prev) => prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)));
+        syncWorkerToFirestore(updatedWorker);
+
+        if (currentWorker && currentWorker.id === job.assignedWorkerId) {
+          setCurrentWorker(updatedWorker);
+        }
       }
     }
 
     playSound('cash');
-    showNotification(`₹${payout} payment released via ${paidVia} to Worker UPI!`);
+    showNotification(`₹${payout} payment released & rated ${rating}★ for ${job.assignedWorkerName || 'Worker'}!`);
+  };
+
+  // Rate or update review for any completed job
+  const rateWorkerJob = (jobId: string, rating: number, review: string, tags?: string[]) => {
+    const job = jobs.find((j) => j.id === jobId);
+    if (!job) return;
+
+    const updatedJob: Job = {
+      ...job,
+      rating: rating,
+      review: review,
+      customerRating: rating,
+      customerReview: review,
+      ratingTags: tags || job.ratingTags,
+      ratedAt: new Date().toISOString(),
+    };
+
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? updatedJob : j))
+    );
+    syncJobToFirestore(updatedJob);
+
+    if (job.assignedWorkerId) {
+      setWorkers((prev) =>
+        prev.map((w) => {
+          if (w.id === job.assignedWorkerId) {
+            const count = Math.max(1, w.reviewCount || 1);
+            const updatedRating = Number((((w.rating * count) - (job.rating || 5.0) + rating) / count).toFixed(1));
+            const updatedW: WorkerProfile = {
+              ...w,
+              rating: Math.min(5.0, Math.max(1.0, updatedRating)),
+            };
+            syncWorkerToFirestore(updatedW);
+            return updatedW;
+          }
+          return w;
+        })
+      );
+    }
+
+    playSound('success');
+    showNotification(`Rating of ${rating}★ recorded successfully!`);
   };
 
   // Worker withdraws wallet balance to UPI bank account
@@ -1678,6 +2129,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const vReq = verifications.find((v) => v.id === id);
     if (vReq) {
+      const updatedV: VerificationRequest = { ...vReq, status };
+      syncVerificationToFirestore(updatedV);
+
       const vReqCleanPhone = vReq.phone.replace(/[^0-9]/g, '').slice(-10);
       const vReqName = vReq.workerName.trim().toLowerCase();
 
@@ -1687,11 +2141,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const isMatch = (wCleanPhone && vReqCleanPhone && wCleanPhone === vReqCleanPhone) || 
                           w.name.trim().toLowerCase() === vReqName;
           if (isMatch) {
-            return {
+            const updatedW: WorkerProfile = {
               ...w,
               isVerified: status === 'approved',
               badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
             };
+            syncWorkerToFirestore(updatedW);
+            return updatedW;
           }
           return w;
         })
@@ -1727,15 +2183,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const targetPhoneClean = targetWorker.phone.replace(/[^0-9]/g, '').slice(-10);
     const targetName = targetWorker.name.trim().toLowerCase();
 
+    const updatedWorker: WorkerProfile = {
+      ...targetWorker,
+      isVerified: status === 'approved',
+      badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
+    };
+    syncWorkerToFirestore(updatedWorker);
+
     // Update workers
     setWorkers((prev) =>
       prev.map((w) =>
         w.id === workerId || (targetPhoneClean && w.phone.replace(/[^0-9]/g, '').slice(-10) === targetPhoneClean) || w.name.trim().toLowerCase() === targetName
-          ? {
-              ...w,
-              isVerified: status === 'approved',
-              badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
-            }
+          ? updatedWorker
           : w
       )
     );
@@ -1766,7 +2225,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                v.workerName.trim().toLowerCase() === targetName;
       });
       if (match) {
-        return prev.map((v) => (v.id === match.id ? { ...v, status } : v));
+        const updatedV: VerificationRequest = { ...match, status };
+        syncVerificationToFirestore(updatedV);
+        return prev.map((v) => (v.id === match.id ? updatedV : v));
       } else {
         const newV: VerificationRequest = {
           id: `v-${Date.now().toString().slice(-4)}`,
@@ -1778,6 +2239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           submittedAt: 'Just now',
           status,
         };
+        syncVerificationToFirestore(newV);
         return [newV, ...prev];
       }
     });
@@ -1842,20 +2304,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       if (match) {
-        return prev.map((v) =>
-          v.id === match.id
-            ? {
-                ...v,
-                workerName: data.workerName,
-                trade: data.trade,
-                phone: data.phone,
-                aadhaarNumber: data.aadhaarNumber,
-                experienceYears: data.experienceYears,
-                submittedAt: 'Just now',
-                status: 'pending',
-              }
-            : v
-        );
+        const updatedV: VerificationRequest = {
+          ...match,
+          workerName: data.workerName,
+          trade: data.trade,
+          phone: data.phone,
+          aadhaarNumber: data.aadhaarNumber,
+          experienceYears: data.experienceYears,
+          submittedAt: 'Just now',
+          status: 'pending',
+        };
+        syncVerificationToFirestore(updatedV);
+        return prev.map((v) => (v.id === match.id ? updatedV : v));
       } else {
         const newV: VerificationRequest = {
           id: `v-${Date.now().toString().slice(-4)}`,
@@ -1867,9 +2327,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           submittedAt: 'Just now',
           status: 'pending',
         };
+        syncVerificationToFirestore(newV);
         return [newV, ...prev];
       }
     });
+
+    const targetW = workers.find((w) => {
+      const wClean = w.phone.replace(/[^0-9]/g, '').slice(-10);
+      return (wClean && cleanPhone && wClean === cleanPhone) || w.name.trim().toLowerCase() === data.workerName.trim().toLowerCase();
+    });
+    if (targetW) {
+      syncWorkerToFirestore({
+        ...targetW,
+        primaryTrade: data.trade,
+        experienceYears: data.experienceYears,
+        aadhaarNumberMasked: maskedAadhaar,
+        badge: 'KYC Under Review',
+      });
+    }
 
     playSound('success');
     showNotification(`Aadhaar KYC request for ${data.workerName} submitted to Admin queue!`);
@@ -1946,6 +2421,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setWorkers((prev) => [newWorker, ...prev]);
     setVerifications((prev) => [newV, ...prev]);
+    syncWorkerToFirestore(newWorker);
+    syncVerificationToFirestore(newV);
 
     playSound('success');
     showNotification(`New worker ${randomPick.name} (${randomPick.trade}) submitted KYC for Admin review!`);
@@ -1994,6 +2471,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Resolve a dispute
   const resolveDispute = (id: string) => {
+    const dMatch = disputes.find((d) => d.id === id);
+    if (dMatch) {
+      const updatedD: DisputeItem = { ...dMatch, status: 'resolved' };
+      syncDisputeToFirestore(updatedD);
+    }
     setDisputes((prev) =>
       prev.map((d) => (d.id === id ? { ...d, status: 'resolved' } : d))
     );
@@ -2012,6 +2494,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentCity,
         supportedCities: SUPPORTED_CITIES,
         detectAndSetLiveLocation,
+        snapToRealWorldAddress,
+        currentResolvedAddress,
         isLocating,
         workers,
         jobs,
@@ -2036,6 +2520,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeShortlistJob,
         openTop5Shortlist,
         closeTop5Shortlist,
+        chatNotifications,
+        triggerChatNotification,
+        dismissChatNotification,
+        activeGlobalChat,
+        openGlobalChat,
+        closeGlobalChat,
         loginWorkerWithAuth,
         registerWorkerWithAuth,
         loginWorker,
@@ -2043,6 +2533,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleWorkerStatus,
         updateWorkerUpi,
         updateWorkerGps,
+        updateWorkerAvatar,
+        updateWorkerProfile,
         acceptJobByWorker,
         startJobWithOtp,
         completeJobByWorker,
@@ -2054,7 +2546,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCustomerGps,
         refreshCustomerGpsLocation,
         postJob,
+        dispatchJobStartOtp,
         releasePaymentByCustomer,
+        rateWorkerJob,
         loginAdminWithAuth,
         loginAdmin,
         logoutAdmin,
@@ -2067,9 +2561,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resolveDispute,
         resetToZero,
         seedSampleData,
+        isFirebaseConnected,
+        connectedCluster,
         speak,
         notification,
         setNotification,
+        showNotification,
       }}
     >
       {children}

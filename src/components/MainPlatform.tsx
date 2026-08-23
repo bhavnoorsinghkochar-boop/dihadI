@@ -20,8 +20,8 @@ export const MainPlatform: React.FC = () => {
   // If Worker chosen: Customer and Admin completely disappear
   if (currentRole === 'worker') {
     return (
-      <div className="w-full flex-1 flex justify-center items-start p-3 sm:p-6 lg:p-8">
-        <div className="w-full max-w-2xl">
+      <div className="w-full flex-1 flex justify-center items-start p-3 sm:p-5 lg:p-6">
+        <div className="w-full max-w-7xl">
           <WorkerApp isEmbedded={false} />
         </div>
       </div>
@@ -31,8 +31,8 @@ export const MainPlatform: React.FC = () => {
   // If Customer / Employer chosen: Worker and Admin completely disappear
   if (currentRole === 'customer') {
     return (
-      <div className="w-full flex-1 flex justify-center items-start p-3 sm:p-6 lg:p-8">
-        <div className="w-full max-w-2xl">
+      <div className="w-full flex-1 flex justify-center items-start p-3 sm:p-5 lg:p-6">
+        <div className="w-full max-w-7xl">
           <CustomerApp isEmbedded={false} />
         </div>
       </div>

@@ -202,6 +202,11 @@ export function createMultiChannelAlertPayload(
   const pushTitle = `⚡ New Hyperlocal Job: ${job.trade} (₹${job.dailyWage}/day)`;
   const pushBody = `${job.customerName} needs a ${job.trade} at ${job.area} (${job.distanceKm} km away). Tap to view and accept.`;
 
+  // 5. Email / Mail alert payload
+  const emailRecipient = worker.email || 'bhavnoorsinghkochar@gmail.com';
+  const emailSubject = `⚡ Dihadi Instant Job: ${job.trade} in ${job.area || 'Local Area'} (₹${job.dailyWage}/day)`;
+  const emailBody = `Hello ${worker.name},\n\nYou have a new direct job match from employer ${job.customerName}.\n\nTrade: ${job.trade} (${job.title})\nLocation: ${job.area || job.locationAddress}\nGuaranteed Daily Wage: Rs.${job.dailyWage}/day (${job.durationDays} day)\nDistance: ~${job.distanceKm} km\n\nLog in to the Dihadi Worker portal to accept and get the 4-digit start OTP.`;
+
   return {
     id: `alert-${Date.now().toString().slice(-4)}`,
     jobId: job.id,
@@ -229,6 +234,12 @@ export function createMultiChannelAlertPayload(
       sms: {
         status: 'sent',
         message: smsMessage,
+      },
+      email: {
+        status: 'sent',
+        recipient: emailRecipient,
+        subject: emailSubject,
+        body: emailBody,
       },
       appPush: {
         status: 'delivered',

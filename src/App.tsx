@@ -8,7 +8,11 @@ import { GpsRadarModal } from './components/common/GpsRadarModal';
 import { UpiQrPaymentModal } from './components/common/UpiQrPaymentModal';
 import { MultiChannelAlertModal } from './components/common/MultiChannelAlertModal';
 import { Top5ShortlistModal } from './components/customer/Top5ShortlistModal';
+import { ChatNotificationToast } from './components/common/ChatNotificationToast';
+import { QuickChatModal } from './components/common/QuickChatModal';
 import { Bell } from 'lucide-react';
+
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainLayout: React.FC = () => {
   const { 
@@ -16,6 +20,7 @@ const MainLayout: React.FC = () => {
     notification, 
     setNotification,
     activeCall,
+    startCall,
     endCall,
     activeGpsJob,
     closeGpsRadar,
@@ -32,7 +37,12 @@ const MainLayout: React.FC = () => {
     releasePaymentByCustomer,
     currentWorker,
     currentCustomer,
-    workers
+    workers,
+    chatNotifications,
+    dismissChatNotification,
+    activeGlobalChat,
+    openGlobalChat,
+    closeGlobalChat,
   } = useApp();
 
   return (
@@ -53,6 +63,24 @@ const MainLayout: React.FC = () => {
         </div>
       )}
 
+      {/* Real-Time Floating Chat Notifications (Pop-ups for Incoming messages on Opposite side) */}
+      <ChatNotificationToast
+        notifications={chatNotifications}
+        onDismiss={dismissChatNotification}
+        onOpenChat={(item) => {
+          dismissChatNotification(item.id);
+          openGlobalChat(
+            item.job || null,
+            item.targetPerson || {
+              name: item.senderName,
+              phone: item.senderPhone,
+              role: item.senderRole,
+            },
+            currentRole === 'worker' ? 'worker' : 'customer'
+          );
+        }}
+      />
+
       {/* Main Header */}
       <Header />
 
@@ -72,6 +100,53 @@ const MainLayout: React.FC = () => {
         callSession={activeCall}
         onEndCall={endCall}
       />
+
+      {/* Global Real-Time Quick Chat Modal */}
+      {activeGlobalChat?.isOpen && (
+        <QuickChatModal
+          isOpen={activeGlobalChat.isOpen}
+          onClose={closeGlobalChat}
+          job={activeGlobalChat.job}
+          targetPerson={activeGlobalChat.targetPerson}
+          currentUserRole={activeGlobalChat.role || (currentRole === 'worker' ? 'worker' : 'customer')}
+          currentUserName={
+            (activeGlobalChat.role || currentRole) === 'worker'
+              ? currentWorker?.name || 'Worker'
+              : currentCustomer?.name || 'Employer'
+          }
+          currentUserPhone={
+            (activeGlobalChat.role || currentRole) === 'worker'
+              ? currentWorker?.phone || '+91 98101 55678'
+              : currentCustomer?.phone || '+91 99100 88221'
+          }
+          onStartCall={
+            activeGlobalChat.targetPerson?.phone
+              ? () => {
+                  startCall(
+                    {
+                      name: currentRole === 'worker' ? currentWorker?.name || 'Worker' : currentCustomer?.name || 'Employer',
+                      role: currentRole === 'worker' ? 'worker' : 'customer',
+                      phone: currentRole === 'worker' ? currentWorker?.phone || '' : currentCustomer?.phone || '',
+                    },
+                    {
+                      name: activeGlobalChat.targetPerson.name || 'Contact',
+                      role: activeGlobalChat.role === 'worker' ? 'customer' : 'worker',
+                      phone: activeGlobalChat.targetPerson.phone || '',
+                    },
+                    activeGlobalChat.job?.title || 'Dihadi Direct Work Chat'
+                  );
+                }
+              : undefined
+          }
+          onOpenRadar={
+            activeGlobalChat.job
+              ? () => {
+                  openGpsRadar(activeGlobalChat.job!);
+                }
+              : undefined
+          }
+        />
+      )}
 
       {/* Global Live GPS Radar & Route Tracking Modal */}
       {activeGpsJob && (() => {
@@ -166,8 +241,10 @@ const MainLayout: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <MainLayout />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <MainLayout />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

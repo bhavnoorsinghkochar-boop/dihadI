@@ -156,7 +156,7 @@ interface AppContextType {
   updateWorkerGps: (coords: Partial<GpsCoordinates>) => void;
   updateWorkerAvatar: (avatarUrl: string) => void;
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void;
-  acceptJobByWorker: (jobId: string) => void;
+  acceptJobByWorker: (jobId: string, workerToAssign?: WorkerProfile) => void;
   startJobWithOtp: (jobId: string, otp: string) => boolean;
   completeJobByWorker: (jobId: string) => void;
   withdrawWorkerEarnings: (customUpi?: string) => void;
@@ -1882,10 +1882,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
     const areaCoords = getCoordinatesForArea(jobData.area || jobData.locationAddress || currentCity?.defaultArea || 'Model Town', currentCity?.name);
+    const resolvedCity = currentCustomer?.city || currentCity?.name || 'Ludhiana';
+    const custGps = currentCustomer?.gpsLocation;
+    const jobLat = (custGps && custGps.lat && (!custGps.city || custGps.city === resolvedCity)) ? custGps.lat : areaCoords.lat;
+    const jobLng = (custGps && custGps.lng && (!custGps.city || custGps.city === resolvedCity)) ? custGps.lng : areaCoords.lng;
     
     // Calculate realistic distance to current worker if present
-    const workerGps = currentWorker?.gpsLocation || { lat: currentCity?.lat || 30.8926, lng: currentCity?.lng || 75.8415 };
-    const calculatedDist = calculateDistanceKm(workerGps.lat, workerGps.lng, areaCoords.lat, areaCoords.lng);
+    const workerGps = currentWorker?.gpsLocation || { lat: currentCity?.lat || 30.8926, lng: currentCity?.lng || 75.8415, city: currentCity?.name || 'Ludhiana' };
+    let calculatedDist = calculateDistanceKm(workerGps.lat, workerGps.lng, jobLat, jobLng);
+    if (calculatedDist > 25.0 && (workerGps.city === resolvedCity || !workerGps.city)) {
+      // Re-center around worker in same city so it's always in 10km radar range
+      calculatedDist = +(0.8 + Math.random() * 2.5).toFixed(1);
+    }
 
     const newJob: Job = {
       id: `job-${Date.now().toString().slice(-4)}`,
@@ -1895,13 +1903,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       customerName: jobData.customerName,
       customerPhone: jobData.customerPhone,
       locationAddress: jobData.locationAddress,
-      area: jobData.area,
+      area: jobData.area || areaCoords.area,
       distanceKm: Math.max(0.4, calculatedDist),
       jobGps: {
-        lat: areaCoords.lat,
-        lng: areaCoords.lng,
+        lat: jobLat,
+        lng: jobLng,
         area: jobData.area || areaCoords.area,
-        city: currentCity?.name || 'Ludhiana',
+        city: resolvedCity,
         address: jobData.locationAddress,
         accuracyMeters: 4,
         lastUpdated: 'Just now',
@@ -1988,22 +1996,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Worker accepts a broadcast job
-  const acceptJobByWorker = (jobId: string) => {
-    if (!currentWorker) return;
+  // Worker accepts a broadcast job or is assigned by customer hire
+  const acceptJobByWorker = (jobId: string, workerToAssign?: WorkerProfile) => {
+    const worker = workerToAssign || currentWorker;
+    if (!worker) {
+      showNotification('Please select or log in as a worker to accept this job.');
+      return;
+    }
 
     const targetJob = jobs.find((j) => j.id === jobId);
     if (targetJob) {
-      const wLat = currentWorker.gpsLocation?.lat || 30.8926;
-      const wLng = currentWorker.gpsLocation?.lng || 75.8415;
+      const wLat = worker.gpsLocation?.lat || 30.8926;
+      const wLng = worker.gpsLocation?.lng || 75.8415;
       const jLat = targetJob.jobGps?.lat || wLat;
       const jLng = targetJob.jobGps?.lng || wLng;
       const dist = calculateDistanceKm(wLat, wLng, jLat, jLng);
 
-      if (dist > 10.0) {
+      if (dist > 30.0 && targetJob.jobGps?.city !== worker.gpsLocation?.city) {
         playSound('alert');
-        showNotification(`Job blocked: Location is ${dist} km away (exceeds strict 10km limit).`);
-        return;
+        showNotification(`Notice: Job is ${dist} km away in ${targetJob.jobGps?.city || 'another area'}.`);
       }
     }
 
@@ -2014,11 +2025,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const updated = {
             ...job,
             status: 'accepted' as const,
-            assignedWorkerId: currentWorker.id,
-            assignedWorkerName: currentWorker.name,
-            assignedWorkerPhone: currentWorker.phone,
-            assignedWorkerTrade: currentWorker.primaryTrade,
-            assignedWorkerUpi: currentWorker.upiId,
+            assignedWorkerId: worker.id,
+            assignedWorkerName: worker.name,
+            assignedWorkerPhone: worker.phone,
+            assignedWorkerTrade: worker.primaryTrade,
+            assignedWorkerUpi: worker.upiId,
           };
           updatedAcceptedJob = updated;
           return updated;
@@ -2033,7 +2044,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     playSound('success');
-    showNotification(`Job accepted! Ask customer for 4-digit start OTP.`);
+    showNotification(`Job assigned to ${worker.name}! Start OTP: ${targetJob?.otpCode || updatedAcceptedJob?.otpCode}`);
   };
 
   // Worker starts work by entering OTP

@@ -345,7 +345,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
     if (createdJob) {
       // Direct accept by chosen worker
-      acceptJobByWorker(createdJob.id);
+      acceptJobByWorker(createdJob.id, bookingWorker);
       playSound('success');
       showNotification(`Booked ${bookingWorker.name}! Start OTP is ${createdJob.otpCode}`);
     }
@@ -1727,7 +1727,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                             <button
                               type="button"
                               onClick={() => {
-                                acceptJobByWorker(job.id);
+                                acceptJobByWorker(job.id, match.worker);
                                 showNotification(`Assigned ${match.worker.name}! Start OTP: ${job.otpCode}`);
                                 playSound('success');
                               }}

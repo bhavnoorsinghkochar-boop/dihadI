@@ -77,7 +77,7 @@ export const Header: React.FC = () => {
               onClick={() => setCurrentRole('select_role')}
               className="text-base sm:text-lg font-black text-slate-900 tracking-tight cursor-pointer flex items-center gap-1"
             >
-              Kaam<span className="text-amber-500 font-extrabold">Setu</span>
+              Kaam<span className="text-amber-500 font-extrabold">zo</span>
             </h1>
 
             {/* Active Role Tag */}
@@ -202,9 +202,9 @@ export const Header: React.FC = () => {
         {/* Audio Helper Button */}
         <button
           onClick={() => {
-            if (currentLanguage === 'en') speak('KaamSetu platform: Connecting daily wage workers with customers.');
-            else if (currentLanguage === 'hi') speak('कामसेतु: श्रमिकों को सीधे काम और सही मजदूरी देने का मंच।');
-            else if (currentLanguage === 'pa') speak('ਕਾਮਸੇਤੂ: ਕਾਮਿਆਂ ਨੂੰ ਸਿੱਧਾ ਕੰਮ ਅਤੇ ਪੱਕੀ ਦਿਹਾੜੀ ਦੇਣ ਵਾਲਾ ਮੰਚ।');
+            if (currentLanguage === 'en') speak('Kaamzo platform: Connecting daily wage workers with customers.');
+            else if (currentLanguage === 'hi') speak('कामज़ो: श्रमिकों को सीधे काम और सही मजदूरी देने का मंच।');
+            else if (currentLanguage === 'pa') speak('ਕਾਮਜ਼ੋ: ਕਾਮਿਆਂ ਨੂੰ ਸਿੱਧਾ ਕੰਮ ਅਤੇ ਪੱਕੀ ਦਿਹਾੜੀ ਦੇਣ ਵਾਲਾ ਮੰਚ।');
           }}
           className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition"
           title="Voice Assistant"

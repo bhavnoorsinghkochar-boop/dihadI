@@ -742,7 +742,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               K
             </div>
             <span className="text-lg font-black tracking-tight text-slate-900">
-              Kaam<span className="text-amber-500">Setu</span>
+              Kaam<span className="text-amber-500">zo</span>
             </span>
           </div>
 
@@ -1876,7 +1876,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
         <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto w-full">
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
             <div>
-              <h3 className="text-xl font-black text-slate-900">KaamSetu Customer Support & Safety Hub</h3>
+              <h3 className="text-xl font-black text-slate-900">Kaamzo Customer Support & Safety Hub</h3>
               <p className="text-xs text-slate-500 mt-1">
                 24/7 dedicated support, dispute resolution, and hyperlocal safety assistance.
               </p>

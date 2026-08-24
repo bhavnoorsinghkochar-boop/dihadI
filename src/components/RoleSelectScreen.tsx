@@ -60,7 +60,7 @@ export const RoleSelectScreen: React.FC = () => {
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-          Kaam<span className="text-amber-500">Setu</span>
+          Kaam<span className="text-amber-500">zo</span>
           <span className="block text-xl sm:text-2xl font-bold text-slate-700 mt-2">
             {getT(currentLanguage, 'choose_portal_title')}
           </span>

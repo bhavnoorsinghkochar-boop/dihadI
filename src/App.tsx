@@ -230,7 +230,7 @@ const MainLayout: React.FC = () => {
 
       {/* Footer */}
       <footer className="h-12 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between px-6 lg:px-8 text-[11px] text-slate-500 font-medium shrink-0 gap-1 sm:gap-0">
-        <p>© 2026 KaamSetu Technologies Pvt. Ltd. | Empowering Bharat's Local Workforce</p>
+        <p>© 2026 Kaamzo Technologies Pvt. Ltd. | Empowering Bharat's Local Workforce</p>
         <p className="text-slate-400">
           SDG 8 & 10 Aligned • 20% Fair Commission • Verified Masons, Painters & Daily Trades
         </p>

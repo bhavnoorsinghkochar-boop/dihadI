@@ -20,7 +20,7 @@ export const PitchDeckViewer: React.FC = () => {
 
   const slides = [
     {
-      title: 'KaamSetu',
+      title: 'Kaamzo',
       subtitle: 'A Startup for the people who WORK HARDER THAN US',
       tagline: 'Promoting the income of LABOURS',
       sdg: ['SDG 8: Decent Work & Economic Growth', 'SDG 10: Reduced Inequalities', 'SDG 17: Partnerships for the Goals'],
@@ -28,7 +28,7 @@ export const PitchDeckViewer: React.FC = () => {
     },
     {
       title: 'Our Team',
-      subtitle: 'The Founders & Visionaries behind KaamSetu',
+      subtitle: 'The Founders & Visionaries behind Kaamzo',
       team: [
         { name: 'Prabinder Singh', role: 'Co-Founder & Operations', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80' },
         { name: 'Danish Wadhawan', role: 'Co-Founder & Product Lead', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
@@ -60,9 +60,9 @@ export const PitchDeckViewer: React.FC = () => {
     },
     {
       title: 'What is the Solution?',
-      subtitle: 'OUR APP: KaamSetu Unified Marketplace',
+      subtitle: 'OUR APP: Kaamzo Unified Marketplace',
       highlights: [
-        { title: 'Direct Connection', desc: 'KaamSetu connects workers directly with employers without an exploitative middleman.' },
+        { title: 'Direct Connection', desc: 'Kaamzo connects workers directly with employers without an exploitative middleman.' },
         { title: '20% Flat Commission', desc: 'Giving employment to labor on transparent 20% commission basis (worker keeps 80%).' },
         { title: 'Starting from ₹800', desc: 'Guaranteed minimum wage starting from ₹800/day ensures dignity and living wages.' },
         { title: 'Accessible Interface', desc: 'Designed for daily wage workers with voice guidance, multi-language support & high contrast.' }
@@ -92,7 +92,7 @@ export const PitchDeckViewer: React.FC = () => {
     },
     {
       title: 'Business Model',
-      subtitle: 'How Dihadi Generates Sustainable Revenue',
+      subtitle: 'How Kaamzo Generates Sustainable Revenue',
       revenueStreams: [
         { name: '20% Commission per Job', desc: 'A transparent 20% platform service fee per completed job (far lower and fairer than traditional contractor cuts).' },
         { name: 'Worker Subscription Tiers', desc: 'Optional premium visibility, guaranteed daily job dispatch priority, and insurance add-ons.' },
@@ -103,7 +103,7 @@ export const PitchDeckViewer: React.FC = () => {
     },
     {
       title: 'Market Research & White Space',
-      subtitle: 'KaamSetu vs Urban Company vs Digital Labour Chowk',
+      subtitle: 'Kaamzo vs Urban Company vs Digital Labour Chowk',
       comparison: [
         { feature: 'Target Workers', uc: 'Beauty, AC Repair, Urban Middle Class', dlc: 'Contractors / B2B Construction', dihadi: 'Daily-Wage Workers: Masons, Painters, Helpers' },
         { feature: 'Commission Cut', uc: '20–30% High Take Rate', dlc: '0% (No in-app escrow)', dihadi: '20% Transparent Flat Commission' },
@@ -114,7 +114,7 @@ export const PitchDeckViewer: React.FC = () => {
     },
     {
       title: 'SWOT Analysis',
-      subtitle: 'Strategic Overview of KaamSetu',
+      subtitle: 'Strategic Overview of Kaamzo',
       swot: {
         strengths: [
           'Direct worker-customer connection without middlemen.',
@@ -152,7 +152,7 @@ export const PitchDeckViewer: React.FC = () => {
           <div className="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-slate-950 font-black text-sm">
             K
           </div>
-          <span className="text-sm font-bold tracking-tight">KaamSetu Pitch Deck</span>
+          <span className="text-sm font-bold tracking-tight">Kaamzo Pitch Deck</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -186,7 +186,7 @@ export const PitchDeckViewer: React.FC = () => {
               {slide.tagline}
             </div>
             <h1 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight">
-              Kaam<span className="text-amber-500">Setu</span>
+              Kaam<span className="text-amber-500">zo</span>
             </h1>
             <p className="text-xl sm:text-2xl font-bold text-slate-700">
               {slide.subtitle}
@@ -337,7 +337,7 @@ export const PitchDeckViewer: React.FC = () => {
                     <th className="p-3">Dimension</th>
                     <th className="p-3 text-slate-500">Urban Company</th>
                     <th className="p-3 text-slate-500">Digital Labour Chowk</th>
-                    <th className="p-3 text-amber-700 bg-amber-50">KaamSetu (Winner)</th>
+                    <th className="p-3 text-amber-700 bg-amber-50">Kaamzo (Winner)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

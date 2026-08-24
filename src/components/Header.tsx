@@ -68,7 +68,7 @@ export const Header: React.FC = () => {
           className="w-10 h-10 bg-[#0F172A] hover:bg-slate-800 transition rounded-xl flex items-center justify-center text-white font-black italic text-xl cursor-pointer shadow-xs select-none shrink-0"
           title="Return to Role Selection"
         >
-          D
+          K
         </div>
 
         <div>
@@ -77,7 +77,7 @@ export const Header: React.FC = () => {
               onClick={() => setCurrentRole('select_role')}
               className="text-base sm:text-lg font-black text-slate-900 tracking-tight cursor-pointer flex items-center gap-1"
             >
-              Dihadi<span className="text-amber-500 font-extrabold">.co</span>
+              Kaam<span className="text-amber-500 font-extrabold">Setu</span>
             </h1>
 
             {/* Active Role Tag */}
@@ -202,9 +202,9 @@ export const Header: React.FC = () => {
         {/* Audio Helper Button */}
         <button
           onClick={() => {
-            if (currentLanguage === 'en') speak('Dihadi dot co platform: Connecting daily wage workers with customers.');
-            else if (currentLanguage === 'hi') speak('दिहाड़ी डॉट को: श्रमिकों को सीधे काम और सही मजदूरी देने का मंच।');
-            else if (currentLanguage === 'pa') speak('ਦਿਹਾੜੀ ਡਾਟ ਕੋ: ਕਾਮਿਆਂ ਨੂੰ ਸਿੱਧਾ ਕੰਮ ਅਤੇ ਪੱਕੀ ਦਿਹਾੜੀ ਦੇਣ ਵਾਲਾ ਮੰਚ।');
+            if (currentLanguage === 'en') speak('KaamSetu platform: Connecting daily wage workers with customers.');
+            else if (currentLanguage === 'hi') speak('कामसेतु: श्रमिकों को सीधे काम और सही मजदूरी देने का मंच।');
+            else if (currentLanguage === 'pa') speak('ਕਾਮਸੇਤੂ: ਕਾਮਿਆਂ ਨੂੰ ਸਿੱਧਾ ਕੰਮ ਅਤੇ ਪੱਕੀ ਦਿਹਾੜੀ ਦੇਣ ਵਾਲਾ ਮੰਚ।');
           }}
           className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition"
           title="Voice Assistant"

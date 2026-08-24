@@ -12,9 +12,14 @@ import {
   CallSession, 
   GpsCoordinates,
   CityInfo,
-  ChatNotificationItem
+  ChatNotificationItem,
+  HyperlocalMatchResult
 } from '../types';
 import { playSound, speakText } from '../utils/audio';
+import { 
+  matchHyperlocalWorkers, 
+  getTop5Shortlist 
+} from '../utils/aiMatching';
 import { 
   calculateDistanceKm, 
   calculateBearing, 
@@ -97,10 +102,15 @@ interface AppContextType {
   openMultiChannelModal: (job: Job, worker?: WorkerProfile) => void;
   closeMultiChannelModal: () => void;
 
-  // Active Top-5 Shortlist modal trigger
+  // Active Top-5 Shortlist & Automated Job Matching Engine
   activeShortlistJob: Job | null;
   openTop5Shortlist: (job: Job) => void;
   closeTop5Shortlist: () => void;
+  latestMatchedJob: Job | null;
+  latestTop5Matches: HyperlocalMatchResult[];
+  getTop5WorkersForJob: (jobOrCriteria: Job | { trade: TradeType; jobGps?: GpsCoordinates; lat?: number; lng?: number; area?: string; dailyWage?: number; maxRadiusKm?: number }) => HyperlocalMatchResult[];
+  matchJobWithWorkers: (job: Job) => { matches: HyperlocalMatchResult[]; totalEligible: number; topMatch: HyperlocalMatchResult | null };
+  clearMatchedSuggestions: () => void;
 
   // Real-time Chat Notifications & Global Chat Modal
   chatNotifications: ChatNotificationItem[];
@@ -709,6 +719,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeMultiChannelJob, setActiveMultiChannelJob] = useState<Job | null>(null);
   const [activeMultiChannelWorker, setActiveMultiChannelWorker] = useState<WorkerProfile | null>(null);
   const [activeShortlistJob, setActiveShortlistJob] = useState<Job | null>(null);
+  
+  // Automated Job Matching Engine state
+  const [latestMatchedJob, setLatestMatchedJob] = useState<Job | null>(null);
+  const [latestTop5Matches, setLatestTop5Matches] = useState<HyperlocalMatchResult[]>([]);
+
   const [chatNotifications, setChatNotifications] = useState<ChatNotificationItem[]>([]);
   const [pendingRoleNotifications, setPendingRoleNotifications] = useState<ChatNotificationItem[]>(() => {
     try {
@@ -1026,6 +1041,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const closeTop5Shortlist = () => {
     setActiveShortlistJob(null);
+  };
+
+  // Automated Job Matching Engine Helpers
+  const getTop5WorkersForJob = (jobOrCriteria: Job | { trade: TradeType; jobGps?: GpsCoordinates; lat?: number; lng?: number; area?: string; dailyWage?: number; maxRadiusKm?: number }): HyperlocalMatchResult[] => {
+    const jobLat = (jobOrCriteria as Job).jobGps?.lat ?? (jobOrCriteria as any).lat ?? currentCustomer?.gpsLocation.lat ?? currentCity.lat;
+    const jobLng = (jobOrCriteria as Job).jobGps?.lng ?? (jobOrCriteria as any).lng ?? currentCustomer?.gpsLocation.lng ?? currentCity.lng;
+    const maxRadius = (jobOrCriteria as any).maxRadiusKm || 10.0;
+
+    return getTop5Shortlist(workers, {
+      trade: jobOrCriteria.trade,
+      lat: jobLat,
+      lng: jobLng,
+      maxRadiusKm: maxRadius,
+      budget: (jobOrCriteria as any).dailyWage,
+      language: currentLanguage,
+    });
+  };
+
+  const matchJobWithWorkers = (job: Job) => {
+    const jobLat = job.jobGps?.lat || currentCustomer?.gpsLocation.lat || currentCity.lat;
+    const jobLng = job.jobGps?.lng || currentCustomer?.gpsLocation.lng || currentCity.lng;
+
+    const allMatches = matchHyperlocalWorkers(workers, {
+      trade: job.trade,
+      lat: jobLat,
+      lng: jobLng,
+      maxRadiusKm: 10.0,
+      budget: job.dailyWage,
+      language: currentLanguage,
+    });
+
+    const top5 = allMatches.slice(0, 5);
+    return {
+      matches: top5,
+      totalEligible: allMatches.length,
+      topMatch: top5.length > 0 ? top5[0] : null,
+    };
+  };
+
+  const clearMatchedSuggestions = () => {
+    setLatestMatchedJob(null);
+    setLatestTop5Matches([]);
   };
 
   // Real-time Chat Notifications System
@@ -1862,7 +1919,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setJobs((prev) => [newJob, ...prev]);
     syncJobToFirestore(newJob);
     playSound('incoming_job');
-    showNotification(`New ${newJob.trade} job broadcasted. OTP: ${otpCode}`);
+
+    // === AUTOMATED JOB MATCHING ENGINE ===
+    // Automatically match and suggest the top 5 most compatible workers based on Trade skills, 10km GPS Proximity, Rating, and Live Availability
+    const matchResult = matchJobWithWorkers(newJob);
+    const topMatches = matchResult.matches;
+    setLatestMatchedJob(newJob);
+    setLatestTop5Matches(topMatches);
+
+    if (topMatches.length > 0) {
+      const topPick = topMatches[0];
+      showNotification(
+        '🎯 Top 5 Matches Suggested!',
+        `Matched ${topMatches.length} verified ${newJob.trade}s nearby. Top pick: ${topPick.worker.name} (${topPick.matchScore}% Match, ${topPick.distanceKm}km away, ${topPick.worker.rating}★)`
+      );
+      // Spoken voice assistant feedback
+      speak(`New ${newJob.trade} job posted. Top 5 compatible workers suggested near ${newJob.area}.`);
+    } else {
+      showNotification(`New ${newJob.trade} job broadcasted. OTP: ${otpCode}`);
+    }
 
     // Auto-dispatch Start OTP to customer email & phone
     dispatchJobStartOtp(newJob);
@@ -2520,6 +2595,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeShortlistJob,
         openTop5Shortlist,
         closeTop5Shortlist,
+        latestMatchedJob,
+        latestTop5Matches,
+        getTop5WorkersForJob,
+        matchJobWithWorkers,
+        clearMatchedSuggestions,
         chatNotifications,
         triggerChatNotification,
         dismissChatNotification,

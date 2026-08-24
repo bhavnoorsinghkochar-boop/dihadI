@@ -1,5 +1,5 @@
 {
-  "name": "Dihadi.co - Daily Wage Worker & Job Platform",
+  "name": "KaamSetu - Daily Wage Worker & Job Platform",
   "description": "A 3-in-1 platform connecting daily-wage workers with local jobs featuring Hyperlocal 10km AI Matching, Multi-Channel Alerts (WhatsApp, Voice IVR, SMS, Push), Top-5 Shortlisting, Live GPS Radar, and UPI Escrow.",
   "requestFramePermissions": ["geolocation", "microphone", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

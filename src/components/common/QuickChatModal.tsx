@@ -96,57 +96,7 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
 
   // Initial welcome seed messages if conversation is empty
   const getDefaultMessages = (): ChatMessage[] => {
-    const isWorker = currentUserRole === 'worker';
-
-    if (job) {
-      return [
-        {
-          id: `m-init-1`,
-          jobId: job.id,
-          senderRole: 'customer',
-          senderName: job.customerName || 'Employer',
-          senderPhone: job.customerPhone,
-          text: `Hello! I posted "${job.title}" at ${jobLocation}. Looking forward to getting this completed promptly.`,
-          timestamp: 'Just now',
-          createdAt: Date.now() - 60000,
-          status: 'read',
-        },
-        {
-          id: `m-init-2`,
-          jobId: job.id,
-          senderRole: 'worker',
-          senderName: job.assignedWorkerName || 'Ramesh Kumar',
-          senderPhone: job.assignedWorkerPhone,
-          text: `Namaste ji! I have received your request. My daily wage is confirmed as ₹${dailyWage}. I am on standby and ready.`,
-          timestamp: 'Just now',
-          createdAt: Date.now() - 30000,
-          status: 'read',
-        }
-      ];
-    }
-
-    return [
-      {
-        id: `m-init-direct-1`,
-        jobId: conversationId,
-        senderRole: 'customer',
-        senderName: currentUserRole === 'customer' ? currentUserName : (job?.customerName || 'Customer'),
-        text: `Hello ${otherPersonName}! Inquiring regarding availability for ${otherPersonTrade} work in ${jobLocation}.`,
-        timestamp: 'Just now',
-        createdAt: Date.now() - 45000,
-        status: 'read',
-      },
-      {
-        id: `m-init-direct-2`,
-        jobId: conversationId,
-        senderRole: 'worker',
-        senderName: otherPersonName,
-        text: `Namaste! Yes, I am available for daily wage assignments in this area. Daily rate is ₹${dailyWage}.`,
-        timestamp: 'Just now',
-        createdAt: Date.now() - 15000,
-        status: 'read',
-      }
-    ];
+    return [];
   };
 
   // Load messages from localStorage
@@ -155,16 +105,14 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setMessages(parsed);
           return;
         }
       }
-      const initial = getDefaultMessages();
-      setMessages(initial);
-      localStorage.setItem(storageKey, JSON.stringify(initial));
+      setMessages([]);
     } catch (e) {
-      setMessages(getDefaultMessages());
+      setMessages([]);
     }
   };
 
@@ -284,131 +232,6 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
     } catch (err) {
       console.debug('Event dispatch error:', err);
     }
-
-    // Auto-respond simulation if chatting alone in demo to create engaging experience
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let replyText = "";
-
-      if (currentUserRole === 'worker') {
-        // Customer responds back
-        if (lower.includes('otp') || lower.includes('code') || lower.includes('passcode')) {
-          replyText = startOtp 
-            ? `Your 4-digit start OTP is ${startOtp}. Please enter it in your app to start the clock!`
-            : "The start OTP will appear here once the work order is officially unlocked.";
-        } else if (lower.includes('reached') || lower.includes('gate') || lower.includes('arrived')) {
-          replyText = "Great! Please come up to the main entrance, I am opening the gate.";
-        } else if (lower.includes('finish') || lower.includes('complete') || lower.includes('done')) {
-          replyText = "Checking the work right now. Releasing your UPI daily wage immediately!";
-        } else if (lower.includes('wage') || lower.includes('rate') || lower.includes('payout')) {
-          replyText = `Agreed daily wage of ₹${dailyWage} is secured in Dihadi escrow and will be paid immediately on completion.`;
-        } else {
-          replyText = "Understood! I am at the address waiting for you.";
-        }
-
-        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const autoReply: ChatMessage = {
-          id: `msg-reply-${Date.now()}`,
-          jobId: job?.id || conversationId,
-          senderRole: 'customer',
-          senderName: otherPersonName,
-          senderPhone: otherPersonPhone,
-          text: replyText,
-          timestamp: replyTime,
-          createdAt: Date.now(),
-          status: 'read',
-        };
-        saveAndBroadcastMessages([...updated, autoReply]);
-        playSound('message');
-
-        // Dispatch incoming message popup event
-        try {
-          window.dispatchEvent(
-            new CustomEvent('dihadi_chat_message_event', {
-              detail: {
-                id: `notif-${autoReply.id}`,
-                senderRole: 'customer',
-                senderName: otherPersonName,
-                senderPhone: otherPersonPhone,
-                recipientRole: 'worker',
-                recipientName: senderDisplayName,
-                text: replyText,
-                timestamp: replyTime,
-                jobTitle: jobTitle,
-                jobId: job?.id || conversationId,
-                job: job,
-                targetPerson: {
-                  name: otherPersonName,
-                  phone: otherPersonPhone,
-                  role: 'customer',
-                },
-                isSender: false,
-              },
-            })
-          );
-        } catch (err) {
-          console.debug(err);
-        }
-      } else {
-        // Worker responds back
-        if (lower.includes('otp') || lower.includes('code')) {
-          replyText = startOtp 
-            ? `Thank you! Entering start OTP #${startOtp} now to begin work clock.`
-            : "Received! Ready to enter start OTP upon arrival.";
-        } else if (lower.includes('where') || lower.includes('eta') || lower.includes('time')) {
-          replyText = "I am nearby within 5-10 minutes, following the GPS radar route.";
-        } else if (lower.includes('tool') || lower.includes('material')) {
-          replyText = "I have brought all my standard hand tools. Ready to start as soon as I arrive.";
-        } else {
-          replyText = `Namaste ji! Noted, I am proceeding with your instructions.`;
-        }
-
-        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const autoReply: ChatMessage = {
-          id: `msg-reply-${Date.now()}`,
-          jobId: job?.id || conversationId,
-          senderRole: 'worker',
-          senderName: otherPersonName,
-          senderPhone: otherPersonPhone,
-          text: replyText,
-          timestamp: replyTime,
-          createdAt: Date.now(),
-          status: 'read',
-        };
-        saveAndBroadcastMessages([...updated, autoReply]);
-        playSound('message');
-
-        // Dispatch incoming message popup event
-        try {
-          window.dispatchEvent(
-            new CustomEvent('dihadi_chat_message_event', {
-              detail: {
-                id: `notif-${autoReply.id}`,
-                senderRole: 'worker',
-                senderName: otherPersonName,
-                senderPhone: otherPersonPhone,
-                recipientRole: 'customer',
-                recipientName: senderDisplayName,
-                text: replyText,
-                timestamp: replyTime,
-                jobTitle: jobTitle,
-                jobId: job?.id || conversationId,
-                job: job,
-                targetPerson: {
-                  name: otherPersonName,
-                  phone: otherPersonPhone,
-                  role: 'worker',
-                  trade: otherPersonTrade,
-                },
-                isSender: false,
-              },
-            })
-          );
-        } catch (err) {
-          console.debug(err);
-        }
-      }
-    }, 1200);
   };
 
   // Real Speech Recognition or Voice Simulation
@@ -448,8 +271,8 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
 
         recognition.onerror = () => {
           setIsRecording(false);
-          setSpeechFeedback(null);
-          fallbackVoiceTemplate();
+          setSpeechFeedback('Microphone unavailable. Type your message below.');
+          setTimeout(() => setSpeechFeedback(null), 2500);
         };
 
         recognition.onend = () => {
@@ -464,28 +287,9 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
       }
     }
 
-    fallbackVoiceTemplate();
-  };
-
-  const fallbackVoiceTemplate = () => {
-    setIsRecording(true);
-    setSpeechFeedback('Voice dictating...');
-    playSound('gps_ping');
-    setTimeout(() => {
-      setIsRecording(false);
-      setSpeechFeedback(null);
-      const voiceTemplates = currentUserRole === 'worker' ? [
-        "I have reached the location gate. Please share the 4-digit start OTP.",
-        "Work is proceeding according to plan. Materials are verified.",
-        "Work finished! Please inspect and release my UPI wage."
-      ] : [
-        "Please come inside through the main gate on ground floor.",
-        startOtp ? `Start OTP is ${startOtp}. Please enter it to begin.` : "Please call when you reach the gate.",
-        "Work looks great! Releasing your UPI payment now."
-      ];
-      const randomTemplate = voiceTemplates[Math.floor(Math.random() * voiceTemplates.length)];
-      handleSendMessage(`🎙️ [Voice]: "${randomTemplate}"`, true);
-    }, 1200);
+    setIsRecording(false);
+    setSpeechFeedback('Voice input not supported in this browser.');
+    setTimeout(() => setSpeechFeedback(null), 2500);
   };
 
   const handleTtsSpeak = (text: string) => {

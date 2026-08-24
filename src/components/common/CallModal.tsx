@@ -33,37 +33,21 @@ export const CallModal: React.FC<CallModalProps> = ({
   const [status, setStatus] = useState<'ringing' | 'connected' | 'ended'>('ringing');
   const [subtitledMessage, setSubtitledMessage] = useState<string | null>(null);
 
-  // Auto connect after 2 rings
+  // Call management: Ring until answered or ended
   useEffect(() => {
     if (!callSession) return;
     setStatus('ringing');
     setSeconds(0);
     setSubtitledMessage(null);
 
-    // Play ringing sound
+    // Play ringing tone
     playSound('ring');
     const ringInterval = setInterval(() => {
       playSound('ring');
-    }, 2000);
-
-    // Auto connect after 2.8 seconds
-    const connectTimer = setTimeout(() => {
-      clearInterval(ringInterval);
-      setStatus('connected');
-      playSound('call_connect');
-      
-      // Auto voice greeting
-      const greeting = callSession.callerRole === 'customer'
-        ? `हाँ जी नमस्ते! मैं ${callSession.receiverName} बोल रहा हूँ। काम की लोकेशन पर पहुँच रहा हूँ।`
-        : `नमस्ते! मैं काम की जगह पर हूँ, आप कहाँ तक पहुँचे?`;
-      
-      setSubtitledMessage(greeting);
-      speakText(greeting, 'hi');
     }, 2800);
 
     return () => {
       clearInterval(ringInterval);
-      clearTimeout(connectTimer);
     };
   }, [callSession?.id]);
 
@@ -81,6 +65,14 @@ export const CallModal: React.FC<CallModalProps> = ({
   }, [status]);
 
   if (!callSession) return null;
+
+  const handleAnswer = () => {
+    setStatus('connected');
+    playSound('call_connect');
+    if (onAnswerCall) {
+      onAnswerCall();
+    }
+  };
 
   const formatTimer = (totalSecs: number) => {
     const mins = Math.floor(totalSecs / 60);
@@ -188,48 +180,78 @@ export const CallModal: React.FC<CallModalProps> = ({
 
         {/* Bottom Call Controls */}
         <div className="w-full space-y-4">
-          <div className="flex items-center justify-center gap-5">
-            {/* Mute Button */}
-            <button
-              onClick={() => {
-                setIsMuted(!isMuted);
-                playSound('click');
-              }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
-                isMuted
-                  ? 'bg-rose-500 text-white'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-              }`}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
+          {status === 'ringing' ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center justify-center gap-8">
+                {/* Decline Button */}
+                <div className="flex flex-col items-center gap-1.5">
+                  <button
+                    onClick={handleEnd}
+                    className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
+                    title="Decline Call"
+                  >
+                    <PhoneOff className="w-7 h-7" />
+                  </button>
+                  <span className="text-[11px] text-slate-400 font-semibold">Decline</span>
+                </div>
 
-            {/* End Call Button */}
-            <button
-              onClick={handleEnd}
-              className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition"
-              title="End Call"
-            >
-              <PhoneOff className="w-7 h-7" />
-            </button>
+                {/* Answer Button */}
+                <div className="flex flex-col items-center gap-1.5">
+                  <button
+                    onClick={handleAnswer}
+                    className="w-16 h-16 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-900/50 transition animate-bounce cursor-pointer"
+                    title="Answer Call"
+                  >
+                    <Phone className="w-7 h-7" />
+                  </button>
+                  <span className="text-[11px] text-emerald-400 font-semibold">Accept</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-5">
+              {/* Mute Button */}
+              <button
+                onClick={() => {
+                  setIsMuted(!isMuted);
+                  playSound('click');
+                }}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
+                  isMuted
+                    ? 'bg-rose-500 text-white'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                }`}
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
 
-            {/* Speaker Button */}
-            <button
-              onClick={() => {
-                setIsSpeaker(!isSpeaker);
-                playSound('click');
-              }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
-                isSpeaker
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-              }`}
-              title={isSpeaker ? 'Speaker On' : 'Speaker Off'}
-            >
-              {isSpeaker ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-            </button>
-          </div>
+              {/* End Call Button */}
+              <button
+                onClick={handleEnd}
+                className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
+                title="End Call"
+              >
+                <PhoneOff className="w-7 h-7" />
+              </button>
+
+              {/* Speaker Button */}
+              <button
+                onClick={() => {
+                  setIsSpeaker(!isSpeaker);
+                  playSound('click');
+                }}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
+                  isSpeaker
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                }`}
+                title={isSpeaker ? 'Speaker On' : 'Speaker Off'}
+              >
+                {isSpeaker ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+            </div>
+          )}
 
           {/* Cellular Fallback Link */}
           <div className="text-center">

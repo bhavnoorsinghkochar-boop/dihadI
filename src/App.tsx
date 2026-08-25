@@ -185,13 +185,16 @@ const MainLayout: React.FC = () => {
           workerUpiId={activeUpiPaymentJob.assignedWorkerUpi || 'ramesh.mason@okaxis'}
           workerPhone={activeUpiPaymentJob.assignedWorkerPhone || '+91 98101 55678'}
           jobTitle={activeUpiPaymentJob.title}
-          onPaymentSuccess={(method, ref) => {
+          onPaymentSuccess={(method, ref, rating, review, tags) => {
+            const finalRating = typeof rating === 'number' && rating >= 1 ? rating : 5;
+            const finalReview = review || `Rated ${finalRating} stars for work on ${activeUpiPaymentJob.title || 'Job'}`;
             releasePaymentByCustomer(
               activeUpiPaymentJob.id,
-              5,
-              'Great work, punctual and high quality finish!',
+              finalRating,
+              finalReview,
               method as any,
-              ref
+              ref,
+              tags
             );
             closeUpiPayment();
           }}

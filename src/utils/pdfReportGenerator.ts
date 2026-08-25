@@ -341,13 +341,16 @@ export async function generateWorkerPerformancePdf(data: PerformanceReportData):
       const payout = j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8);
       doc.text(`Rs. ${payout}`, margin + 120, currentY + 7);
 
-      const jobRating = j.rating || j.customerRating || j.ratingGiven;
-      if (jobRating && jobRating > 0) {
+      const hasRating = (typeof j.rating === 'number' && j.rating > 0) || 
+                        (typeof j.customerRating === 'number' && j.customerRating > 0) || 
+                        (typeof j.ratingGiven === 'number' && j.ratingGiven > 0);
+      const jobRating = hasRating ? (j.rating ?? j.customerRating ?? j.ratingGiven) : null;
+      if (jobRating !== null && jobRating > 0) {
         doc.setTextColor(217, 119, 6);
         doc.text(`★ ${Number(jobRating).toFixed(1)} / 5.0`, margin + 148, currentY + 5);
       } else {
         doc.setTextColor(100, 116, 139);
-        doc.text(`★ 5.0 (Default)`, margin + 148, currentY + 5);
+        doc.text(`Pending Rating`, margin + 148, currentY + 5);
       }
 
       doc.setTextColor(16, 185, 129);

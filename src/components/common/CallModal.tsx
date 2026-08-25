@@ -11,7 +11,10 @@ import {
   User, 
   ExternalLink,
   Radio,
-  MessageSquareQuote
+  MessageSquareQuote,
+  Smartphone,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { CallSession } from '../../types';
 import { playSound, speakText } from '../../utils/audio';
@@ -32,6 +35,7 @@ export const CallModal: React.FC<CallModalProps> = ({
   const [seconds, setSeconds] = useState(0);
   const [status, setStatus] = useState<'ringing' | 'connected' | 'ended'>('ringing');
   const [subtitledMessage, setSubtitledMessage] = useState<string | null>(null);
+  const [showNormalCallPrompt, setShowNormalCallPrompt] = useState(false);
 
   // Call management: Ring until answered or ended
   useEffect(() => {
@@ -39,6 +43,7 @@ export const CallModal: React.FC<CallModalProps> = ({
     setStatus('ringing');
     setSeconds(0);
     setSubtitledMessage(null);
+    setShowNormalCallPrompt(false);
 
     // Play ringing tone
     playSound('ring');
@@ -46,8 +51,14 @@ export const CallModal: React.FC<CallModalProps> = ({
       playSound('ring');
     }, 2800);
 
+    // After 4.5 seconds of in-app ringing, highlight direct normal telephone fallback
+    const fallbackTimer = setTimeout(() => {
+      setShowNormalCallPrompt(true);
+    }, 4500);
+
     return () => {
       clearInterval(ringInterval);
+      clearTimeout(fallbackTimer);
     };
   }, [callSession?.id]);
 
@@ -65,6 +76,8 @@ export const CallModal: React.FC<CallModalProps> = ({
   }, [status]);
 
   if (!callSession) return null;
+
+  const cleanTargetPhone = (callSession.receiverPhone || '+91 98101 55678').replace(/[^0-9+]/g, '');
 
   const handleAnswer = () => {
     setStatus('connected');
@@ -93,14 +106,21 @@ export const CallModal: React.FC<CallModalProps> = ({
     speakText(phrase, 'hi');
   };
 
+  const handleDirectNormalCall = () => {
+    playSound('click');
+    window.location.href = `tel:${cleanTargetPhone}`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 select-none">
-      <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-slate-700 flex flex-col items-center justify-between p-6 h-[580px] relative">
+      <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-slate-700 flex flex-col items-center justify-between p-5 sm:p-6 min-h-[580px] max-h-[92vh] relative">
         {/* Top Status Bar */}
         <div className="w-full flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700">
             <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-bold text-emerald-300">Dihadi Direct VoIP</span>
+            <span className="text-[11px] font-bold text-emerald-300">
+              {status === 'connected' ? 'VoIP Connected' : 'In-App Calling...'}
+            </span>
           </div>
           <div className="font-mono font-bold text-slate-300 text-xs">
             {status === 'ringing' ? 'Ringing...' : formatTimer(seconds)}
@@ -108,10 +128,10 @@ export const CallModal: React.FC<CallModalProps> = ({
         </div>
 
         {/* Center Caller / Receiver Profile */}
-        <div className="flex flex-col items-center space-y-3 my-auto">
+        <div className="flex flex-col items-center space-y-3 my-auto w-full py-2">
           {/* Animated Avatar Waves */}
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-slate-800 border-4 border-amber-500 shadow-2xl flex items-center justify-center text-3xl font-black text-white relative z-10">
+            <div className="w-22 h-22 rounded-full bg-slate-800 border-4 border-amber-500 shadow-2xl flex items-center justify-center text-3xl font-black text-white relative z-10">
               {callSession.receiverName.charAt(0)}
             </div>
 
@@ -136,15 +156,45 @@ export const CallModal: React.FC<CallModalProps> = ({
             <p className="text-xs text-amber-400 font-bold uppercase tracking-wider">
               {callSession.receiverRole === 'worker' ? '🔨 Verified Worker' : '🏢 Employer / Client'}
             </p>
-            <p className="text-xs text-slate-400 font-mono">
-              {callSession.receiverPhone}
-            </p>
+            
+            {/* Interactive Phone Number Link */}
+            <a
+              href={`tel:${cleanTargetPhone}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800/90 hover:bg-slate-700/90 text-amber-300 font-mono text-xs font-bold rounded-xl border border-slate-700 transition"
+              title="Click to dial this number on your phone"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+              <span>{callSession.receiverPhone}</span>
+            </a>
+
             {callSession.jobTitle && (
-              <p className="text-[11px] text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700">
+              <p className="text-[11px] text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700 truncate max-w-[260px] mx-auto mt-1">
                 Job: {callSession.jobTitle}
               </p>
             )}
           </div>
+
+          {/* Normal Phone Call Fallback Card (When In-App VoIP is waiting) */}
+          {status === 'ringing' && (
+            <div className="w-full bg-slate-800/90 border border-amber-500/40 rounded-2xl p-3 text-center space-y-2 animate-in fade-in slide-in-from-bottom-2 shadow-lg">
+              <div className="flex items-center justify-center gap-1.5 text-amber-400 text-xs font-black">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Normal Phone Call Fallback</span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-snug">
+                If the recipient is not active inside the app right now, dial their regular phone number:
+              </p>
+              
+              <a
+                href={`tel:${cleanTargetPhone}`}
+                onClick={() => playSound('click')}
+                className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Dial Normal Phone ({callSession.receiverPhone})</span>
+              </a>
+            </div>
+          )}
 
           {/* Live Audio Subtitle / Speech Bubble */}
           {status === 'connected' && subtitledMessage && (
@@ -163,12 +213,14 @@ export const CallModal: React.FC<CallModalProps> = ({
           {status === 'connected' && (
             <div className="flex flex-wrap justify-center gap-1.5 pt-1">
               <button
+                type="button"
                 onClick={() => handleSpeakSample('मैं 5 मिनट में पहुँच रहा हूँ')}
                 className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-semibold border border-slate-700 transition"
               >
                 "5 min me aa raha hu"
               </button>
               <button
+                type="button"
                 onClick={() => handleSpeakSample('स्टार्ट OTP 4829 है')}
                 className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-semibold border border-slate-700 transition"
               >
@@ -179,32 +231,34 @@ export const CallModal: React.FC<CallModalProps> = ({
         </div>
 
         {/* Bottom Call Controls */}
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-3 pt-2">
           {status === 'ringing' ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center justify-center gap-8">
-                {/* Decline Button */}
-                <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-col items-center gap-2.5">
+              <div className="flex items-center justify-center gap-6">
+                {/* Cancel / End Call Button */}
+                <div className="flex flex-col items-center gap-1">
                   <button
+                    type="button"
                     onClick={handleEnd}
-                    className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
-                    title="Decline Call"
+                    className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
+                    title="End / Cancel Call"
                   >
-                    <PhoneOff className="w-7 h-7" />
+                    <PhoneOff className="w-6 h-6" />
                   </button>
-                  <span className="text-[11px] text-slate-400 font-semibold">Decline</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">End Call</span>
                 </div>
 
-                {/* Answer Button */}
-                <div className="flex flex-col items-center gap-1.5">
+                {/* Simulate Answer Button */}
+                <div className="flex flex-col items-center gap-1">
                   <button
+                    type="button"
                     onClick={handleAnswer}
-                    className="w-16 h-16 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-900/50 transition animate-bounce cursor-pointer"
-                    title="Answer Call"
+                    className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-900/50 transition animate-bounce cursor-pointer"
+                    title="Simulate In-App Connect / Answer"
                   >
-                    <Phone className="w-7 h-7" />
+                    <Phone className="w-6 h-6" />
                   </button>
-                  <span className="text-[11px] text-emerald-400 font-semibold">Accept</span>
+                  <span className="text-[10px] text-emerald-400 font-bold">Answer (VoIP)</span>
                 </div>
               </div>
             </div>
@@ -212,6 +266,7 @@ export const CallModal: React.FC<CallModalProps> = ({
             <div className="flex items-center justify-center gap-5">
               {/* Mute Button */}
               <button
+                type="button"
                 onClick={() => {
                   setIsMuted(!isMuted);
                   playSound('click');
@@ -228,6 +283,7 @@ export const CallModal: React.FC<CallModalProps> = ({
 
               {/* End Call Button */}
               <button
+                type="button"
                 onClick={handleEnd}
                 className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
                 title="End Call"
@@ -237,6 +293,7 @@ export const CallModal: React.FC<CallModalProps> = ({
 
               {/* Speaker Button */}
               <button
+                type="button"
                 onClick={() => {
                   setIsSpeaker(!isSpeaker);
                   playSound('click');
@@ -253,14 +310,14 @@ export const CallModal: React.FC<CallModalProps> = ({
             </div>
           )}
 
-          {/* Cellular Fallback Link */}
-          <div className="text-center">
+          {/* Direct Cellular Link in footer */}
+          <div className="text-center pt-1 border-t border-slate-800">
             <a
-              href={`tel:${callSession.receiverPhone}`}
-              className="text-[11px] text-slate-400 hover:text-white underline inline-flex items-center gap-1 font-semibold"
+              href={`tel:${cleanTargetPhone}`}
+              className="text-[11px] text-slate-400 hover:text-amber-300 underline inline-flex items-center gap-1 font-semibold transition"
             >
               <ExternalLink className="w-3 h-3" />
-              <span>Or make direct cellular phone call ({callSession.receiverPhone})</span>
+              <span>Direct GSM call: {callSession.receiverPhone}</span>
             </a>
           </div>
         </div>

@@ -395,7 +395,10 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                   const platformFee = job.platformFee || Math.round(grossWage * 0.2);
                   const workerPayout = job.workerPayout || (grossWage - platformFee);
                   const completionDateStr = job.completionDate || job.completedAt || job.postedAt || 'Recently';
-                  const ratingScore = job.rating || job.customerRating || 5.0;
+                  const hasExplicitRating = (typeof job.rating === 'number' && job.rating > 0) || 
+                                            (typeof job.customerRating === 'number' && job.customerRating > 0) || 
+                                            (typeof job.ratingGiven === 'number' && job.ratingGiven > 0);
+                  const ratingScore = hasExplicitRating ? (job.rating ?? job.customerRating ?? job.ratingGiven) : null;
                   const feedbackText = job.review || job.customerReview || job.reviewGiven || 'Work completed with excellence.';
                   const tags = job.ratingTags || ['⚡ 100% Punctual', '🛠️ Master Craftsmanship'];
                   const txn = job.transactionRef || `UPI-DIHADI-${job.id.slice(-6).toUpperCase()}`;
@@ -460,10 +463,16 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                               <span className="text-[10px] font-black text-amber-950 uppercase tracking-wider">
                                 Employer Feedback & Rating
                               </span>
-                              <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-[11px] rounded-lg shadow-2xs">
-                                <Star className="w-3 h-3 fill-slate-950" />
-                                <span>{ratingScore.toFixed(1)} ★</span>
-                              </span>
+                              {ratingScore !== null ? (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-[11px] rounded-lg shadow-2xs">
+                                  <Star className="w-3 h-3 fill-slate-950" />
+                                  <span>{ratingScore.toFixed(1)} ★</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-500 font-semibold px-2 py-0.5 bg-slate-100 rounded-lg">
+                                  Pending Rating
+                                </span>
+                              )}
                             </div>
 
                             <button

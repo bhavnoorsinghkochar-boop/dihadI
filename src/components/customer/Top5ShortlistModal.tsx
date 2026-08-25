@@ -276,6 +276,9 @@ export const Top5ShortlistModal: React.FC<Top5ShortlistModalProps> = ({
                     <div className="text-right shrink-0">
                       <span className="text-base font-black text-slate-900">₹{worker.dailyRate}</span>
                       <span className="text-[10px] text-slate-500 block">per day</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5 block">
+                        🛡️ Prepaid Escrow
+                      </span>
                       <span className="text-[11px] font-bold text-amber-600 flex items-center justify-end gap-1 mt-0.5">
                         ★ {worker.rating} ({worker.reviewCount})
                       </span>

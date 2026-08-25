@@ -58,7 +58,10 @@ import {
   MessageCircle,
   FileDown,
   Mic,
-  MicOff
+  MicOff,
+  Crown,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 import { getGoogleMapsDirectionsUrl, calculateDistanceKm } from '../../utils/geo';
@@ -69,6 +72,7 @@ import { EditAvailabilityModal } from './EditAvailabilityModal';
 import { PortfolioUploadModal } from './PortfolioUploadModal';
 import { WorkerAvatarUploadModal } from './WorkerAvatarUploadModal';
 import { WorkerJobHistory } from './WorkerJobHistory';
+import { WorkerSubscriptionModal } from './WorkerSubscriptionModal';
 import { generateWorkerPerformancePdf } from '../../utils/pdfReportGenerator';
 
 interface WorkerAppProps {
@@ -84,6 +88,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     detectAndSetLiveLocation,
     snapToRealWorldAddress,
     isLocating,
+    workerAccounts,
     loginWorkerWithAuth,
     registerWorkerWithAuth,
     logoutWorker,
@@ -95,6 +100,8 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     startJobWithOtp,
     completeJobByWorker,
     withdrawWorkerEarnings,
+    subscribeWorkerPremium,
+    topUpWorkerWallet,
     submitWorkerKyc,
     verifyCurrentWorker,
     refreshWorkerGpsLocation,
@@ -107,17 +114,22 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     showNotification,
   } = useApp();
 
+  // Subscription Modal State
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
   // Auth Mode: 'login' or 'register'
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
 
   // Login form state
   const [loginId, setLoginId] = useState('ramesh');
   const [loginPassword, setLoginPassword] = useState('123');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Registration form state
   const [regUserId, setRegUserId] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regName, setRegName] = useState('');
   const [regPhone, setRegPhone] = useState('+91 98101 55678');
   const [regEmail, setRegEmail] = useState('bhavnoorsinghkochar@gmail.com');
@@ -690,7 +702,27 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
       setAuthError('Please enter your full name');
       return;
     }
-    setShowSecurityModal(true);
+    if (!regPassword.trim()) {
+      setAuthError('Please enter a password');
+      return;
+    }
+
+    const chosenId = regUserId.trim() || regPhone.replace(/[^0-9]/g, '') || regName.trim().toLowerCase().replace(/\s+/g, '_');
+    registerWorkerWithAuth({
+      userId: chosenId,
+      password: regPassword.trim(),
+      name: regName.trim(),
+      phone: regPhone.trim() || '+91 98101 55678',
+      email: regEmail.trim() || undefined,
+      isPhoneVerified: true,
+      isEmailVerified: !!regEmail.trim(),
+      primaryTrade: regTrade,
+      dailyRate: Number(regDailyRate) || 850,
+      experienceYears: Number(regExperienceYears) || 3,
+      area: regArea || `${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
+      aadhaarNumber: regAadhaarNumber || '7829-4412-9901',
+      upiId: regUpiId || `${chosenId}@upi`,
+    });
   };
 
   const handleVerificationSuccess = (verifiedData: {
@@ -700,10 +732,11 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     isPhoneVerified: boolean;
   }) => {
     setShowSecurityModal(false);
+    const chosenId = regUserId.trim() || (verifiedData.verifiedPhone || regPhone).replace(/[^0-9]/g, '');
     registerWorkerWithAuth({
-      userId: regUserId || regPhone.replace(/[^0-9]/g, ''),
-      password: regPassword || '123',
-      name: regName,
+      userId: chosenId,
+      password: regPassword.trim() || '123',
+      name: regName.trim(),
       phone: verifiedData.verifiedPhone || regPhone,
       email: verifiedData.verifiedEmail || regEmail,
       isPhoneVerified: verifiedData.isPhoneVerified,
@@ -711,9 +744,9 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
       primaryTrade: regTrade,
       dailyRate: Number(regDailyRate) || 850,
       experienceYears: Number(regExperienceYears) || 3,
-      area: regArea || 'Delhi NCR',
+      area: regArea || `${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
       aadhaarNumber: regAadhaarNumber || '7829-4412-9901',
-      upiId: regUpiId || `${regName.toLowerCase().replace(/\s+/g, '.')}@upi`,
+      upiId: regUpiId || `${chosenId}@upi`,
     });
   };
 
@@ -821,45 +854,65 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
           {authTab === 'login' ? (
             /* Login Form */
             <div className="space-y-4">
-              {/* Quick 1-Tap Demo Logins */}
+              {/* Quick 1-Tap Demo & Saved Accounts Logins */}
               <div className="space-y-2">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {getT(currentLanguage, 'demo_quick_login')}
+                  {getT(currentLanguage, 'demo_quick_login')} / Saved Logins
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('ramesh', '123')}
-                    className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-950 rounded-xl text-xs font-bold border border-amber-200 transition"
-                  >
-                    Ramesh Kumar (Mason)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('sunil', '123')}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition"
-                  >
-                    Sunil Sharma (Painter)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('deepak', '123')}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition"
-                  >
-                    Deepak (Plumber)
-                  </button>
+                  {workerAccounts && workerAccounts.length > 0 ? (
+                    workerAccounts.map((acc) => (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => handleQuickDemoLogin(acc.id, acc.password || '123')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
+                          acc.id === 'ramesh' 
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200' 
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-300 shadow-xs'
+                        }`}
+                      >
+                        <User className="w-3 h-3" />
+                        <span>{acc.name} ({acc.id})</span>
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickDemoLogin('ramesh', '123')}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-950 rounded-xl text-xs font-bold border border-amber-200 transition"
+                      >
+                        Ramesh Kumar (Mason)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickDemoLogin('sunil', '123')}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition"
+                      >
+                        Sunil Sharma (Painter)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickDemoLogin('deepak', '123')}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition"
+                      >
+                        Deepak (Plumber)
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
               <form onSubmit={handleLoginSubmit} className="space-y-3.5 text-xs">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    {getT(currentLanguage, 'auth_user_id_label')}
+                    {getT(currentLanguage, 'auth_user_id_label')} / Mobile / Email
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="e.g. ramesh or 9810155678"
+                      placeholder="e.g. ramesh, bhavnoor, or 9810155678"
                       value={loginId}
                       onChange={(e) => setLoginId(e.target.value)}
                       required
@@ -870,19 +923,34 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    {getT(currentLanguage, 'auth_password_label')}
+                  <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                    <span>{getT(currentLanguage, 'auth_password_label')}</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="text-[11px] text-amber-700 font-semibold flex items-center gap-1 hover:underline"
+                    >
+                      {showLoginPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      <span>{showLoginPassword ? 'Hide' : 'Show Password'}</span>
+                    </button>
                   </label>
                   <div className="relative">
                     <input
-                      type="password"
+                      type={showLoginPassword ? 'text' : 'password'}
                       placeholder="Enter password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-amber-500 pl-9"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-amber-500 pl-9 pr-10"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      {showLoginPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
                 </div>
 
@@ -902,7 +970,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                 <label className="font-bold text-slate-700 block mb-1">Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Ramesh Kumar"
+                  placeholder="e.g. Ramesh Kumar or Bhavnoor Singh"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   required
@@ -912,25 +980,43 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">User ID</label>
+                  <label className="font-bold text-slate-700 block mb-1">User ID / Username</label>
                   <input
                     type="text"
-                    placeholder="e.g. ramesh"
+                    placeholder="e.g. bhavnoor"
                     value={regUserId}
                     onChange={(e) => setRegUserId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Password</label>
-                  <input
-                    type="password"
-                    placeholder="e.g. 123"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-500"
-                  />
+                  <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                    <span>Password</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="text-[10px] text-amber-700 font-semibold"
+                    >
+                      {showRegPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      placeholder="e.g. mypass123"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-500 pr-8"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1254,6 +1340,27 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
           >
             <Power className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{currentWorker.isOnline ? 'Online (Broadcasting)' : 'Offline'}</span>
+          </button>
+
+          {/* Zero Commission VIP Pass Badge / Button */}
+          <button
+            onClick={() => {
+              playSound('click');
+              setShowSubscriptionModal(true);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer ${
+              (currentWorker.zeroCommissionJobsRemaining || 0) > 0
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
+                : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:opacity-90 shadow-sm'
+            }`}
+            title="Get 6 Jobs with 0% Platform Commission"
+          >
+            <Crown className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              {(currentWorker.zeroCommissionJobsRemaining || 0) > 0
+                ? `0% VIP (${currentWorker.zeroCommissionJobsRemaining} Left)`
+                : '0% Comm. Pass'}
+            </span>
           </button>
 
           {/* Wallet Balance Badge */}
@@ -1900,13 +2007,17 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                             <Sparkles className="w-2.5 h-2.5 text-blue-600" />
                             {job.distanceKm} km away
                           </span>
+                          <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[10px] font-bold rounded-md flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Prepaid by Employer</span>
+                          </span>
                         </div>
 
                         <div className="text-right shrink-0">
                           <span className="text-lg font-black text-emerald-600 font-mono leading-none block">
                             ₹{job.workerPayout}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-bold">Daily Wage</span>
+                          <span className="text-[10px] text-emerald-700 font-bold">100% in Escrow</span>
                         </div>
                       </div>
 
@@ -2130,12 +2241,16 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                         className="bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition"
                       >
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-black rounded-md border border-amber-500/30">
                               {job.trade}
                             </span>
                             <span className="text-xs font-black text-white">{job.title}</span>
                             <span className="text-[10px] text-emerald-400 font-mono font-bold">({job.distanceKm} km)</span>
+                            <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded-md border border-emerald-500/30 flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                              <span>Prepaid in Escrow</span>
+                            </span>
                           </div>
                           <p className="text-[11px] text-slate-400 flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-slate-500" />
@@ -2209,9 +2324,15 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="px-2.5 py-1 bg-amber-500 text-slate-950 font-black text-[10px] rounded-lg">
-                            {job.status === 'accepted' ? 'Pending Start OTP' : 'Work In Progress'}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2.5 py-1 bg-amber-500 text-slate-950 font-black text-[10px] rounded-lg">
+                              {job.status === 'accepted' ? 'Pending Start OTP' : 'Work In Progress'}
+                            </span>
+                            <span className="px-2 py-0.5 bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-bold rounded-md flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                              <span>100% Prepaid in Escrow</span>
+                            </span>
+                          </div>
                           <h4 className="font-black text-slate-900 text-base mt-2">{job.title}</h4>
                           <p className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3.5 h-3.5 text-slate-500" />
@@ -2415,6 +2536,69 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
         {/* TAB 4: WALLET & EARNINGS BREAKDOWN */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
+            {/* VIP Zero-Commission Feature Card */}
+            <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 border-2 border-amber-400/60 rounded-3xl p-5 sm:p-6 relative overflow-hidden shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
+                    <Crown className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full">
+                        Worker VIP Subscription
+                      </span>
+                      {(currentWorker.zeroCommissionJobsRemaining || 0) > 0 && (
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                          Active Pass
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                      0% Commission VIP Pass (₹2,000)
+                    </h3>
+                    <p className="text-xs text-slate-600 max-w-xl">
+                      Get <strong>6 jobs with 0% platform commission</strong> (keep 100% of employer wage). The ₹2,000 fee can be <strong>directly deducted from your wallet balance</strong>!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:items-end gap-2 shrink-0">
+                  <div className="text-right">
+                    <span className="text-xs text-slate-500 block">VIP Status:</span>
+                    <span className="text-sm font-black text-slate-900">
+                      {(currentWorker.zeroCommissionJobsRemaining || 0) > 0
+                        ? `🌟 ${currentWorker.zeroCommissionJobsRemaining} of 6 Jobs Remaining`
+                        : 'Not Active'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      playSound('click');
+                      setShowSubscriptionModal(true);
+                    }}
+                    className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>
+                      {(currentWorker.zeroCommissionJobsRemaining || 0) > 0
+                        ? 'Manage / Top-up VIP Pass'
+                        : 'Activate Pass (Pay ₹2,000)'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {(currentWorker.commissionSavedTotal || 0) > 0 && (
+                <div className="mt-4 pt-3 border-t border-amber-300/60 flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Total Platform Fees Saved:</span>
+                  <span className="font-black text-emerald-700 font-mono">
+                    🎉 ₹{currentWorker.commissionSavedTotal} Saved in Platform Fees
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Financial Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 text-white rounded-3xl p-5 space-y-2 border border-slate-800 shadow-md">
@@ -2836,6 +3020,15 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
         onVerified={(verifiedEmail) => {
           showNotification('Gmail Verified', `✓ Worker email ${verifiedEmail} confirmed and verified.`);
         }}
+      />
+
+      {/* 0% Commission VIP Pass Subscription Modal */}
+      <WorkerSubscriptionModal
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        worker={currentWorker}
+        onSubscribe={(method) => subscribeWorkerPremium(currentWorker.id, method)}
+        onTopUpWallet={(amount) => topUpWorkerWallet(amount)}
       />
     </div>
   );

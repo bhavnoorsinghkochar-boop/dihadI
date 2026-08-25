@@ -19,7 +19,8 @@ export type JobStatus =
   | 'in_progress' 
   | 'completed_pending_payment' 
   | 'paid_and_closed' 
-  | 'cancelled';
+  | 'cancelled'
+  | 'disputed';
 
 export interface GpsCoordinates {
   lat: number;
@@ -62,6 +63,11 @@ export interface WorkerProfile {
   totalEarnings: number;
   walletBalance: number;
   badge: string;
+  // Subscription & VIP Zero-Commission Pass
+  isPremiumWorker?: boolean;
+  premiumWorkerExpiresAt?: string;
+  zeroCommissionJobsRemaining?: number; // 6 jobs with 0% commission
+  commissionSavedTotal?: number;
   // UPI & Banking Details
   upiId: string; // e.g. 9810155678@paytm or ramesh@upi
   bankName: string;
@@ -81,6 +87,22 @@ export interface CustomerProfile {
   address: string;
   gpsLocation: GpsCoordinates;
   upiId: string;
+  // Premium Subscription with 1 Month Free Service (₹15,000)
+  isPremiumCustomer?: boolean;
+  premiumCustomerExpiresAt?: string;
+  premiumFreeServiceMonths?: number;
+  premiumFeePaid?: number; // ₹15,000
+}
+
+export interface AdminTransaction {
+  id: string;
+  type: 'SUBSCRIPTION_CREDIT' | 'WORKER_PAYOUT_DISBURSEMENT' | 'COMMISSION_FEE' | 'REFUND_DISBURSEMENT';
+  amount: number;
+  description: string;
+  timestamp: string;
+  customerName?: string;
+  workerName?: string;
+  jobId?: string;
 }
 
 export interface AdminProfile {
@@ -88,6 +110,9 @@ export interface AdminProfile {
   name: string;
   email: string;
   role: string;
+  treasuryBalance?: number;
+  totalSubscriptionRevenue?: number;
+  totalDisbursedToWorkers?: number;
 }
 
 export interface Job {
@@ -115,7 +140,15 @@ export interface Job {
   postedAt: string;
   platformFee: number; // 20%
   workerPayout: number; // 80%
+  zeroCommissionApplied?: boolean;
+  adminFundedPayout?: boolean;
   isPaid: boolean;
+  isEscrowPrepaid?: boolean;
+  escrowPrepaidAmount?: number;
+  escrowStatus?: 'held_in_escrow' | 'released_to_worker' | 'refunded_to_customer' | 'refund_requested_dispute';
+  escrowPrepaidAt?: string;
+  disputeId?: string;
+  disputeReason?: string;
   paidVia?: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH';
   transactionRef?: string;
   rating?: number;
@@ -198,12 +231,19 @@ export interface CityInfo {
 export interface DisputeItem {
   id: string;
   jobId: string;
+  jobTitle?: string;
+  workerId?: string;
   workerName: string;
+  workerPhone?: string;
   customerName: string;
+  customerPhone?: string;
   reason: string;
-  status: 'open' | 'resolved';
+  detailedReason?: string;
+  status: 'open' | 'resolved' | 'rejected';
   amount: number;
   reportedAt: string;
+  resolutionNote?: string;
+  resolvedAt?: string;
 }
 
 export interface HyperlocalMatchResult {

@@ -10,6 +10,8 @@ import { MultiChannelAlertModal } from './components/common/MultiChannelAlertMod
 import { Top5ShortlistModal } from './components/customer/Top5ShortlistModal';
 import { ChatNotificationToast } from './components/common/ChatNotificationToast';
 import { QuickChatModal } from './components/common/QuickChatModal';
+import { SubscriptionPromoModal } from './components/common/SubscriptionPromoModal';
+import { AppProtectionGuaranteeModal } from './components/common/AppProtectionGuaranteeModal';
 import { Bell } from 'lucide-react';
 
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -43,6 +45,12 @@ const MainLayout: React.FC = () => {
     activeGlobalChat,
     openGlobalChat,
     closeGlobalChat,
+    isSubscriptionPromoOpen,
+    promoInitialRole,
+    closeSubscriptionPromo,
+    isProtectionModalOpen,
+    protectionModalData,
+    closeProtectionModal,
   } = useApp();
 
   return (
@@ -228,6 +236,29 @@ const MainLayout: React.FC = () => {
           onOpenRadar={(job) => {
             openGpsRadar(job);
           }}
+        />
+      )}
+
+      {/* Global YouTube-Style Subscription Promo Ad Interstitial Modal */}
+      {isSubscriptionPromoOpen && (
+        <SubscriptionPromoModal
+          isOpen={isSubscriptionPromoOpen}
+          onClose={closeSubscriptionPromo}
+          initialRole={promoInitialRole || (currentRole === 'worker' ? 'worker' : 'customer')}
+          allowRoleSwitch={false}
+        />
+      )}
+
+      {/* Global Safety, Direct Work Warning & 100% Protection Guarantee Modal */}
+      {isProtectionModalOpen && (
+        <AppProtectionGuaranteeModal
+          isOpen={isProtectionModalOpen}
+          onClose={closeProtectionModal}
+          variant={protectionModalData?.variant || 'post_rating'}
+          workerName={protectionModalData?.workerName}
+          workerTrade={protectionModalData?.workerTrade}
+          workerAadhaarMasked={protectionModalData?.workerAadhaarMasked}
+          refundAmount={protectionModalData?.refundAmount}
         />
       )}
 

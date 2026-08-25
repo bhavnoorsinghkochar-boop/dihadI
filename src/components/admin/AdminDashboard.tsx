@@ -19,7 +19,12 @@ import {
   ShieldCheck,
   ShieldAlert,
   Search,
-  Briefcase
+  Briefcase,
+  Coins,
+  Wallet,
+  Crown,
+  ArrowDownRight,
+  ArrowUpRight
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -39,14 +44,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
     seedMoreWorkersForVerification,
     setCurrentRole,
     currentLanguage,
+    adminTreasuryBalance,
+    adminSubscriptionRevenue,
+    adminWorkerPayoutsDisbursed,
+    adminTransactions,
+    disburseWorkerWageFromAdmin,
+    subscribeCustomerPremium,
+    currentCustomer,
   } = useApp();
 
   const [adminId, setAdminId] = useState('ops@dihadi.co');
   const [adminPassword, setAdminPassword] = useState('admin');
   const [authError, setAuthError] = useState<string | null>(null);
   
-  // Admin navigation tabs: 'kyc' | 'workers' | 'jobs'
-  const [adminTab, setAdminTab] = useState<'kyc' | 'workers' | 'jobs'>('kyc');
+  // Admin navigation tabs: 'treasury' | 'kyc' | 'workers' | 'jobs'
+  const [adminTab, setAdminTab] = useState<'treasury' | 'kyc' | 'workers' | 'jobs'>('treasury');
   // KYC sub-filter: 'pending' | 'approved' | 'all'
   const [kycFilter, setKycFilter] = useState<'pending' | 'approved' | 'all'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
@@ -234,10 +246,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex border-b border-slate-800 bg-slate-900 text-xs font-bold shrink-0 px-2 pt-2 gap-1">
+      <div className="flex border-b border-slate-800 bg-slate-900 text-xs font-bold shrink-0 px-2 pt-2 gap-1 overflow-x-auto">
+        <button
+          onClick={() => setAdminTab('treasury')}
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
+            adminTab === 'treasury'
+              ? 'bg-slate-800 text-amber-400 border-t-2 border-amber-500 shadow-xs'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+          }`}
+        >
+          <Coins className="w-3.5 h-3.5 text-amber-400" />
+          <span>Treasury & Payouts</span>
+        </button>
+
         <button
           onClick={() => setAdminTab('kyc')}
-          className={`flex-1 py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[110px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
             adminTab === 'kyc'
               ? 'bg-slate-800 text-amber-400 border-t-2 border-amber-500'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -254,7 +278,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
 
         <button
           onClick={() => setAdminTab('workers')}
-          className={`flex-1 py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[100px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
             adminTab === 'workers'
               ? 'bg-slate-800 text-blue-400 border-t-2 border-blue-500'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -269,7 +293,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
 
         <button
           onClick={() => setAdminTab('jobs')}
-          className={`flex-1 py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
             adminTab === 'jobs'
               ? 'bg-slate-800 text-emerald-400 border-t-2 border-emerald-500'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -289,20 +313,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
         <div className="grid grid-cols-3 gap-2.5">
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-              <span>Commission</span>
-              <TrendingUp className="w-3 h-3 text-amber-400" />
+              <span>Admin Treasury</span>
+              <Wallet className="w-3 h-3 text-emerald-400" />
             </div>
-            <p className="text-lg font-black text-amber-400 font-mono">₹{totalCommissionRevenue}</p>
-            <p className="text-[9px] text-slate-400 font-mono truncate">GMV: ₹{totalGMV}</p>
+            <p className="text-lg font-black text-emerald-400 font-mono">₹{adminTreasuryBalance.toLocaleString('en-IN')}</p>
+            <p className="text-[9px] text-amber-400 font-mono truncate">Rev: ₹{adminSubscriptionRevenue.toLocaleString('en-IN')}</p>
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-              <span>Workers</span>
-              <Users className="w-3 h-3 text-blue-400" />
+              <span>Auto Disbursed</span>
+              <ArrowDownRight className="w-3 h-3 text-blue-400" />
             </div>
-            <p className="text-lg font-black text-white font-mono">{workers.length}</p>
-            <p className="text-[9px] text-emerald-400 font-mono">{activeWorkersCount} Online</p>
+            <p className="text-lg font-black text-blue-400 font-mono">₹{adminWorkerPayoutsDisbursed.toLocaleString('en-IN')}</p>
+            <p className="text-[9px] text-slate-400 font-mono">To Worker Wallets</p>
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
@@ -310,10 +334,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
               <span>KYC Verified</span>
               <ShieldCheck className="w-3 h-3 text-emerald-400" />
             </div>
-            <p className="text-lg font-black text-emerald-400 font-mono">{verifiedWorkersCount}</p>
+            <p className="text-lg font-black text-white font-mono">{verifiedWorkersCount}</p>
             <p className="text-[9px] text-amber-400 font-mono">{pendingVerifications.length} Pending</p>
           </div>
         </div>
+
+        {/* TAB 0: ADMIN TREASURY, SUBSCRIPTIONS & AUTOMATED WORKER PAYOUTS */}
+        {adminTab === 'treasury' && (
+          <div className="space-y-3">
+            {/* Treasury Highlight Banner */}
+            <div className="bg-linear-to-r from-amber-500/10 via-slate-800 to-emerald-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
+                      Admin Subscription & Auto-Payout Treasury
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Customer ₹15,000 Gold Memberships & Worker VIP subscriptions flow into Admin Account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mechanism Breakdown */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    <span>Customer ₹15,000 Inflow</span>
+                  </div>
+                  <p className="text-slate-300">
+                    Customers pay ₹15,000 for Gold Membership (1 month free service & zero commission). 100% of this money is received in the Admin Account.
+                  </p>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                    <ArrowDownRight className="w-3.5 h-3.5" />
+                    <span>Automatic Worker Payouts</span>
+                  </div>
+                  <p className="text-slate-300">
+                    When a Gold Customer hires a worker, the Admin Treasury automatically sends the worker's daily wage directly into their digital wallet.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Treasury Transaction Audit Log */}
+            <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                  <Coins className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Real-Time Admin Ledger & Audit Log ({adminTransactions.length})</span>
+                </h4>
+              </div>
+
+              <div className="space-y-2">
+                {adminTransactions.length === 0 ? (
+                  <p className="text-slate-400 text-center py-4">No treasury transactions recorded yet.</p>
+                ) : (
+                  adminTransactions.map((tx) => {
+                    const isCredit = tx.type === 'SUBSCRIPTION_CREDIT';
+                    return (
+                      <div 
+                        key={tx.id} 
+                        className="bg-slate-800 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            isCredit 
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          }`}>
+                            {isCredit ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white text-xs leading-snug">{tx.description}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {tx.timestamp} {tx.customerName ? `• Customer: ${tx.customerName}` : ''} {tx.workerName ? `• Worker: ${tx.workerName}` : ''}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className={`font-mono font-black text-xs ${
+                            isCredit ? 'text-emerald-400' : 'text-blue-400'
+                          }`}>
+                            {isCredit ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
+                          </span>
+                          <span className="block text-[9px] text-slate-400 uppercase font-bold">
+                            {isCredit ? 'Admin Inflow' : 'Worker Auto-Credit'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TAB 1: KYC VERIFICATION QUEUE */}
         {adminTab === 'kyc' && (

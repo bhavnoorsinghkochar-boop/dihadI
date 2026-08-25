@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playSound } from '../../utils/audio';
+import { useApp } from '../../context/AppContext';
 
 interface UpiQrPaymentModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ interface UpiQrPaymentModalProps {
   accountNumberMasked?: string;
   ifscCode?: string;
   isWorkerReceiving?: boolean;
+  isCustomerSubscriptionActive?: boolean;
   jobTitle?: string;
   onPaymentSuccess?: (paidVia: 'UPI_QR' | 'UPI_DIRECT', txnId: string, rating?: number, review?: string, tags?: string[]) => void;
 }
@@ -76,14 +78,18 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
   accountNumberMasked = '•••• •••• 4819',
   ifscCode = 'SBIN0004921',
   isWorkerReceiving = false,
+  isCustomerSubscriptionActive = false,
   jobTitle,
   onPaymentSuccess,
 }) => {
+  const { openProtectionModal, currentCustomer } = useApp();
   const [copied, setCopied] = useState(false);
   const [selectedApp, setSelectedApp] = useState<'gpay' | 'phonepe' | 'paytm' | 'bhim' | 'cred'>('gpay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'qr' | 'barcode' | 'bank'>('qr');
   
+  const isSubscribedCustomer = Boolean(isCustomerSubscriptionActive || currentCustomer?.isPremiumCustomer);
+
   // Rating step state after payment confirmation
   const [step, setStep] = useState<'payment' | 'rating'>('payment');
   const [completedTxn, setCompletedTxn] = useState<{ method: 'UPI_QR' | 'UPI_DIRECT'; txnId: string } | null>(null);
@@ -160,6 +166,17 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
       );
     }
     onClose();
+
+    // Trigger Important Direct Hiring Warning & Platform Protection Advisory
+    setTimeout(() => {
+      openProtectionModal({
+        variant: 'post_rating',
+        workerName: targetWorkerName,
+        workerTrade: workerTrade,
+        workerAadhaarMasked: 'Govt. Aadhaar Verified',
+        refundAmount: amount
+      });
+    }, 450);
   };
 
   const currentDisplayRating = hoveredRating !== null ? hoveredRating : rating;
@@ -194,30 +211,60 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
         {step === 'payment' ? (
           <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
             {/* Amount and Beneficiary banner */}
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-3.5 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold text-amber-800 block uppercase tracking-wider">
-                  {isWorkerReceiving ? 'Your Receiving UPI ID' : 'Direct Beneficiary Transfer'}
-                </span>
-                <h4 className="text-sm font-black text-slate-900">{targetWorkerName}</h4>
-                <p className="text-xs text-slate-600 font-mono flex items-center gap-1 mt-0.5">
-                  <span>{cleanUpi}</span>
-                  <button
-                    onClick={handleCopyUpi}
-                    className="p-1 hover:bg-amber-100 rounded text-amber-800 transition"
-                    title="Copy UPI ID"
-                  >
-                    {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                  </button>
+            {isSubscribedCustomer && !isWorkerReceiving ? (
+              <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 rounded-2xl p-4 shadow-md space-y-2 border border-amber-400">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className="w-5 h-5 fill-slate-950 text-slate-950" />
+                    <span className="text-xs font-black uppercase tracking-wider">
+                      Dihadi Gold Plan Active (₹15,000)
+                    </span>
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-slate-950 text-amber-400 text-[10px] font-black rounded-full">
+                    100% FREE SERVICE
+                  </span>
+                </div>
+                <div className="flex justify-between items-end bg-slate-950/10 p-2.5 rounded-xl border border-slate-950/15">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-900 block">Beneficiary Worker</span>
+                    <h4 className="text-sm font-black text-slate-950">{targetWorkerName}</h4>
+                    <p className="text-[10px] text-slate-800 font-mono mt-0.5">Disbursing ₹{amount} from Admin Treasury</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-slate-800 block uppercase">You Pay</span>
+                    <span className="text-2xl font-black text-slate-950 font-mono">₹0</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-900 font-medium">
+                  ✨ No UPI deduction from your bank. Worker receives their full wage directly from Dihadi Admin.
                 </p>
               </div>
-              <div className="text-right">
-                <span className="text-[10px] font-bold text-amber-800 uppercase block">Amount</span>
-                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-                  ₹{amount}
-                </span>
+            ) : (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-amber-800 block uppercase tracking-wider">
+                    {isWorkerReceiving ? 'Your Receiving UPI ID' : 'Direct Beneficiary Transfer'}
+                  </span>
+                  <h4 className="text-sm font-black text-slate-900">{targetWorkerName}</h4>
+                  <p className="text-xs text-slate-600 font-mono flex items-center gap-1 mt-0.5">
+                    <span>{cleanUpi}</span>
+                    <button
+                      onClick={handleCopyUpi}
+                      className="p-1 hover:bg-amber-100 rounded text-amber-800 transition"
+                      title="Copy UPI ID"
+                    >
+                      {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-amber-800 uppercase block">Amount</span>
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
+                    ₹{amount}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Mode Switcher Tabs */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
@@ -478,24 +525,45 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
               </button>
 
               {!isWorkerReceiving ? (
-                <button
-                  onClick={() => handleSimulateUpiPay('UPI_QR')}
-                  disabled={isProcessing}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Connecting to UPI Gateway...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>Confirm UPI Payment (₹{amount})</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                isSubscribedCustomer ? (
+                  <button
+                    onClick={() => handleSimulateUpiPay('UPI_DIRECT')}
+                    disabled={isProcessing}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 text-xs font-black transition flex items-center justify-center gap-2 shadow-md disabled:opacity-50 cursor-pointer"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                        <span>Disbursing From Admin Treasury...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="w-4 h-4 text-slate-950 fill-slate-950" />
+                        <span>Use My Subscription (Release ₹0 Free)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSimulateUpiPay('UPI_QR')}
+                    disabled={isProcessing}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Connecting to UPI Gateway...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>Confirm UPI Payment (₹{amount})</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                )
               ) : (
                 <button
                   onClick={handleCopyUpi}

@@ -46,12 +46,17 @@ import {
   Copy,
   ExternalLink,
   MessageCircle,
-  Check
+  Check,
+  Crown,
+  Eye,
+  EyeOff,
+  AlertTriangle
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 import { SecurityVerificationModal, GmailOtpVerificationModal, GmailOtpVerificationSection } from '../common/SecurityVerificationModal';
 import { RateEmployeeModal } from '../common/RateEmployeeModal';
 import { QuickChatModal, ChatTarget } from '../common/QuickChatModal';
+import { CustomerSubscriptionModal } from './CustomerSubscriptionModal';
 
 interface CustomerAppProps {
   isEmbedded?: boolean;
@@ -66,6 +71,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     detectAndSetLiveLocation,
     snapToRealWorldAddress,
     isLocating,
+    customerAccounts,
     loginCustomerWithAuth,
     registerCustomerWithAuth,
     loginCustomer,
@@ -76,6 +82,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     workers,
     postJob,
     releasePaymentByCustomer,
+    subscribeCustomerPremium,
     rateWorkerJob,
     setCurrentRole,
     currentLanguage,
@@ -91,7 +98,33 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     latestMatchedJob,
     getTop5WorkersForJob,
     matchJobWithWorkers,
+    openProtectionModal,
+    refundEscrowToCustomer,
+    raiseJobComplaint,
+    openSubscriptionPromo,
   } = useApp();
+
+  // Subscription Modal State
+  const [showCustomerSubscriptionModal, setShowCustomerSubscriptionModal] = useState(false);
+
+  // Dispute & Complaint Modal State
+  const [complaintJob, setComplaintJob] = useState<Job | null>(null);
+  const [complaintReason, setComplaintReason] = useState<string>('Worker did not arrive at site / Absent');
+  const [complaintDetails, setComplaintDetails] = useState<string>('');
+  const [isSubmittingComplaint, setIsSubmittingComplaint] = useState<boolean>(false);
+
+  const handleSubmitComplaint = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!complaintJob) return;
+    setIsSubmittingComplaint(true);
+    setTimeout(() => {
+      setIsSubmittingComplaint(false);
+      raiseJobComplaint(complaintJob.id, complaintReason, complaintDetails);
+      setComplaintJob(null);
+      setComplaintReason('Worker did not arrive at site / Absent');
+      setComplaintDetails('');
+    }, 350);
+  };
 
   // Navigation Sub-Tabs: 'find_workers' | 'my_bookings' | 'support'
   const [activeTab, setActiveTab] = useState<'find_workers' | 'my_bookings' | 'support'>('find_workers');
@@ -119,12 +152,14 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
   // Login form states
   const [loginId, setLoginId] = useState('pooja');
   const [loginPassword, setLoginPassword] = useState('123');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Registration form states
   const [regName, setRegName] = useState('');
   const [regUserId, setRegUserId] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regPhone, setRegPhone] = useState('+91 99100 88221');
   const [regEmail, setRegEmail] = useState('bhavnoorsinghkochar@gmail.com');
   const [regArea, setRegArea] = useState(() => currentCity?.defaultArea || 'Model Town');
@@ -225,7 +260,24 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
       setAuthError('Please enter your full name');
       return;
     }
-    setShowSecurityModal(true);
+    if (!regPassword.trim()) {
+      setAuthError('Please enter a password');
+      return;
+    }
+
+    const chosenId = regUserId.trim() || regPhone.replace(/[^0-9]/g, '') || regName.trim().toLowerCase().replace(/\s+/g, '_');
+    registerCustomerWithAuth({
+      userId: chosenId,
+      password: regPassword.trim(),
+      name: regName.trim(),
+      phone: regPhone.trim() || '+91 99100 88221',
+      email: regEmail.trim() || undefined,
+      isPhoneVerified: true,
+      isEmailVerified: !!regEmail.trim(),
+      area: regArea || currentCity?.defaultArea || 'Model Town',
+      address: regAddress || `House 142, ${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
+      upiId: regUpi || `${chosenId}@upi`,
+    });
   };
 
   const handleVerificationSuccess = (verifiedData: {
@@ -235,17 +287,18 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     isPhoneVerified: boolean;
   }) => {
     setShowSecurityModal(false);
+    const chosenId = regUserId.trim() || (verifiedData.verifiedPhone || regPhone).replace(/[^0-9]/g, '');
     registerCustomerWithAuth({
-      userId: regUserId || regPhone.replace(/[^0-9]/g, ''),
-      password: regPassword || '123',
-      name: regName,
+      userId: chosenId,
+      password: regPassword.trim() || '123',
+      name: regName.trim(),
       phone: verifiedData.verifiedPhone || regPhone,
       email: verifiedData.verifiedEmail || regEmail,
       isPhoneVerified: verifiedData.isPhoneVerified,
       isEmailVerified: verifiedData.isEmailVerified,
-      area: regArea,
-      address: regAddress,
-      upiId: regUpi || `${regName.toLowerCase().replace(/\s+/g, '.')}@upi`,
+      area: regArea || currentCity?.defaultArea || 'Model Town',
+      address: regAddress || `House 142, ${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
+      upiId: regUpi || `${chosenId}@upi`,
     });
   };
 
@@ -487,35 +540,55 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {getT(currentLanguage, 'demo_quick_login')}
+                  {getT(currentLanguage, 'demo_quick_login')} / Saved Logins
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('pooja', '123')}
-                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-950 rounded-lg text-[11px] font-bold border border-blue-200 transition"
-                  >
-                    Pooja Verma (Model Town)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('vikram', '123')}
-                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-semibold border border-slate-200 transition"
-                  >
-                    Vikram Sethi (Sarabha Nagar)
-                  </button>
+                  {customerAccounts && customerAccounts.length > 0 ? (
+                    customerAccounts.map((acc) => (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => handleQuickDemoLogin(acc.id, acc.password || '123')}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition flex items-center gap-1 ${
+                          acc.id === 'pooja' 
+                            ? 'bg-blue-50 hover:bg-blue-100 text-blue-950 border-blue-200' 
+                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-300'
+                        }`}
+                      >
+                        <User className="w-3 h-3" />
+                        <span>{acc.name} ({acc.id})</span>
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickDemoLogin('pooja', '123')}
+                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-950 rounded-lg text-[11px] font-bold border border-blue-200 transition"
+                      >
+                        Pooja Verma (Model Town)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickDemoLogin('vikram', '123')}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-semibold border border-slate-200 transition"
+                      >
+                        Vikram Sethi (Sarabha Nagar)
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
               <form onSubmit={handleLoginSubmit} className="space-y-3 text-xs">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    {getT(currentLanguage, 'auth_user_id_label')}
+                    {getT(currentLanguage, 'auth_user_id_label')} / Mobile / Email
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="e.g. pooja or 9910088221"
+                      placeholder="e.g. pooja, bhavnoor, or 9910088221"
                       value={loginId}
                       onChange={(e) => setLoginId(e.target.value)}
                       required
@@ -526,19 +599,34 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    {getT(currentLanguage, 'auth_password_label')}
+                  <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                    <span>{getT(currentLanguage, 'auth_password_label')}</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="text-[10px] text-blue-700 font-semibold flex items-center gap-1 hover:underline"
+                    >
+                      {showLoginPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      <span>{showLoginPassword ? 'Hide' : 'Show Password'}</span>
+                    </button>
                   </label>
                   <div className="relative">
                     <input
-                      type="password"
+                      type={showLoginPassword ? 'text' : 'password'}
                       placeholder="Enter password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600 pl-8"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600 pl-8 pr-9"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      {showLoginPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
                 </div>
 
@@ -560,7 +648,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Pooja Verma"
+                  placeholder="e.g. Pooja Verma or Bhavnoor Singh"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
@@ -570,7 +658,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">User ID</label>
+                  <label className="font-bold text-slate-700 block mb-1">User ID / Username</label>
                   <input
                     type="text"
                     placeholder="e.g. pooja"
@@ -580,15 +668,33 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Password</label>
-                  <input
-                    type="password"
-                    placeholder="e.g. 123"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
-                  />
+                  <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                    <span>Password</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="text-[10px] text-blue-700 font-semibold"
+                    >
+                      {showRegPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      placeholder="e.g. mypass123"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 pr-8"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -795,9 +901,30 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
         {/* Right User & Quick Post Job Actions */}
         <div className="flex items-center gap-3">
+          {/* Gold Club Membership Button */}
+          <button
+            onClick={() => {
+              playSound('click');
+              setShowCustomerSubscriptionModal(true);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer ${
+              currentCustomer?.isPremiumCustomer
+                ? 'bg-amber-500/20 text-amber-800 border border-amber-400 hover:bg-amber-500/30'
+                : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:opacity-90'
+            }`}
+            title="Dihadi Gold: 1 Month Free Service"
+          >
+            <Crown className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              {currentCustomer?.isPremiumCustomer
+                ? 'Gold Member (1 Mo Free)'
+                : 'Dihadi Gold (1 Mo Free)'}
+            </span>
+          </button>
+
           <button
             onClick={() => setShowPostModal(true)}
-            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Post a Job</span>
@@ -928,6 +1055,48 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Dihadi Gold Club Callout Banner */}
+          <div className="bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 border-2 border-amber-400/70 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
+                <Crown className="w-7 h-7" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full">
+                    Customer Gold Pass
+                  </span>
+                  {currentCustomer?.isPremiumCustomer && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-700 text-white px-2 py-0.5 rounded-full">
+                      Active: 1 Month Free Service
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  Dihadi Gold: Get 1 Month 100% Free Service & ₹0 Booking Fees
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Plan fee: <strong>₹1,500</strong> for 30 days of unlimited 0% platform surcharge bookings, priority radar dispatch & free KYC dossiers!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                playSound('click');
+                setShowCustomerSubscriptionModal(true);
+              }}
+              className="px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-2xl transition shadow-md flex items-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Crown className="w-4 h-4" />
+              <span>
+                {currentCustomer?.isPremiumCustomer
+                  ? 'Manage Gold Membership'
+                  : 'Get 1 Month Free Pass (₹1,500)'}
+              </span>
+            </button>
           </div>
 
           {/* B. Popular Services Category Chips (As shown in screenshot) */}
@@ -1576,6 +1745,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                            job.status === 'completed_pending_payment' ? 'Work Completed (Payment Due)' :
                            job.status}
                         </span>
+
+                        <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold rounded-md flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Prepaid Escrow Protected</span>
+                        </span>
                       </div>
                       <h4 className="text-base font-black text-slate-900 mt-1.5">{job.title}</h4>
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
@@ -1586,7 +1760,20 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
                     <div className="text-right">
                       <span className="text-lg font-black text-slate-900">₹{job.dailyWage}</span>
-                      <span className="text-[10px] text-slate-500 block">Total Daily Wage</span>
+                      <span className="text-[10px] text-emerald-700 font-bold block">100% Escrow Held</span>
+                      {job.status !== 'paid_and_closed' && job.status !== 'cancelled' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm('Worker did not arrive or wish to cancel? You will receive an immediate 100% refund.')) {
+                              refundEscrowToCustomer(job.id);
+                            }
+                          }}
+                          className="mt-1 text-[10px] text-red-600 hover:text-red-700 font-bold underline cursor-pointer"
+                        >
+                          Worker Absent? Claim Refund
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1849,20 +2036,116 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     </div>
                   )}
 
-                  {job.status === 'completed_pending_payment' && (
-                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <h5 className="text-xs font-black text-emerald-950">Work Completed Successfully!</h5>
-                        <p className="text-[11px] text-emerald-800">Worker has requested wage release of ₹{job.workerPayout}.</p>
+                  {/* Disputed Job Status Banner */}
+                  {job.status === 'disputed' && (
+                    <div className="bg-amber-50/90 border-2 border-amber-400 p-4 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-5 h-5 text-amber-700" />
+                          <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                            Complaint Registered for Admin Review (#{job.disputeId || 'DISP'})
+                          </span>
+                        </div>
+                        <span className="px-2.5 py-0.5 bg-amber-500 text-slate-950 font-black text-[10px] rounded-full uppercase">
+                          Escrow Locked
+                        </span>
                       </div>
+                      <p className="text-xs text-amber-900 leading-snug">
+                        Reported issue: <strong>{job.disputeReason || 'Worker absent / site non-arrival'}</strong>.
+                      </p>
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200 text-[11px] text-slate-700 space-y-1">
+                        <div className="flex items-center justify-between font-bold">
+                          <span>Protected Escrow Amount:</span>
+                          <span className="font-mono text-slate-900">₹{job.escrowPrepaidAmount || ((job.dailyWage || 850) * (job.durationDays || 1))}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-600">
+                          Admin Operations is auditing worker GPS timestamps & proof. Upon verification, 100% of your escrow will be refunded or wage appropriately adjusted. No direct 1-click refund allows fraudulent claims.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Raise Complaint Action Banner for Active Jobs */}
+                  {(job.status === 'accepted' || job.status === 'in_progress' || job.status === 'broadcast') && (
+                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                      <span className="text-[11px] text-slate-600 font-medium">Worker not arrived or left site?</span>
                       <button
-                        onClick={() => openUpiPayment(job)}
-                        className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm"
+                        type="button"
+                        onClick={() => {
+                          setComplaintJob(job);
+                          playSound('click');
+                        }}
+                        className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold rounded-lg border border-rose-200 text-[11px] transition flex items-center gap-1 cursor-pointer"
                       >
-                        <CreditCard className="w-4 h-4" />
-                        <span>Release UPI Payment (₹{job.workerPayout})</span>
+                        <AlertTriangle className="w-3 h-3 text-rose-600" />
+                        <span>Raise Complaint for Refund</span>
                       </button>
                     </div>
+                  )}
+
+                  {job.status === 'completed_pending_payment' && (
+                    currentCustomer?.isPremiumCustomer ? (
+                      <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-emerald-500/10 p-4 rounded-2xl border-2 border-amber-300 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
+                            <h5 className="text-xs font-black text-slate-950">Work Completed • Covered by Gold Membership</h5>
+                          </div>
+                          <p className="text-[11px] text-slate-700 mt-0.5">
+                            Worker wage of ₹{job.workerPayout} will be disbursed directly from Admin Treasury. <strong>₹0 charged to your account.</strong>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setComplaintJob(job);
+                              playSound('click');
+                            }}
+                            className="px-3 py-2 bg-white hover:bg-rose-50 text-rose-700 font-bold rounded-xl border border-rose-300 text-xs transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Raise Dispute</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openUpiPayment(job)}
+                            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <Crown className="w-4 h-4" />
+                            <span>Use My Subscription (Release ₹0 Free)</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <h5 className="text-xs font-black text-emerald-950">Work Completed Successfully!</h5>
+                          <p className="text-[11px] text-emerald-800">Worker has requested wage release of ₹{job.workerPayout}.</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setComplaintJob(job);
+                              playSound('click');
+                            }}
+                            className="px-3 py-2 bg-white hover:bg-rose-50 text-rose-700 font-bold rounded-xl border border-rose-300 text-xs transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Raise Dispute</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openUpiPayment(job)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <CreditCard className="w-4 h-4" />
+                            <span>Release UPI Payment (₹{job.workerPayout})</span>
+                          </button>
+                        </div>
+                      </div>
+                    )
                   )}
                 </div>
               ))}
@@ -1937,7 +2220,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               </button>
             </div>
 
-            <form onSubmit={handleConfirmDirectBooking} className="space-y-3 text-xs">
+            <form onSubmit={handleConfirmDirectBooking} className="space-y-3.5 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Work Requirement / Title</label>
                 <input
@@ -1945,7 +2228,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   placeholder={`e.g. Need ${bookingWorker.primaryTrade} for 1 day work`}
                   value={directJobTitle}
                   onChange={(e) => setDirectJobTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 font-medium"
                   required
                 />
               </div>
@@ -1959,7 +2242,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     max="30"
                     value={directJobDuration}
                     onChange={(e) => setDirectJobDuration(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 font-medium"
                     required
                   />
                 </div>
@@ -1981,25 +2264,68 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   value={directJobDescription}
                   onChange={(e) => setDirectJobDescription(e.target.value)}
                   placeholder="e.g. Bring standard tools, reach location by 9:00 AM."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 font-medium"
                 />
               </div>
+
+              {/* Upfront Prepaid Escrow Breakdown */}
+              {currentCustomer.isPremiumCustomer ? (
+                <div className="p-3.5 bg-gradient-to-r from-amber-500/20 to-amber-500/10 border-2 border-amber-400 rounded-2xl space-y-2 text-slate-900">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-300">
+                    <span className="text-[11px] font-black text-slate-950 flex items-center gap-1.5">
+                      <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
+                      <span>Dihadi Gold Plan Active (Covered by ₹15,000)</span>
+                    </span>
+                    <span className="text-xs font-mono font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                      ₹0 (Free Service)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-800 leading-snug">
+                    👑 <strong>Unlimited Free Booking:</strong> Worker daily wage of ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)} is covered by your Gold Subscription and will be disbursed directly from Admin Treasury upon confirmation.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl space-y-2 text-slate-800">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
+                    <span className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                      <span>Upfront Prepaid Escrow (Before Work)</span>
+                    </span>
+                    <span className="text-xs font-mono font-black text-emerald-800">
+                      ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-900 leading-snug">
+                    🛡️ <strong>100% Protected:</strong> Employer prepays wage before work starts. Funds remain locked in the Dihadi Escrow Vault and are only released when you confirm satisfactory work completion. <strong>100% refundable upon complaint review if worker is absent.</strong>
+                  </p>
+                </div>
+              )}
 
               <div className="pt-2 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setBookingWorker(null)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Confirm Booking</span>
-                </button>
+                {currentCustomer.isPremiumCustomer ? (
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>Use My Subscription (₹0 Free) & Book</span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Prepay ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)} & Book</span>
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -2111,6 +2437,39 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 />
               </div>
 
+              {/* Upfront Prepaid Escrow Breakdown for Broadcast Job */}
+              {currentCustomer.isPremiumCustomer ? (
+                <div className="p-3.5 bg-gradient-to-r from-amber-500/20 to-amber-500/10 border-2 border-amber-400 rounded-2xl space-y-2 text-slate-900">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-300">
+                    <span className="text-[11px] font-black text-slate-950 flex items-center gap-1.5">
+                      <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
+                      <span>Dihadi Gold Plan Active (Covered by ₹15,000)</span>
+                    </span>
+                    <span className="text-xs font-mono font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                      ₹0 (Free Service)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-800 leading-snug">
+                    👑 <strong>Unlimited Free Broadcast:</strong> Job wage of ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)} is covered by your Gold Subscription and will be disbursed directly from Admin Treasury to the worker upon your work approval.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl space-y-2 text-slate-800">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
+                    <span className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                      <span>Upfront Prepaid Escrow (Before Work Starts)</span>
+                    </span>
+                    <span className="text-xs font-mono font-black text-emerald-800">
+                      ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-900 leading-snug">
+                    🛡️ <strong>100% Escrow Guarantee:</strong> Employer prepays total wage into secure escrow vault before job broadcast. Funds are only disbursed when worker finishes work with your verified approval. <strong>100% refundable upon complaint review if worker is absent or leaves.</strong>
+                  </p>
+                </div>
+              )}
+
               <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-[11px] text-indigo-900 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
                 <span>Our AI engine will instantly rank and alert the Top 5 nearest workers within 10 km.</span>
@@ -2120,16 +2479,124 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 <button
                   type="button"
                   onClick={() => setShowPostModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                {currentCustomer.isPremiumCustomer ? (
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>Use My Subscription (₹0 Free) & Broadcast</span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Prepay ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)} & Broadcast</span>
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Raise Dispute & Complaint Modal */}
+      {complaintJob && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 font-black flex items-center justify-center text-sm shadow-xs">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-slate-900">Raise Complaint / Dispute</h4>
+                  <p className="text-xs text-slate-500">Official review by Kaamzo Operations & Admin</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setComplaintJob(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Job Summary Pill */}
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1 text-xs">
+              <p className="font-bold text-slate-900">{complaintJob.title}</p>
+              <div className="flex items-center justify-between text-slate-600 text-[11px]">
+                <span>Assigned Worker: <strong>{complaintJob.assignedWorkerName || 'Broadcasting'}</strong></span>
+                <span className="font-mono text-emerald-700 font-bold">Escrow: ₹{complaintJob.escrowPrepaidAmount || ((complaintJob.dailyWage || 850) * (complaintJob.durationDays || 1))}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmitComplaint} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Reason for Complaint</label>
+                <select
+                  value={complaintReason}
+                  onChange={(e) => setComplaintReason(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-rose-600"
+                  required
+                >
+                  <option value="Worker did not arrive at site / Absent">Worker did not arrive at site / Absent (ਗੈਰ-ਹਾਜ਼ਰ)</option>
+                  <option value="Worker left site without completing work">Worker left site early without finishing work</option>
+                  <option value="Severe quality defect or property damage">Substandard work / Quality defect / Damage</option>
+                  <option value="Worker demanded unauthorized extra cash">Worker demanded unauthorized extra cash outside app</option>
+                  <option value="Other complaint">Other grievance</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Additional Details (Optional)</label>
+                <textarea
+                  rows={3}
+                  value={complaintDetails}
+                  onChange={(e) => setComplaintDetails(e.target.value)}
+                  placeholder="Provide any additional context, e.g. waited 2 hours, worker phone switched off, etc."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-rose-600"
+                />
+              </div>
+
+              {/* Admin Verification Notice */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Admin Fair Audit Guarantee</span>
+                </div>
+                <p className="text-amber-800">
+                  To prevent fraudulent disputes, Kaamzo Admin will cross-verify worker GPS location logs and timestamps. <strong>100% of your escrow funds are held safely locked in escrow vault</strong> and will be refunded upon verification.
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setComplaintJob(null)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                  disabled={isSubmittingComplaint}
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Broadcast Job (10km)</span>
+                  {isSubmittingComplaint ? (
+                    <span>Registering...</span>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Submit for Admin Audit</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -2203,6 +2670,16 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           showNotification('Gmail Verified', `✓ Gmail (${verifiedEmail}) verified successfully!`);
         }}
       />
+
+      {/* Customer Gold Membership (1 Month Free Service) Modal */}
+      {currentCustomer && (
+        <CustomerSubscriptionModal
+          isOpen={showCustomerSubscriptionModal}
+          onClose={() => setShowCustomerSubscriptionModal(false)}
+          customer={currentCustomer}
+          onSubscribe={(method) => subscribeCustomerPremium(currentCustomer.id, method)}
+        />
+      )}
     </div>
   );
 };

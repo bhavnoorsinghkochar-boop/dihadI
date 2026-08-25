@@ -40,8 +40,13 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  if (errMsg.includes('unavailable') || errMsg.includes('offline') || errMsg.includes('Failed to get document')) {
+    // Firestore operates automatically in offline mode with indexedDB local cache
+    return;
+  }
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -56,7 +61,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.warn('Firestore Operation Notice: ', JSON.stringify(errInfo));
+  console.debug('Firestore background notice: ', JSON.stringify(errInfo));
 }
 
 export const COLLECTIONS = {
@@ -94,6 +99,30 @@ export async function syncJobToFirestore(job: Job) {
     const jobRef = doc(db, COLLECTIONS.JOBS, job.id);
     await setDoc(jobRef, {
       ...job,
+      syncedAt: new Date().toISOString(),
+    }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+/**
+ * Save / Update User Account (Worker/Customer/Admin credentials) in Firestore
+ */
+export async function syncAccountToFirestore(account: {
+  id: string;
+  phone: string;
+  password: string;
+  name: string;
+  role: 'worker' | 'customer' | 'admin';
+  extraData?: any;
+}) {
+  const safeId = (account.id || account.phone || 'acc_' + Date.now()).replace(/[^a-zA-Z0-9_.-]/g, '_').toLowerCase();
+  const path = `${COLLECTIONS.ACCOUNTS}/${safeId}`;
+  try {
+    const accRef = doc(db, COLLECTIONS.ACCOUNTS, safeId);
+    await setDoc(accRef, {
+      ...account,
       syncedAt: new Date().toISOString(),
     }, { merge: true });
   } catch (error) {

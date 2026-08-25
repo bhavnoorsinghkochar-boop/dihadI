@@ -6,14 +6,15 @@ import {
   ThumbsUp, 
   ShieldCheck, 
   CheckCircle2, 
-  MessageSquare,
-  Award,
-  Zap,
-  Clock,
-  Heart
+  MessageSquare, 
+  Award, 
+  Zap, 
+  Clock, 
+  Heart 
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 import confetti from 'canvas-confetti';
+import { useApp } from '../../context/AppContext';
 
 interface RateEmployeeModalProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ export const RateEmployeeModal: React.FC<RateEmployeeModalProps> = ({
   existingTags = ['⚡ Punctual & On-Time', '🛠️ Expert Craftsmanship'],
   onSubmitRating,
 }) => {
+  const { openProtectionModal } = useApp();
   const [rating, setRating] = useState<number>(existingRating || 5);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [review, setReview] = useState<string>(existingReview);
@@ -96,6 +98,16 @@ export const RateEmployeeModal: React.FC<RateEmployeeModalProps> = ({
       const finalReview = review.trim() || `Rated ${rating} stars for ${workerTrade} work on ${jobTitle}.`;
       onSubmitRating(jobId, rating, finalReview, selectedTags);
       onClose();
+
+      // Show Safety & Protection Advisory Modal
+      setTimeout(() => {
+        openProtectionModal({
+          variant: 'post_rating',
+          workerName,
+          workerTrade,
+          workerAadhaarMasked: 'Govt. Aadhaar Verified'
+        });
+      }, 400);
     }, 400);
   };
 

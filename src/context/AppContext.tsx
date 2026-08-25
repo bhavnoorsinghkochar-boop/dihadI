@@ -6,6 +6,7 @@ import {
   WorkerProfile, 
   CustomerProfile, 
   AdminProfile, 
+  AdminTransaction,
   VerificationRequest, 
   DisputeItem, 
   TradeType, 
@@ -37,6 +38,7 @@ import {
   syncJobToFirestore, 
   syncVerificationToFirestore, 
   syncDisputeToFirestore,
+  syncAccountToFirestore,
   handleFirestoreError,
   OperationType 
 } from '../lib/firestoreSync';
@@ -120,7 +122,8 @@ interface AppContextType {
   openGlobalChat: (job?: Job | null, targetPerson?: any, role?: 'worker' | 'customer' | 'admin') => void;
   closeGlobalChat: () => void;
 
-  // Worker Auth & Actions
+  // Worker Auth & Accounts
+  workerAccounts: UserAccount[];
   loginWorkerWithAuth: (userIdOrPhone: string, password: string) => { success: boolean; error?: string };
   registerWorkerWithAuth: (data: {
     userId: string;
@@ -161,7 +164,8 @@ interface AppContextType {
   completeJobByWorker: (jobId: string) => void;
   withdrawWorkerEarnings: (customUpi?: string) => void;
 
-  // Customer Auth & Actions
+  // Customer Auth & Accounts
+  customerAccounts: UserAccount[];
   loginCustomerWithAuth: (userIdOrPhone: string, password: string) => { success: boolean; error?: string };
   registerCustomerWithAuth: (data: {
     userId: string;
@@ -210,7 +214,47 @@ interface AppContextType {
   ) => void;
   rateWorkerJob: (jobId: string, rating: number, review: string, tags?: string[]) => void;
 
-  // Admin Auth & Actions
+  // Premium Subscriptions & Zero-Commission VIP Pass
+  subscribeWorkerPremium: (workerId: string, paymentMethod?: 'WALLET' | 'UPI') => { success: boolean; message: string };
+  subscribeCustomerPremium: (customerId: string, paymentMethod?: 'UPI' | 'CARD' | 'NET_BANKING') => { success: boolean; message: string };
+  topUpWorkerWallet: (amount: number) => void;
+  disburseWorkerWageFromAdmin: (workerId: string, wage: number, jobId?: string, customerName?: string) => boolean;
+
+  // Subscription Promo Ad Modal (YouTube-style)
+  isSubscriptionPromoOpen: boolean;
+  promoInitialRole: 'customer' | 'worker';
+  openSubscriptionPromo: (initialRole?: 'customer' | 'worker') => void;
+  closeSubscriptionPromo: () => void;
+
+  // Platform Safety, Direct Hiring Warning & Trust Guarantee Modal
+  isProtectionModalOpen: boolean;
+  protectionModalData: {
+    variant: 'post_rating' | 'post_login';
+    workerName?: string;
+    workerTrade?: string;
+    workerAadhaarMasked?: string;
+    refundAmount?: number;
+  } | null;
+  openProtectionModal: (data: {
+    variant: 'post_rating' | 'post_login';
+    workerName?: string;
+    workerTrade?: string;
+    workerAadhaarMasked?: string;
+    refundAmount?: number;
+  }) => void;
+  closeProtectionModal: () => void;
+
+  // Escrow Complaints & Admin Review (Replaces 1-Click Refund)
+  raiseJobComplaint: (jobId: string, reason: string, detailedExplanation?: string) => { success: boolean; disputeId?: string };
+  adminApproveRefund: (disputeId: string, resolutionNote?: string) => void;
+  adminRejectDisputeAndReleaseToWorker: (disputeId: string, resolutionNote?: string) => void;
+  refundEscrowToCustomer: (jobId: string) => boolean;
+
+  // Admin Auth, Treasury & Actions
+  adminTreasuryBalance: number;
+  adminSubscriptionRevenue: number;
+  adminWorkerPayoutsDisbursed: number;
+  adminTransactions: AdminTransaction[];
   loginAdminWithAuth: (adminIdOrEmail: string, password: string) => { success: boolean; error?: string };
   loginAdmin: (data: { name: string; email: string }) => void;
   logoutAdmin: () => void;
@@ -275,9 +319,12 @@ const DEFAULT_INITIAL_WORKERS: WorkerProfile[] = [
     aadhaarNumberMasked: 'XXXX-XXXX-9901',
     isVerified: false, // Pending in verification queue
     todayEarnings: 0,
-    totalEarnings: 0,
-    walletBalance: 0,
+    totalEarnings: 3400,
+    walletBalance: 2500, // Pre-seeded with balance so worker can test paying ₹2,000 subscription from wallet
     badge: 'Aadhaar Pending',
+    isPremiumWorker: false,
+    zeroCommissionJobsRemaining: 0,
+    commissionSavedTotal: 0,
     upiId: 'ramesh.mason@okaxis',
     bankName: 'State Bank of India',
     accountNumberMasked: '•••• •••• 5678',
@@ -530,6 +577,111 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('dihadi_current_admin_v6');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // Admin Treasury & Automated Payouts State
+  const [adminTreasuryBalance, setAdminTreasuryBalance] = useState<number>(() => {
+    const saved = localStorage.getItem('dihadi_admin_treasury_v6');
+    return saved ? Number(saved) : 65000;
+  });
+
+  const [adminSubscriptionRevenue, setAdminSubscriptionRevenue] = useState<number>(() => {
+    const saved = localStorage.getItem('dihadi_admin_sub_rev_v6');
+    return saved ? Number(saved) : 45000;
+  });
+
+  const [adminWorkerPayoutsDisbursed, setAdminWorkerPayoutsDisbursed] = useState<number>(() => {
+    const saved = localStorage.getItem('dihadi_admin_disbursed_v6');
+    return saved ? Number(saved) : 18500;
+  });
+
+  const [adminTransactions, setAdminTransactions] = useState<AdminTransaction[]>(() => {
+    const saved = localStorage.getItem('dihadi_admin_txs_v6');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'tx-sub-1',
+        type: 'SUBSCRIPTION_CREDIT',
+        amount: 15000,
+        description: 'Customer Gold Membership (1 Month Free Service)',
+        timestamp: 'Today, 09:30 AM',
+        customerName: 'Pooja Verma'
+      },
+      {
+        id: 'tx-sub-2',
+        type: 'SUBSCRIPTION_CREDIT',
+        amount: 2000,
+        description: 'Worker VIP Pass & Instant Aadhaar Verification',
+        timestamp: 'Today, 10:15 AM',
+        workerName: 'Ramesh Kumar'
+      },
+      {
+        id: 'tx-payout-1',
+        type: 'WORKER_PAYOUT_DISBURSEMENT',
+        amount: 850,
+        description: 'Admin Treasury Auto-Disbursed wage to Ramesh Kumar on behalf of Gold Member Pooja Verma',
+        timestamp: 'Today, 11:00 AM',
+        customerName: 'Pooja Verma',
+        workerName: 'Ramesh Kumar'
+      }
+    ];
+  });
+
+  // YouTube-Style Subscription Promo Ad State
+  const [isSubscriptionPromoOpen, setIsSubscriptionPromoOpen] = useState<boolean>(false);
+  const [promoInitialRole, setPromoInitialRole] = useState<'customer' | 'worker'>('customer');
+
+  const openSubscriptionPromo = (initialRole: 'customer' | 'worker' = 'customer') => {
+    setPromoInitialRole(initialRole);
+    setIsSubscriptionPromoOpen(true);
+    playSound('incoming_job');
+  };
+
+  const closeSubscriptionPromo = () => {
+    setIsSubscriptionPromoOpen(false);
+    sessionStorage.setItem('dihadi_promo_shown_session_v6', 'true');
+    sessionStorage.setItem(`dihadi_promo_shown_${promoInitialRole}_v6`, 'true');
+  };
+
+  // Platform Safety, Direct Hiring Warning & Trust Guarantee Modal State
+  const [isProtectionModalOpen, setIsProtectionModalOpen] = useState<boolean>(false);
+  const [protectionModalData, setProtectionModalData] = useState<{
+    variant: 'post_rating' | 'post_login';
+    workerName?: string;
+    workerTrade?: string;
+    workerAadhaarMasked?: string;
+    refundAmount?: number;
+  } | null>(null);
+
+  const openProtectionModal = (data: {
+    variant: 'post_rating' | 'post_login';
+    workerName?: string;
+    workerTrade?: string;
+    workerAadhaarMasked?: string;
+    refundAmount?: number;
+  }) => {
+    setProtectionModalData(data);
+    setIsProtectionModalOpen(true);
+    playSound('alert');
+  };
+
+  const closeProtectionModal = () => {
+    setIsProtectionModalOpen(false);
+    setProtectionModalData(null);
+  };
+
+  // Check if promo ad should be shown on app start/reopen
+  useEffect(() => {
+    const roleKey = currentRole === 'worker' ? 'worker' : 'customer';
+    const hasSeenInSession = sessionStorage.getItem(`dihadi_promo_shown_${roleKey}_v6`);
+    if (!hasSeenInSession && (currentRole === 'customer' || currentRole === 'worker')) {
+      const timer = setTimeout(() => {
+        setPromoInitialRole(roleKey);
+        setIsSubscriptionPromoOpen(true);
+        sessionStorage.setItem(`dihadi_promo_shown_${roleKey}_v6`, 'true');
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRole]);
 
   // Registered credentials database
   const [workerAccounts, setWorkerAccounts] = useState<UserAccount[]>(() => {
@@ -841,6 +993,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return () => unsub();
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, COLLECTIONS.DISPUTES);
+    }
+  }, []);
+
+  // 5. Real-time Firestore synchronization for Registered Accounts (Credentials & Passwords)
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, COLLECTIONS.ACCOUNTS), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteAccounts: UserAccount[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as UserAccount;
+            if (data && (data.id || data.phone)) {
+              remoteAccounts.push(data);
+            }
+          });
+
+          if (remoteAccounts.length > 0) {
+            // Merge worker accounts
+            setWorkerAccounts((prev) => {
+              const updated = [...prev];
+              remoteAccounts.filter(a => a.role === 'worker').forEach((rem) => {
+                const idx = updated.findIndex(u => u.id?.toLowerCase() === rem.id?.toLowerCase() || (u.phone && rem.phone && u.phone.replace(/[^0-9]/g, '').slice(-10) === rem.phone.replace(/[^0-9]/g, '').slice(-10)));
+                if (idx >= 0) {
+                  updated[idx] = { ...updated[idx], ...rem };
+                } else {
+                  updated.push(rem);
+                }
+              });
+              return updated;
+            });
+
+            // Merge customer accounts
+            setCustomerAccounts((prev) => {
+              const updated = [...prev];
+              remoteAccounts.filter(a => a.role === 'customer').forEach((rem) => {
+                const idx = updated.findIndex(u => u.id?.toLowerCase() === rem.id?.toLowerCase() || (u.phone && rem.phone && u.phone.replace(/[^0-9]/g, '').slice(-10) === rem.phone.replace(/[^0-9]/g, '').slice(-10)));
+                if (idx >= 0) {
+                  updated[idx] = { ...updated[idx], ...rem };
+                } else {
+                  updated.push(rem);
+                }
+              });
+              return updated;
+            });
+          }
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.ACCOUNTS);
+      });
+      return () => unsub();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, COLLECTIONS.ACCOUNTS);
     }
   }, []);
 
@@ -1341,20 +1545,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showNotification('Demo test environment created with UPI & GPS active.');
   };
 
+  // Helper to match user credentials by User ID, Email, Phone number (last 10 digits), or Name
+  const findAccountMatch = (accounts: UserAccount[], input: string): UserAccount | undefined => {
+    const clean = input.trim().toLowerCase();
+    if (!clean) return undefined;
+    
+    const digits = input.replace(/[^0-9]/g, '');
+    const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
+
+    // 1. Direct ID match (case-insensitive)
+    let match = accounts.find(a => a.id && a.id.trim().toLowerCase() === clean);
+    if (match) return match;
+
+    // 2. Email match
+    match = accounts.find(a => {
+      const email = (a.extraData?.email || (a as any).email || '').trim().toLowerCase();
+      return email && (email === clean || clean === email.split('@')[0]);
+    });
+    if (match) return match;
+
+    // 3. Normalized Phone match
+    if (digits.length >= 7) {
+      match = accounts.find(a => {
+        const aDigits = (a.phone || '').replace(/[^0-9]/g, '');
+        const aLast10 = aDigits.length >= 10 ? aDigits.slice(-10) : aDigits;
+        return aDigits === digits || (last10.length >= 10 && aLast10 === last10);
+      });
+      if (match) return match;
+    }
+
+    // 4. Name match (case-insensitive)
+    match = accounts.find(a => a.name && a.name.trim().toLowerCase() === clean);
+    if (match) return match;
+
+    return undefined;
+  };
+
   // Worker Login with Auth (ID & Password)
   const loginWorkerWithAuth = (userIdOrPhone: string, password: string): { success: boolean; error?: string } => {
-    const cleanInput = userIdOrPhone.trim().toLowerCase();
-    const cleanNumeric = userIdOrPhone.replace(/[^0-9]/g, '');
+    const cleanInput = userIdOrPhone.trim();
+    if (!cleanInput) {
+      return { success: false, error: 'Please enter your User ID, Mobile number, or Email.' };
+    }
 
-    const found = workerAccounts.find((acc) => 
-      acc.id.toLowerCase() === cleanInput || 
-      acc.phone.replace(/[^0-9]/g, '') === cleanNumeric ||
-      acc.phone === userIdOrPhone.trim()
-    );
+    const found = findAccountMatch(workerAccounts, cleanInput);
 
     if (!found) {
       // Auto-fallback demo match
-      if (cleanInput === 'ramesh' || cleanNumeric.endsWith('55678')) {
+      if (cleanInput.toLowerCase() === 'ramesh' || cleanInput.replace(/[^0-9]/g, '').endsWith('55678')) {
         loginWorker({
           name: 'Ramesh Kumar',
           phone: '+91 98101 55678',
@@ -1367,11 +1605,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         return { success: true };
       }
-      return { success: false, error: 'Worker ID not found. Please register or check details.' };
+      return { 
+        success: false, 
+        error: `Worker account "${cleanInput}" not found. Please click Register to create your account or check your User ID / Phone.` 
+      };
     }
 
-    if (found.password && found.password !== password) {
-      return { success: false, error: 'Incorrect password. Please try again.' };
+    const savedPassword = (found.password || '123').trim();
+    if (savedPassword !== password.trim()) {
+      return { 
+        success: false, 
+        error: `Incorrect password for ${found.name} (${found.id}). Please check the password you entered.` 
+      };
     }
 
     // Login worker profile
@@ -1379,6 +1624,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loginWorker({
       name: found.name,
       phone: found.phone,
+      email: extra.email || (found as any).email,
+      isPhoneVerified: extra.isPhoneVerified ?? true,
+      isEmailVerified: extra.isEmailVerified ?? true,
       primaryTrade: extra.trade || 'Mason',
       dailyRate: extra.rate || 850,
       experienceYears: extra.exp || 4,
@@ -1406,11 +1654,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     aadhaarNumber: string;
     upiId?: string;
   }) => {
+    const rawId = data.userId?.trim().toLowerCase() || 
+                  (data.email ? data.email.split('@')[0].toLowerCase() : '') ||
+                  data.phone.replace(/[^0-9]/g, '').slice(-10) ||
+                  data.name.trim().toLowerCase().replace(/\s+/g, '_');
+
     const newAcc: UserAccount = {
-      id: data.userId.trim().toLowerCase() || data.phone.replace(/[^0-9]/g, ''),
-      password: data.password || '123',
-      name: data.name,
-      phone: data.phone,
+      id: rawId,
+      password: (data.password || '123').trim(),
+      name: data.name.trim(),
+      phone: data.phone.trim(),
       role: 'worker',
       extraData: {
         trade: data.primaryTrade,
@@ -1419,19 +1672,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         area: data.area,
         aadhaar: data.aadhaarNumber,
         upi: data.upiId,
-        email: data.email,
-        isPhoneVerified: data.isPhoneVerified,
-        isEmailVerified: data.isEmailVerified,
+        email: data.email?.trim(),
+        isPhoneVerified: data.isPhoneVerified ?? true,
+        isEmailVerified: data.isEmailVerified ?? true,
       }
     };
-    setWorkerAccounts((prev) => [...prev.filter(a => a.id !== newAcc.id), newAcc]);
+
+    setWorkerAccounts((prev) => {
+      const updated = [...prev.filter(a => a.id?.toLowerCase() !== newAcc.id && (!a.phone || a.phone.replace(/[^0-9]/g, '').slice(-10) !== newAcc.phone.replace(/[^0-9]/g, '').slice(-10))), newAcc];
+      localStorage.setItem('dihadi_worker_accounts_v6', JSON.stringify(updated));
+      return updated;
+    });
+    syncAccountToFirestore(newAcc);
 
     loginWorker({
       name: data.name,
       phone: data.phone,
       email: data.email,
-      isPhoneVerified: data.isPhoneVerified,
-      isEmailVerified: data.isEmailVerified,
+      isPhoneVerified: data.isPhoneVerified ?? true,
+      isEmailVerified: data.isEmailVerified ?? true,
       primaryTrade: data.primaryTrade,
       dailyRate: data.dailyRate,
       experienceYears: data.experienceYears,
@@ -1439,6 +1698,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       aadhaarNumber: data.aadhaarNumber,
       upiId: data.upiId,
     });
+    showNotification(`Account created! User ID: "${newAcc.id}". You are now logged in.`);
   };
 
   // Worker Login / Register helper
@@ -1653,17 +1913,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Customer Login with Auth (ID & Password)
   const loginCustomerWithAuth = (userIdOrPhone: string, password: string): { success: boolean; error?: string } => {
-    const cleanInput = userIdOrPhone.trim().toLowerCase();
-    const cleanNumeric = userIdOrPhone.replace(/[^0-9]/g, '');
+    const cleanInput = userIdOrPhone.trim();
+    if (!cleanInput) {
+      return { success: false, error: 'Please enter your User ID, Mobile number, or Email.' };
+    }
 
-    const found = customerAccounts.find((acc) => 
-      acc.id.toLowerCase() === cleanInput || 
-      acc.phone.replace(/[^0-9]/g, '') === cleanNumeric ||
-      acc.phone === userIdOrPhone.trim()
-    );
+    const found = findAccountMatch(customerAccounts, cleanInput);
 
     if (!found) {
-      if (cleanInput === 'pooja' || cleanNumeric.endsWith('88221')) {
+      if (cleanInput.toLowerCase() === 'pooja' || cleanInput.replace(/[^0-9]/g, '').endsWith('88221')) {
         loginCustomer({
           name: 'Pooja Verma',
           phone: '+91 99100 88221',
@@ -1673,17 +1931,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         return { success: true };
       }
-      return { success: false, error: 'Customer ID not found. Please register or check details.' };
+      return { 
+        success: false, 
+        error: `Customer account "${cleanInput}" not found. Please click Register to create your account or check your User ID / Phone.` 
+      };
     }
 
-    if (found.password && found.password !== password) {
-      return { success: false, error: 'Incorrect password. Please try again.' };
+    const savedPassword = (found.password || '123').trim();
+    if (savedPassword !== password.trim()) {
+      return { 
+        success: false, 
+        error: `Incorrect password for ${found.name} (${found.id}). Please check the password you entered.` 
+      };
     }
 
     const extra = found.extraData || {};
     loginCustomer({
       name: found.name,
       phone: found.phone,
+      email: extra.email || (found as any).email,
+      isPhoneVerified: extra.isPhoneVerified ?? true,
+      isEmailVerified: extra.isEmailVerified ?? true,
       area: extra.area || currentCity?.defaultArea || 'Model Town',
       address: extra.address || `${extra.area || currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
       upiId: extra.upi || `${found.id}@upi`,
@@ -1705,33 +1973,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     address: string;
     upiId?: string;
   }) => {
+    const rawId = data.userId?.trim().toLowerCase() || 
+                  (data.email ? data.email.split('@')[0].toLowerCase() : '') ||
+                  data.phone.replace(/[^0-9]/g, '').slice(-10) ||
+                  data.name.trim().toLowerCase().replace(/\s+/g, '_');
+
     const newAcc: UserAccount = {
-      id: data.userId.trim().toLowerCase() || data.phone.replace(/[^0-9]/g, ''),
-      password: data.password || '123',
-      name: data.name,
-      phone: data.phone,
+      id: rawId,
+      password: (data.password || '123').trim(),
+      name: data.name.trim(),
+      phone: data.phone.trim(),
       role: 'customer',
       extraData: {
         area: data.area,
         address: data.address,
         upi: data.upiId,
-        email: data.email,
-        isPhoneVerified: data.isPhoneVerified,
-        isEmailVerified: data.isEmailVerified,
+        email: data.email?.trim(),
+        isPhoneVerified: data.isPhoneVerified ?? true,
+        isEmailVerified: data.isEmailVerified ?? true,
       }
     };
-    setCustomerAccounts((prev) => [...prev.filter(a => a.id !== newAcc.id), newAcc]);
+
+    setCustomerAccounts((prev) => {
+      const updated = [...prev.filter(a => a.id?.toLowerCase() !== newAcc.id && (!a.phone || a.phone.replace(/[^0-9]/g, '').slice(-10) !== newAcc.phone.replace(/[^0-9]/g, '').slice(-10))), newAcc];
+      localStorage.setItem('dihadi_customer_accounts_v6', JSON.stringify(updated));
+      return updated;
+    });
+    syncAccountToFirestore(newAcc);
 
     loginCustomer({
       name: data.name,
       phone: data.phone,
       email: data.email,
-      isPhoneVerified: data.isPhoneVerified,
-      isEmailVerified: data.isEmailVerified,
+      isPhoneVerified: data.isPhoneVerified ?? true,
+      isEmailVerified: data.isEmailVerified ?? true,
       area: data.area,
       address: data.address,
       upiId: data.upiId,
     });
+    showNotification(`Account created! User ID: "${newAcc.id}". Employer Portal active.`);
   };
 
   // Customer Login / Register helper
@@ -1770,6 +2050,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentCustomer(customer);
     playSound('success');
     showNotification(`Welcome ${data.name}! Employer Portal Active.`);
+    
+    // Automatically display Safety & Accountability Guarantee Modal on customer login
+    setTimeout(() => {
+      openProtectionModal({
+        variant: 'post_login',
+        workerName: 'Verified Dihadi Worker',
+        workerAadhaarMasked: 'Govt. Aadhaar Verified'
+      });
+    }, 600);
   };
 
   const logoutCustomer = () => {
@@ -1922,6 +2211,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       platformFee,
       workerPayout,
       isPaid: false,
+      isEscrowPrepaid: true,
+      escrowPrepaidAmount: totalGross,
+      escrowStatus: 'held_in_escrow',
+      escrowPrepaidAt: new Date().toISOString(),
     };
 
     setJobs((prev) => [newJob, ...prev]);
@@ -2019,6 +2312,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     let updatedAcceptedJob: Job | null = null;
+    const isGoldCustomer = Boolean(
+      (currentCustomer && currentCustomer.isPremiumCustomer) || 
+      (targetJob?.customerPhone && customerAccounts.some(c => c.phone === targetJob.customerPhone && c.extraData?.isPremiumCustomer))
+    );
+
     setJobs((prev) =>
       prev.map((job) => {
         if (job.id === jobId) {
@@ -2030,6 +2328,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             assignedWorkerPhone: worker.phone,
             assignedWorkerTrade: worker.primaryTrade,
             assignedWorkerUpi: worker.upiId,
+            adminFundedPayout: isGoldCustomer ? true : job.adminFundedPayout,
+            zeroCommissionApplied: isGoldCustomer ? true : job.zeroCommissionApplied,
           };
           updatedAcceptedJob = updated;
           return updated;
@@ -2041,6 +2341,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (updatedAcceptedJob) {
       syncJobToFirestore(updatedAcceptedJob);
       dispatchJobStartOtp(updatedAcceptedJob);
+    }
+
+    // If customer has Gold Membership (₹15,000 plan), Admin automatically disburses worker wage to worker's wallet
+    if (isGoldCustomer && targetJob) {
+      const wage = (targetJob.dailyWage || 850) * (targetJob.durationDays || 1);
+      disburseWorkerWageFromAdmin(worker.id, wage, targetJob.id, targetJob.customerName);
     }
 
     playSound('success');
@@ -2095,10 +2401,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
 
-    const payout = job.workerPayout;
+    let payout = job.workerPayout;
+    let actualPlatformFee = job.platformFee;
+    let zeroCommissionUsed = false;
+
+    // Check if assigned worker has active Zero Commission VIP Pass (6 jobs with 0% platform fee)
+    const targetWorker = workers.find((w) => w.id === job.assignedWorkerId);
+    if (targetWorker && (targetWorker.zeroCommissionJobsRemaining || 0) > 0) {
+      const fullGross = (job.dailyWage || 850) * (job.durationDays || 1);
+      payout = fullGross;
+      actualPlatformFee = 0;
+      zeroCommissionUsed = true;
+    }
 
     const updatedJob: Job = {
       ...job,
+      platformFee: actualPlatformFee,
+      workerPayout: payout,
+      zeroCommissionApplied: zeroCommissionUsed,
       status: 'paid_and_closed',
       isPaid: true,
       rating: rating,
@@ -2116,35 +2436,86 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     syncJobToFirestore(updatedJob);
 
-    // Update worker earnings, wallet, and compute dynamic average rating
-    if (job.assignedWorkerId) {
-      const targetWorker = workers.find((w) => w.id === job.assignedWorkerId);
-      if (targetWorker) {
-        const prevReviews = targetWorker.reviewCount || 0;
-        const newCount = prevReviews + 1;
-        const newRating = prevReviews === 0 ? rating : Number((((targetWorker.rating || rating) * prevReviews + rating) / newCount).toFixed(1));
+    // Update worker earnings, wallet, zero-commission counter, and compute dynamic average rating
+    if (job.assignedWorkerId && targetWorker) {
+      const prevReviews = targetWorker.reviewCount || 0;
+      const newCount = prevReviews + 1;
+      const newRating = prevReviews === 0 ? rating : Number((((targetWorker.rating || rating) * prevReviews + rating) / newCount).toFixed(1));
 
-        const updatedWorker: WorkerProfile = {
-          ...targetWorker,
-          todayEarnings: targetWorker.todayEarnings + payout,
-          totalEarnings: targetWorker.totalEarnings + payout,
-          walletBalance: targetWorker.walletBalance + payout,
-          completedJobsCount: targetWorker.completedJobsCount + 1,
-          reviewCount: newCount,
-          rating: Math.min(5.0, Math.max(1.0, newRating)),
-        };
+      const newRemainingZeroJobs = zeroCommissionUsed 
+        ? Math.max(0, (targetWorker.zeroCommissionJobsRemaining || 0) - 1)
+        : (targetWorker.zeroCommissionJobsRemaining || 0);
 
-        setWorkers((prev) => prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)));
-        syncWorkerToFirestore(updatedWorker);
+      const savedThisJob = zeroCommissionUsed 
+        ? (job.platformFee || Math.round(((job.dailyWage || 850) * (job.durationDays || 1)) * 0.2)) 
+        : 0;
 
-        if (currentWorker && currentWorker.id === job.assignedWorkerId) {
-          setCurrentWorker(updatedWorker);
-        }
+      const updatedWorker: WorkerProfile = {
+        ...targetWorker,
+        todayEarnings: targetWorker.todayEarnings + payout,
+        totalEarnings: targetWorker.totalEarnings + payout,
+        walletBalance: targetWorker.walletBalance + payout,
+        completedJobsCount: targetWorker.completedJobsCount + 1,
+        zeroCommissionJobsRemaining: newRemainingZeroJobs,
+        commissionSavedTotal: (targetWorker.commissionSavedTotal || 0) + savedThisJob,
+        reviewCount: newCount,
+        rating: Math.min(5.0, Math.max(1.0, newRating)),
+      };
+
+      setWorkers((prev) => prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)));
+      syncWorkerToFirestore(updatedWorker);
+
+      if (currentWorker && currentWorker.id === job.assignedWorkerId) {
+        setCurrentWorker(updatedWorker);
       }
     }
 
+    const isCustomerGoldMember = Boolean(currentCustomer?.isPremiumCustomer || job.adminFundedPayout);
+
+    if (isCustomerGoldMember) {
+      // Deduct payout from Admin Treasury balance
+      setAdminTreasuryBalance((prev) => {
+        const next = Math.max(0, prev - payout);
+        localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+        return next;
+      });
+
+      setAdminWorkerPayoutsDisbursed((prev) => {
+        const next = prev + payout;
+        localStorage.setItem('dihadi_admin_disbursed_v6', String(next));
+        return next;
+      });
+
+      // Record in Admin Transactions
+      const payoutTx: AdminTransaction = {
+        id: `tx-admin-disburse-${Date.now()}`,
+        type: 'WORKER_PAYOUT_DISBURSEMENT',
+        amount: payout,
+        description: `Customer Gold Membership Auto-Payout (₹${payout}) for ${job.title}`,
+        timestamp: 'Just now',
+        customerName: currentCustomer?.name || job.customerName,
+        workerName: job.assignedWorkerName || 'Worker',
+        jobId: job.id,
+      };
+
+      setAdminTransactions((prev) => {
+        const updated = [payoutTx, ...prev];
+        localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+        return updated;
+      });
+    }
+
     playSound('cash');
-    showNotification(`₹${payout} payment released & rated ${rating}★ for ${job.assignedWorkerName || 'Worker'}!`);
+    if (isCustomerGoldMember) {
+      showNotification(
+        '👑 Subscription Payout Complete (₹0 Paid)',
+        `Worker wage of ₹${payout} was automatically disbursed from Admin Treasury to ${job.assignedWorkerName || 'Worker'}. Rated ${rating}★.`
+      );
+    } else if (zeroCommissionUsed) {
+      showNotification(`🎉 0% Commission Applied! ₹${payout} (100% Wage) credited to ${job.assignedWorkerName || 'Worker'}! Remaining VIP Jobs: ${Math.max(0, (targetWorker?.zeroCommissionJobsRemaining || 1) - 1)}`);
+    } else {
+      showNotification(`₹${payout} payment released & rated ${rating}★ for ${job.assignedWorkerName || 'Worker'}!`);
+    }
   };
 
   // Rate or update review for any completed job
@@ -2187,6 +2558,220 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     playSound('success');
     showNotification(`Rating of ${rating}★ recorded successfully!`);
+  };
+
+  // Top-up worker wallet balance (for subscription or testing)
+  const topUpWorkerWallet = (amount: number) => {
+    if (!currentWorker) return;
+    const updated: WorkerProfile = {
+      ...currentWorker,
+      walletBalance: (currentWorker.walletBalance || 0) + amount,
+    };
+    setCurrentWorker(updated);
+    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    syncWorkerToFirestore(updated);
+    playSound('cash');
+    showNotification(`₹${amount} added to wallet balance! New balance: ₹${updated.walletBalance}`);
+  };
+
+  // Disburse Worker Wage directly from Admin Treasury into worker's wallet
+  const disburseWorkerWageFromAdmin = (workerId: string, wage: number, jobId?: string, customerName?: string): boolean => {
+    const target = workers.find((w) => w.id === workerId);
+    if (!target) return false;
+
+    // Deduct wage from Admin Treasury balance
+    setAdminTreasuryBalance((prev) => {
+      const next = Math.max(0, prev - wage);
+      localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+      return next;
+    });
+
+    // Increase total disbursed to workers counter
+    setAdminWorkerPayoutsDisbursed((prev) => {
+      const next = prev + wage;
+      localStorage.setItem('dihadi_admin_disbursed_v6', String(next));
+      return next;
+    });
+
+    // Record detailed admin audit transaction
+    const newTx: AdminTransaction = {
+      id: `tx-payout-${Date.now()}`,
+      type: 'WORKER_PAYOUT_DISBURSEMENT',
+      amount: wage,
+      description: `Admin Treasury Auto-Disbursed ₹${wage} to ${target.name} (Hired by Gold Customer ${customerName || 'Gold Member'})`,
+      timestamp: 'Just now',
+      customerName: customerName || 'Gold Member',
+      workerName: target.name,
+      jobId: jobId
+    };
+
+    setAdminTransactions((prev) => {
+      const updated = [newTx, ...prev];
+      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    // Directly credit worker's wallet
+    const updatedWorker: WorkerProfile = {
+      ...target,
+      walletBalance: (target.walletBalance || 0) + wage,
+      todayEarnings: (target.todayEarnings || 0) + wage,
+      totalEarnings: (target.totalEarnings || 0) + wage,
+    };
+
+    setWorkers((prev) => prev.map((w) => (w.id === target.id ? updatedWorker : w)));
+    syncWorkerToFirestore(updatedWorker);
+
+    if (currentWorker && currentWorker.id === target.id) {
+      setCurrentWorker(updatedWorker);
+    }
+
+    playSound('cash');
+    showNotification(
+      `💰 Admin Auto-Payout: ₹${wage} transferred directly into ${target.name}'s wallet!`
+    );
+    return true;
+  };
+
+  // Worker purchases 0% Commission VIP Pass (₹2,000 for 6 zero-fee jobs) & Quick Aadhaar Verification
+  const subscribeWorkerPremium = (workerId: string, paymentMethod: 'WALLET' | 'UPI' = 'WALLET'): { success: boolean; message: string } => {
+    const target = workers.find((w) => w.id === workerId) || currentWorker;
+    if (!target) {
+      return { success: false, message: 'Worker profile not found.' };
+    }
+
+    const PRICE = 2000;
+    const JOBS_ADDED = 6;
+
+    if (paymentMethod === 'WALLET') {
+      if ((target.walletBalance || 0) < PRICE) {
+        playSound('alert');
+        showNotification(`Insufficient wallet balance. You have ₹${target.walletBalance}, need ₹${PRICE}.`);
+        return { success: false, message: 'Insufficient wallet balance.' };
+      }
+    }
+
+    const newBalance = paymentMethod === 'WALLET' ? (target.walletBalance - PRICE) : target.walletBalance;
+    const newZeroJobs = (target.zeroCommissionJobsRemaining || 0) + JOBS_ADDED;
+
+    // Instant Aadhaar verification upon VIP activation
+    const updatedWorker: WorkerProfile = {
+      ...target,
+      walletBalance: newBalance,
+      isPremiumWorker: true,
+      zeroCommissionJobsRemaining: newZeroJobs,
+      isVerified: true,
+      badge: 'Aadhaar Verified',
+      premiumWorkerExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    setWorkers((prev) => prev.map((w) => (w.id === target.id ? updatedWorker : w)));
+    syncWorkerToFirestore(updatedWorker);
+
+    if (currentWorker && currentWorker.id === target.id) {
+      setCurrentWorker(updatedWorker);
+    }
+
+    // Auto-approve worker's verification in the admin KYC table
+    setVerifications((prev) =>
+      prev.map((v) =>
+        v.workerName.toLowerCase() === target.name.toLowerCase() || v.phone === target.phone
+          ? { ...v, status: 'approved' }
+          : v
+      )
+    );
+
+    // Credit money to Admin Treasury & Subscription Revenue
+    setAdminTreasuryBalance((prev) => {
+      const next = prev + PRICE;
+      localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+      return next;
+    });
+
+    setAdminSubscriptionRevenue((prev) => {
+      const next = prev + PRICE;
+      localStorage.setItem('dihadi_admin_sub_rev_v6', String(next));
+      return next;
+    });
+
+    // Record Admin transaction
+    const newTx: AdminTransaction = {
+      id: `tx-worker-sub-${Date.now()}`,
+      type: 'SUBSCRIPTION_CREDIT',
+      amount: PRICE,
+      description: `Worker VIP Pass & Instant Aadhaar Verification (₹${PRICE})`,
+      timestamp: 'Just now',
+      workerName: target.name,
+    };
+
+    setAdminTransactions((prev) => {
+      const updated = [newTx, ...prev];
+      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    playSound('cash');
+    showNotification(
+      '🎉 VIP Pass & Quick Aadhaar Verification Activated!',
+      `₹${PRICE} received. You are now Govt. Aadhaar Verified with 6 Zero-Commission Jobs and Priority Ranking!`
+    );
+
+    return { success: true, message: 'VIP Pass & Aadhaar Verification Activated Successfully!' };
+  };
+
+  // Customer purchases Dihadi Gold Membership (₹15,000 with 1 Month Free Service & Admin Automated Worker Payouts)
+  const subscribeCustomerPremium = (customerId: string, paymentMethod: 'UPI' | 'CARD' | 'NET_BANKING' = 'UPI'): { success: boolean; message: string } => {
+    const PRICE = 15000;
+    const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 1 Month Free Service
+
+    if (currentCustomer) {
+      const updatedCustomer: CustomerProfile = {
+        ...currentCustomer,
+        isPremiumCustomer: true,
+        premiumFreeServiceMonths: 1,
+        premiumFeePaid: PRICE,
+        premiumCustomerExpiresAt: expiry,
+      };
+      setCurrentCustomer(updatedCustomer);
+      localStorage.setItem('dihadi_current_customer_v6', JSON.stringify(updatedCustomer));
+    }
+
+    // Credit money to Admin Account & Treasury
+    setAdminTreasuryBalance((prev) => {
+      const next = prev + PRICE;
+      localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+      return next;
+    });
+
+    setAdminSubscriptionRevenue((prev) => {
+      const next = prev + PRICE;
+      localStorage.setItem('dihadi_admin_sub_rev_v6', String(next));
+      return next;
+    });
+
+    // Record in Admin Transactions
+    const newTx: AdminTransaction = {
+      id: `tx-cust-sub-${Date.now()}`,
+      type: 'SUBSCRIPTION_CREDIT',
+      amount: PRICE,
+      description: `Customer Gold Membership (₹${PRICE.toLocaleString('en-IN')}) - 1 Month Free Service & Auto Worker Payouts`,
+      timestamp: 'Just now',
+      customerName: currentCustomer?.name || 'Customer'
+    };
+
+    setAdminTransactions((prev) => {
+      const updated = [newTx, ...prev];
+      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    playSound('success');
+    showNotification(
+      '👑 Dihadi Gold Membership Activated!',
+      `₹${PRICE.toLocaleString('en-IN')} received in Admin Account. Worker hiring wages will now be automatically disbursed directly into worker wallets by Admin!`
+    );
+
+    return { success: true, message: 'Dihadi Gold Membership Activated!' };
   };
 
   // Worker withdraws wallet balance to UPI bank account
@@ -2569,6 +3154,154 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showNotification('Dispute marked resolved.');
   };
 
+  // Raise a Job Complaint / Worker Absent Dispute (Replaces 1-Click Direct Refund)
+  const raiseJobComplaint = (
+    jobId: string, 
+    reason: string, 
+    detailedExplanation?: string
+  ): { success: boolean; disputeId?: string } => {
+    const targetJob = jobs.find((j) => j.id === jobId);
+    if (!targetJob) {
+      showNotification('Job not found.');
+      return { success: false };
+    }
+
+    const disputeId = `DISP-${Date.now().toString().slice(-6)}`;
+    const escrowAmount = targetJob.escrowPrepaidAmount || ((targetJob.dailyWage || 850) * (targetJob.durationDays || 1));
+
+    const updatedJob: Job = {
+      ...targetJob,
+      status: 'disputed',
+      escrowStatus: 'refund_requested_dispute',
+      disputeId: disputeId,
+      disputeReason: reason,
+    };
+
+    setJobs((prev) => prev.map((j) => (j.id === jobId ? updatedJob : j)));
+    syncJobToFirestore(updatedJob);
+
+    const newDispute: DisputeItem = {
+      id: disputeId,
+      jobId: targetJob.id,
+      jobTitle: targetJob.title,
+      workerId: targetJob.assignedWorkerId,
+      workerName: targetJob.assignedWorkerName || 'Assigned Worker',
+      workerPhone: targetJob.assignedWorkerPhone || '+91 98101 55678',
+      customerName: targetJob.customerName || currentCustomer?.name || 'Customer',
+      customerPhone: targetJob.customerPhone || currentCustomer?.phone || '+91 98101 00000',
+      reason: reason || 'Worker did not arrive at site',
+      detailedReason: detailedExplanation || 'Employer reported worker absence or issue. Escrow locked for admin audit.',
+      status: 'open',
+      amount: escrowAmount,
+      reportedAt: 'Just now',
+    };
+
+    setDisputes((prev) => [newDispute, ...prev]);
+    syncDisputeToFirestore(newDispute);
+
+    playSound('alert');
+    showNotification(
+      '🛡️ Complaint Registered for Admin Review!',
+      `Complaint #${disputeId} logged. Escrow funds of ₹${escrowAmount} remain safely locked. Admin Ops will audit GPS logs and approve refund upon verification.`
+    );
+
+    return { success: true, disputeId };
+  };
+
+  // Admin Approves 100% Refund to Customer after audit
+  const adminApproveRefund = (disputeId: string, resolutionNote?: string) => {
+    const dispute = disputes.find((d) => d.id === disputeId);
+    if (!dispute) return;
+
+    const note = resolutionNote || 'Complaint verified: 100% Escrow refund approved by Admin.';
+    const updatedDispute: DisputeItem = {
+      ...dispute,
+      status: 'resolved',
+      resolutionNote: note,
+      resolvedAt: 'Just now',
+    };
+
+    setDisputes((prev) => prev.map((d) => (d.id === disputeId ? updatedDispute : d)));
+    syncDisputeToFirestore(updatedDispute);
+
+    // Cancel job and mark escrow refunded
+    const targetJob = jobs.find((j) => j.id === dispute.jobId);
+    if (targetJob) {
+      const refundedJob: Job = {
+        ...targetJob,
+        status: 'cancelled',
+        escrowStatus: 'refunded_to_customer',
+      };
+      setJobs((prev) => prev.map((j) => (j.id === targetJob.id ? refundedJob : j)));
+      syncJobToFirestore(refundedJob);
+    }
+
+    // Log in Admin Transactions
+    const refundTx: AdminTransaction = {
+      id: `tx-refund-${Date.now()}`,
+      type: 'REFUND_DISBURSEMENT',
+      amount: dispute.amount,
+      description: `Escrow Refund (₹${dispute.amount}) to ${dispute.customerName} - ${note}`,
+      timestamp: 'Just now',
+      customerName: dispute.customerName,
+      workerName: dispute.workerName,
+      jobId: dispute.jobId,
+    };
+
+    setAdminTransactions((prev) => {
+      const updated = [refundTx, ...prev];
+      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      return updated;
+    });
+
+    playSound('cash');
+    showNotification(
+      '✅ Refund Approved by Admin',
+      `₹${dispute.amount} 100% Escrow refund processed for ${dispute.customerName}.`
+    );
+  };
+
+  // Admin Rejects Complaint & Releases Payment to Worker
+  const adminRejectDisputeAndReleaseToWorker = (disputeId: string, resolutionNote?: string) => {
+    const dispute = disputes.find((d) => d.id === disputeId);
+    if (!dispute) return;
+
+    const note = resolutionNote || 'Audit complete: Worker presence verified. Escrow wage released.';
+    const updatedDispute: DisputeItem = {
+      ...dispute,
+      status: 'rejected',
+      resolutionNote: note,
+      resolvedAt: 'Just now',
+    };
+
+    setDisputes((prev) => prev.map((d) => (d.id === disputeId ? updatedDispute : d)));
+    syncDisputeToFirestore(updatedDispute);
+
+    const targetJob = jobs.find((j) => j.id === dispute.jobId);
+    if (targetJob) {
+      releasePaymentByCustomer(
+        targetJob.id,
+        5,
+        `Admin resolution: ${note}`,
+        'ESCROW_WALLET',
+        `ADMIN-RES-${Date.now().toString().slice(-5)}`
+      );
+    }
+
+    playSound('success');
+    showNotification('⚖️ Complaint Dismissed: Escrow payment released to worker.');
+  };
+
+  // Escrow Refund Handler (Routes into dispute workflow if safety check needed)
+  const refundEscrowToCustomer = (jobId: string): boolean => {
+    const target = jobs.find((j) => j.id === jobId);
+    if (!target) return false;
+
+    // Route to complaint / dispute for admin verification
+    raiseJobComplaint(jobId, 'Worker did not arrive / Cancelled', 'Escrow refund requested by customer.');
+    return true;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -2617,6 +3350,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeGlobalChat,
         openGlobalChat,
         closeGlobalChat,
+        workerAccounts,
         loginWorkerWithAuth,
         registerWorkerWithAuth,
         loginWorker,
@@ -2630,6 +3364,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         startJobWithOtp,
         completeJobByWorker,
         withdrawWorkerEarnings,
+        customerAccounts,
         loginCustomerWithAuth,
         registerCustomerWithAuth,
         loginCustomer,
@@ -2640,6 +3375,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dispatchJobStartOtp,
         releasePaymentByCustomer,
         rateWorkerJob,
+        subscribeWorkerPremium,
+        subscribeCustomerPremium,
+        topUpWorkerWallet,
+        disburseWorkerWageFromAdmin,
+        isSubscriptionPromoOpen,
+        promoInitialRole,
+        openSubscriptionPromo,
+        closeSubscriptionPromo,
+        isProtectionModalOpen,
+        protectionModalData,
+        openProtectionModal,
+        closeProtectionModal,
+        raiseJobComplaint,
+        adminApproveRefund,
+        adminRejectDisputeAndReleaseToWorker,
+        refundEscrowToCustomer,
+        adminTreasuryBalance,
+        adminSubscriptionRevenue,
+        adminWorkerPayoutsDisbursed,
+        adminTransactions,
         loginAdminWithAuth,
         loginAdmin,
         logoutAdmin,

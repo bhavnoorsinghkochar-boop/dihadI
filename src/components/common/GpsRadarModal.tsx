@@ -198,7 +198,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
         {/* Header */}
         <div className="bg-slate-800 p-4 sm:p-5 border-b border-slate-700 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
               <Crosshair className="w-5 h-5 animate-pulse" />
             </div>
             <div>
@@ -206,8 +206,8 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                 <h3 className="text-base font-black text-white tracking-tight flex items-center gap-1.5">
                   Live GPS Radar & Tracking
                 </h3>
-                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
                   GPS Active
                 </span>
               </div>
@@ -227,20 +227,20 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
         {/* Modal Body */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 text-xs">
           {/* Distance & ETA Live Pill Banner */}
-          <div className="bg-gradient-to-r from-blue-950/80 to-slate-800 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between shadow-inner">
+          <div className="bg-gradient-to-r from-amber-950/80 to-slate-800 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between shadow-inner">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
                 Distance to Destination
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-white font-mono">
-                  {currentDist.toFixed(1)} <span className="text-sm font-sans font-bold text-blue-400">km</span>
+                  {currentDist.toFixed(1)} <span className="text-sm font-sans font-bold text-amber-400">km</span>
                 </span>
                 <span className="text-slate-400 font-medium text-xs">
                   ({Math.round(currentDist * 1000)} meters)
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-[11px]">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-[11px]">
                 <ClockIcon className="w-3.5 h-3.5" />
                 <span>Estimated Arrival: <strong>{currentDist <= 0.05 ? 'ARRIVED ON SITE' : `${activeEta} mins`}</strong></span>
               </div>
@@ -254,7 +254,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                   playSound('click');
                 }}
                 className={`p-1.5 rounded-lg transition flex items-center gap-1 text-[11px] font-bold ${
-                  transitMode === 'walk' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  transitMode === 'walk' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Walking (5 km/h)"
               >
@@ -267,7 +267,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                   playSound('click');
                 }}
                 className={`p-1.5 rounded-lg transition flex items-center gap-1 text-[11px] font-bold ${
-                  transitMode === 'bike' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  transitMode === 'bike' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Bicycle / Bike (20 km/h)"
               >
@@ -285,7 +285,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                 playSound('click');
               }}
               className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 ${
-                viewMode === 'google_maps' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                viewMode === 'google_maps' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
               }`}
             >
               <MapIcon className="w-3.5 h-3.5" />
@@ -297,7 +297,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                 playSound('click');
               }}
               className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 ${
-                viewMode === 'radar' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                viewMode === 'radar' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Crosshair className="w-3.5 h-3.5" />
@@ -318,7 +318,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
 
               {/* Map Floating Control Overlay */}
               <div className="absolute top-2 left-2 bg-slate-900/90 backdrop-blur-xs border border-slate-700 px-2.5 py-1.5 rounded-xl text-[10px] font-mono text-slate-300 space-y-0.5 pointer-events-none">
-                <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                <div className="flex items-center gap-1 text-amber-400 font-bold">
                   <Radio className="w-3 h-3 animate-pulse" />
                   <span>Google Maps Sync Active</span>
                 </div>
@@ -329,10 +329,10 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
               {/* Recalibrate button overlay */}
               <button
                 onClick={calibrateDeviceLocation}
-                className="absolute top-2 right-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-blue-300 flex items-center gap-1 shadow-md transition"
+                className="absolute top-2 right-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-amber-300 flex items-center gap-1 shadow-md transition"
                 title="Recalibrate GPS with device sensor"
               >
-                <LocateFixed className="w-3 h-3 text-blue-400" />
+                <LocateFixed className="w-3 h-3 text-amber-400" />
                 <span>Calibrate GPS</span>
               </button>
             </div>
@@ -342,16 +342,16 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
 
               {/* Concentric Radar Rings */}
-              <div className="absolute w-44 h-44 rounded-full border border-blue-500/20"></div>
-              <div className="absolute w-72 h-72 rounded-full border border-blue-500/15"></div>
-              <div className="absolute w-96 h-96 rounded-full border border-blue-500/10"></div>
+              <div className="absolute w-44 h-44 rounded-full border border-amber-500/20"></div>
+              <div className="absolute w-72 h-72 rounded-full border border-amber-500/15"></div>
+              <div className="absolute w-96 h-96 rounded-full border border-amber-500/10"></div>
 
               {/* Radar Crosshairs */}
-              <div className="absolute inset-x-0 top-1/2 h-[1px] bg-blue-500/20"></div>
-              <div className="absolute inset-y-0 left-1/2 w-[1px] bg-blue-500/20"></div>
+              <div className="absolute inset-x-0 top-1/2 h-[1px] bg-amber-500/20"></div>
+              <div className="absolute inset-y-0 left-1/2 w-[1px] bg-amber-500/20"></div>
 
               {/* Rotating Radar Sweep Line */}
-              <div className="absolute w-48 h-48 rounded-full pointer-events-none origin-center animate-[spin_4s_linear_infinite] bg-gradient-to-tr from-blue-500/20 to-transparent"></div>
+              <div className="absolute w-48 h-48 rounded-full pointer-events-none origin-center animate-[spin_4s_linear_infinite] bg-gradient-to-tr from-amber-500/20 to-transparent"></div>
 
               {/* SVG Trajectory Path */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -380,12 +380,12 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                 title={jobAddress}
               >
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 shadow-lg animate-bounce">
-                    <MapPin className="w-4 h-4 text-emerald-400 fill-emerald-400" />
+                  <div className="w-8 h-8 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-lg animate-bounce">
+                    <MapPin className="w-4 h-4 text-amber-400 fill-amber-400" />
                   </div>
-                  <div className="absolute -inset-1 rounded-full border border-emerald-400 animate-ping opacity-60"></div>
+                  <div className="absolute -inset-1 rounded-full border border-amber-400 animate-ping opacity-60"></div>
                 </div>
-                <div className="bg-slate-900/90 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/30 whitespace-nowrap mt-1 shadow-md">
+                <div className="bg-slate-900/90 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-500/30 whitespace-nowrap mt-1 shadow-md">
                   Job Site
                 </div>
               </div>
@@ -409,14 +409,14 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
                   <div className="absolute -inset-2 rounded-full border border-amber-400 animate-ping opacity-40 pointer-events-none"></div>
                 </div>
                 <div className="bg-slate-900/90 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-500/30 whitespace-nowrap mt-1 shadow-md flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                   {workerName} ({currentDist <= 0.05 ? 'Arrived' : 'En Route'})
                 </div>
               </div>
 
               {/* Live Telemetry Overlay in Corner */}
               <div className="absolute bottom-2 left-2 bg-slate-900/90 backdrop-blur-xs border border-slate-700 px-2.5 py-1.5 rounded-xl text-[10px] font-mono text-slate-300 space-y-0.5">
-                <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                <div className="flex items-center gap-1 text-amber-400 font-bold">
                   <Radio className="w-3 h-3 animate-pulse" />
                   <span>GPS Precision: ±{gpsAccuracy}m</span>
                 </div>
@@ -426,7 +426,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
 
               {/* Compass Heading Indicator */}
               <div className="absolute top-2 right-2 bg-slate-900/90 border border-slate-700 px-2 py-1 rounded-xl text-[10px] font-mono text-slate-300 flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 text-blue-400" />
+                <Compass className="w-3.5 h-3.5 text-amber-400" />
                 <span>{heading}° Bearing</span>
               </div>
             </div>
@@ -434,7 +434,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
 
           {/* Turn-by-turn Navigation Instruction Box */}
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0">
               <Navigation className="w-4 h-4" />
             </div>
             <div className="flex-1 space-y-0.5">
@@ -460,8 +460,8 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
               }}
               className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 ${
                 isNavigating
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'bg-amber-600 hover:bg-amber-700 text-white'
               }`}
             >
               {isNavigating ? (
@@ -481,7 +481,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
               href={googleMapsDirectionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs"
+              className="py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Open in Google Maps</span>
@@ -492,7 +492,7 @@ export const GpsRadarModal: React.FC<GpsRadarModalProps> = ({
         {/* Footer */}
         <div className="p-4 bg-slate-800 border-t border-slate-700 flex items-center justify-between text-xs font-semibold text-slate-400">
           <div className="flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
             <span>Google Maps Grounded GPS • Battery optimized</span>
           </div>
           <button

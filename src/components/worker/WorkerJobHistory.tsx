@@ -193,7 +193,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                 </>
               ) : exportSuccess ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-950" />
+                  <Check className="w-3.5 h-3.5 text-amber-950" />
                   <span>PDF Downloaded!</span>
                 </>
               ) : (
@@ -204,8 +204,8 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
               )}
             </button>
 
-            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
               <span>100% Settled via UPI</span>
             </span>
           </div>
@@ -216,7 +216,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
           <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/60 space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Jobs Completed</span>
             <p className="text-2xl font-black text-white font-mono">{displayJobs.length}</p>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3 inline" /> {displayJobs.length > 0 ? '100% Completed' : '0 Assignments'}
             </span>
           </div>
@@ -244,7 +244,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
 
           <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700/60 space-y-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">On-Time Arrival</span>
-            <p className="text-2xl font-black text-emerald-400 font-mono">
+            <p className="text-2xl font-black text-amber-400 font-mono">
               {displayJobs.length > 0 ? '100%' : 'N/A'}
             </p>
             <span className="text-[10px] text-slate-400 font-medium">
@@ -370,7 +370,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                 Showing {filteredJobs.length} Past Completed Assignment{filteredJobs.length !== 1 ? 's' : ''}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                Total Settled: <strong className="text-emerald-700 font-mono">₹{filteredJobs.reduce((acc, j) => acc + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0)}</strong>
+                Total Settled: <strong className="text-amber-700 font-mono">₹{filteredJobs.reduce((acc, j) => acc + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0)}</strong>
               </span>
             </div>
 
@@ -418,8 +418,8 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                             <Calendar className="w-3 h-3 text-slate-500" />
                             <span>Completed: {completionDateStr}</span>
                           </span>
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-[11px] font-bold flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[11px] font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-amber-600" />
                             <span>Settled to UPI</span>
                           </span>
                         </div>
@@ -427,7 +427,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                         <div className="text-right shrink-0">
                           <div className="flex items-baseline gap-1">
                             <span className="text-xs text-slate-400 font-bold">Net Payout:</span>
-                            <span className="text-xl font-black text-emerald-600 font-mono leading-none">
+                            <span className="text-xl font-black text-amber-600 font-mono leading-none">
                               +₹{workerPayout}
                             </span>
                           </div>
@@ -514,7 +514,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                           <button
                             type="button"
                             onClick={() => handleCopyTxn(txn)}
-                            className="text-[10px] text-blue-600 hover:underline font-sans font-bold ml-1 cursor-pointer"
+                            className="text-[10px] text-amber-600 hover:underline font-sans font-bold ml-1 cursor-pointer"
                           >
                             {copiedTxn === txn ? '✓ Copied' : 'Copy'}
                           </button>
@@ -575,13 +575,13 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
 
             {/* Receipt Body */}
             <div className="space-y-4 text-xs">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Settled Amount</span>
-                <p className="text-3xl font-black text-emerald-700 font-mono">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center space-y-1">
+                <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Settled Amount</span>
+                <p className="text-3xl font-black text-amber-700 font-mono">
                   +₹{receiptJob.workerPayout || Math.round((receiptJob.dailyWage || 850) * 0.8)}
                 </p>
-                <p className="text-[11px] text-emerald-700 font-semibold flex items-center justify-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <p className="text-[11px] text-amber-700 font-semibold flex items-center justify-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
                   Successfully credited to UPI
                 </p>
               </div>
@@ -621,11 +621,11 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Dihadi Platform Fee {receiptJob.platformFee === 0 ? '(Covered by VIP)' : '(20%)'}</span>
-                  <span className="font-mono text-rose-600">-₹{receiptJob.platformFee !== undefined ? receiptJob.platformFee : Math.round((receiptJob.dailyWage || 850) * 0.2)}</span>
+                  <span className="font-mono text-amber-600">-₹{receiptJob.platformFee !== undefined ? receiptJob.platformFee : Math.round((receiptJob.dailyWage || 850) * 0.2)}</span>
                 </div>
                 <div className="flex justify-between font-black text-slate-900 text-sm border-t border-dashed border-slate-300 pt-2">
                   <span>Net Worker Payout</span>
-                  <span className="font-mono text-emerald-600">₹{receiptJob.workerPayout || Math.round((receiptJob.dailyWage || 850) * 0.8)}</span>
+                  <span className="font-mono text-amber-600">₹{receiptJob.workerPayout || Math.round((receiptJob.dailyWage || 850) * 0.8)}</span>
                 </div>
               </div>
             </div>

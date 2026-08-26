@@ -117,8 +117,8 @@ export const CallModal: React.FC<CallModalProps> = ({
         {/* Top Status Bar */}
         <div className="w-full flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-bold text-emerald-300">
+            <Radio className="w-3 h-3 text-amber-400 animate-pulse" />
+            <span className="text-[11px] font-bold text-amber-300">
               {status === 'connected' ? 'VoIP Connected' : 'In-App Calling...'}
             </span>
           </div>
@@ -144,7 +144,7 @@ export const CallModal: React.FC<CallModalProps> = ({
             )}
 
             {status === 'connected' && (
-              <div className="absolute -inset-2 rounded-full border border-emerald-400 animate-pulse opacity-60"></div>
+              <div className="absolute -inset-2 rounded-full border border-amber-400 animate-pulse opacity-60"></div>
             )}
           </div>
 
@@ -188,7 +188,7 @@ export const CallModal: React.FC<CallModalProps> = ({
               <a
                 href={`tel:${cleanTargetPhone}`}
                 onClick={() => playSound('click')}
-                className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md"
+                className="w-full py-2.5 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md"
               >
                 <Phone className="w-4 h-4" />
                 <span>Dial Normal Phone ({callSession.receiverPhone})</span>
@@ -240,7 +240,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                   <button
                     type="button"
                     onClick={handleEnd}
-                    className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
+                    className="w-14 h-14 rounded-full bg-amber-600 hover:bg-amber-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-amber-900/50 transition cursor-pointer"
                     title="End / Cancel Call"
                   >
                     <PhoneOff className="w-6 h-6" />
@@ -253,12 +253,12 @@ export const CallModal: React.FC<CallModalProps> = ({
                   <button
                     type="button"
                     onClick={handleAnswer}
-                    className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-900/50 transition animate-bounce cursor-pointer"
+                    className="w-14 h-14 rounded-full bg-amber-600 hover:bg-amber-500 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-amber-900/50 transition animate-bounce cursor-pointer"
                     title="Simulate In-App Connect / Answer"
                   >
                     <Phone className="w-6 h-6" />
                   </button>
-                  <span className="text-[10px] text-emerald-400 font-bold">Answer (VoIP)</span>
+                  <span className="text-[10px] text-amber-400 font-bold">Answer (VoIP)</span>
                 </div>
               </div>
             </div>
@@ -273,7 +273,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                 }}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
                   isMuted
-                    ? 'bg-rose-500 text-white'
+                    ? 'bg-amber-500 text-white'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                 }`}
                 title={isMuted ? 'Unmute' : 'Mute'}
@@ -285,7 +285,7 @@ export const CallModal: React.FC<CallModalProps> = ({
               <button
                 type="button"
                 onClick={handleEnd}
-                className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 transition cursor-pointer"
+                className="w-16 h-16 rounded-full bg-amber-600 hover:bg-amber-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-amber-900/50 transition cursor-pointer"
                 title="End Call"
               >
                 <PhoneOff className="w-7 h-7" />
@@ -300,7 +300,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                 }}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
                   isSpeaker
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-amber-600 text-white'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                 }`}
                 title={isSpeaker ? 'Speaker On' : 'Speaker Off'}

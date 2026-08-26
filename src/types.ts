@@ -16,6 +16,8 @@ export type TradeType =
 export type JobStatus = 
   | 'broadcast' 
   | 'accepted' 
+  | 'approved'
+  | 'pending_payment'
   | 'in_progress' 
   | 'completed_pending_payment' 
   | 'paid_and_closed' 
@@ -145,7 +147,7 @@ export interface Job {
   isPaid: boolean;
   isEscrowPrepaid?: boolean;
   escrowPrepaidAmount?: number;
-  escrowStatus?: 'held_in_escrow' | 'released_to_worker' | 'refunded_to_customer' | 'refund_requested_dispute';
+  escrowStatus?: 'pending' | 'held_in_escrow' | 'released_to_worker' | 'refunded_to_customer' | 'refund_requested_dispute';
   escrowPrepaidAt?: string;
   disputeId?: string;
   disputeReason?: string;

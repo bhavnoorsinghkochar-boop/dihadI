@@ -33,87 +33,56 @@
   --app-card-shadow: none;
 }
 
+@theme {
+  --color-slate-50: var(--app-bg);
+  --color-slate-100: var(--app-surface);
+  --color-slate-200: var(--app-border);
+  --color-slate-300: var(--app-border);
+  --color-slate-400: var(--app-text-muted);
+  --color-slate-500: var(--app-text-muted);
+  --color-slate-600: var(--app-text-muted);
+  --color-slate-700: var(--app-text);
+  --color-slate-800: var(--app-text);
+  --color-slate-900: var(--app-text);
+  --color-slate-950: var(--app-text);
+
+  /* Primary Accents mapped to Yellow/Canary */
+  --color-amber-50: var(--app-surface-hover);
+  --color-amber-100: var(--app-surface-hover);
+  --color-amber-200: var(--app-border);
+  --color-amber-300: var(--app-accent);
+  --color-amber-400: var(--app-accent);
+  --color-amber-500: var(--app-accent);
+  --color-amber-600: var(--app-accent);
+  --color-amber-700: var(--app-text);
+  --color-amber-800: var(--app-text);
+  --color-amber-900: var(--app-text);
+}
+
 body {
-  background-color: var(--app-bg) !important;
-  color: var(--app-text) !important;
+  background-color: var(--app-bg);
+  color: var(--app-text);
 }
 
-/* BACKGROUNDS */
-.bg-slate-50, .bg-gray-50, .bg-slate-900, .bg-slate-950, .bg-gray-900, .bg-black {
-  background-color: var(--app-bg) !important;
-}
-
-.bg-white, .bg-slate-100, .bg-gray-100, .bg-slate-800, .bg-gray-800 {
-  background-color: var(--app-surface) !important;
-}
-/* Apply shadows only in light mode */
-:root:not(.dark) .bg-white, :root:not(.dark) .bg-slate-100 {
-  box-shadow: var(--app-card-shadow) !important;
-}
-
-/* TEXT */
-.text-slate-900, .text-slate-800, .text-slate-700, .text-gray-900, .text-gray-800, .text-black, .text-white, .text-slate-50 {
-  color: var(--app-text) !important;
-}
-
-.text-slate-600, .text-slate-500, .text-slate-400, .text-gray-600, .text-gray-500 {
-  color: var(--app-text-muted) !important;
-}
-
-/* BORDERS */
-.border-slate-100, .border-slate-200, .border-slate-300, .border-slate-400, .border-slate-800, .border-gray-200, .border-white {
-  border-color: var(--app-border) !important;
-}
-
-/* ACCENTS - Buttons and Badges */
-.bg-blue-500, .bg-blue-600, .bg-emerald-500, .bg-emerald-600, .bg-amber-500, .bg-amber-600, .bg-indigo-500, .bg-indigo-600, .bg-rose-500, .bg-rose-600 {
-  background-color: var(--c-yellow) !important;
-  color: var(--c-charcoal) !important;
-  border-color: var(--c-yellow) !important;
-}
-
-/* Force child elements of accents to be charcoal */
-.bg-blue-500 *, .bg-blue-600 *, .bg-emerald-500 *, .bg-emerald-600 *, .bg-amber-500 *, .bg-amber-600 *, .bg-indigo-500 *, .bg-indigo-600 *, .bg-rose-500 *, .bg-rose-600 * {
+/* Force child elements of amber-500/amber-600 to be charcoal for legibility */
+.bg-amber-500, .bg-amber-600, .bg-amber-400 {
   color: var(--c-charcoal) !important;
 }
 
-/* SOFT ACCENTS - Tinted Backgrounds */
-.bg-blue-50, .bg-emerald-50, .bg-amber-50, .bg-indigo-50, .bg-rose-50,
-.bg-blue-100, .bg-emerald-100, .bg-amber-100, .bg-indigo-100, .bg-rose-100, .bg-amber-500\/10 {
-  background-color: var(--app-surface-hover) !important;
-  color: var(--app-text) !important;
+.bg-amber-500 *, .bg-amber-600 *, .bg-amber-400 * {
+  color: var(--c-charcoal) !important;
 }
 
-/* ACCENT TEXT / ICONS */
-.text-blue-500, .text-blue-600, .text-emerald-500, .text-emerald-600, .text-amber-500, .text-amber-600, .text-indigo-500, .text-indigo-600, .text-rose-500, .text-rose-600, .text-emerald-700 {
-  color: var(--c-ochre) !important;
-}
-.dark .text-blue-500, .dark .text-blue-600, .dark .text-emerald-500, .dark .text-emerald-600, .dark .text-amber-500, .dark .text-amber-600, .dark .text-indigo-500, .dark .text-indigo-600, .dark .text-rose-500, .dark .text-rose-600, .dark .text-emerald-700 {
-  color: var(--c-yellow) !important;
-}
+/* Fix any stray text-white that got caught in surfaces */
 
-/* ACCENT BORDERS */
-.border-blue-200, .border-emerald-200, .border-amber-200, .border-indigo-200, .border-rose-200,
-.border-blue-500, .border-emerald-500, .border-amber-500, .border-indigo-500, .border-rose-500 {
-  border-color: var(--c-ochre) !important;
-}
-.dark .border-blue-200, .dark .border-emerald-200, .dark .border-amber-200, .dark .border-indigo-200, .dark .border-rose-200,
-.dark .border-blue-500, .dark .border-emerald-500, .dark .border-amber-500, .dark .border-indigo-500, .dark .border-rose-500 {
-  border-color: var(--c-yellow) !important;
-}
-
-/* FIX HOVER STATES FOR ACCENTS */
-.hover\:bg-blue-700:hover, .hover\:bg-emerald-700:hover, .hover\:bg-amber-700:hover, .hover\:bg-indigo-700:hover, .hover\:bg-rose-700:hover,
-.hover\:bg-slate-800:hover, .hover\:bg-gray-800:hover {
-  background-color: var(--app-surface-hover) !important;
-}
+/* Let's remove the .text-white global override. It's safer to not touch it, except maybe inside amber buttons. */
 
 /* Global Transitions */
 button, a, input, select, textarea, .cursor-pointer {
-  transition: all 0.3s ease-in-out !important;
+  transition: all 0.3s ease-in-out;
 }
 button:hover:not(:disabled), .cursor-pointer:hover {
-  transform: scale(1.02) !important;
+  transform: scale(1.02);
 }
 
 /* Strict Spacing Rules (8px grid) */
@@ -124,3 +93,4 @@ button:hover:not(:disabled), .cursor-pointer:hover {
 .p-16 { padding: 64px !important; }
 .m-4 { margin: 16px !important; }
 .gap-4 { gap: 16px !important; }
+

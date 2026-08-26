@@ -10,7 +10,7 @@ export const TripleViewSimulator: React.FC = () => {
       {/* Live sync highlight note */}
       <div className="max-w-7xl mx-auto mb-6 bg-white/90 border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
@@ -23,7 +23,7 @@ export const TripleViewSimulator: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
           Escrow: 20% Fee Enabled
         </div>
       </div>
@@ -33,7 +33,7 @@ export const TripleViewSimulator: React.FC = () => {
         {/* Interface A: Worker App */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
             <h2 className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">
               Interface A: Worker App
             </h2>
@@ -46,7 +46,7 @@ export const TripleViewSimulator: React.FC = () => {
         {/* Interface B: Employer App */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
             <h2 className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">
               Interface B: Employer App
             </h2>

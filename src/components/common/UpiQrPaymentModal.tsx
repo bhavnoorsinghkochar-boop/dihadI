@@ -255,7 +255,7 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
                       className="p-1 hover:bg-amber-100 rounded text-amber-800 transition"
                       title="Copy UPI ID"
                     >
-                      {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copied ? <Check className="w-3 h-3 text-amber-600" /> : <Copy className="w-3 h-3" />}
                     </button>
                   </p>
                 </div>
@@ -326,7 +326,7 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
 
                 <div className="text-center space-y-1">
                   <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700">
-                    <Scan className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                    <Scan className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                     <span>Scan with any UPI App (GPay / PhonePe / Paytm / BHIM)</span>
                   </div>
                   <p className="text-[11px] text-slate-500">
@@ -337,10 +337,10 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
                 {/* UPI App Icons Row */}
                 <div className="w-full flex items-center justify-center gap-2 pt-1">
                   {[
-                    { id: 'gpay', name: 'Google Pay', color: 'border-blue-300 text-blue-700 bg-blue-50' },
+                    { id: 'gpay', name: 'Google Pay', color: 'border-amber-300 text-amber-700 bg-amber-50' },
                     { id: 'phonepe', name: 'PhonePe', color: 'border-purple-300 text-purple-700 bg-purple-50' },
                     { id: 'paytm', name: 'Paytm UPI', color: 'border-cyan-300 text-cyan-800 bg-cyan-50' },
-                    { id: 'bhim', name: 'BHIM', color: 'border-emerald-300 text-emerald-800 bg-emerald-50' },
+                    { id: 'bhim', name: 'BHIM', color: 'border-amber-300 text-amber-800 bg-amber-50' },
                   ].map((app) => (
                     <button
                       key={app.id}
@@ -412,8 +412,8 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
             )}
 
             {/* Verification Badge */}
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-semibold">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold">
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
               <span>Aadhaar & NPCI Verified UPI Account • Instant 2-second bank deposit</span>
             </div>
           </div>
@@ -421,13 +421,13 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
           /* STEP 2: RATING AND REVIEW VIEW */
           <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 animate-in fade-in">
             {/* Payment success alert */}
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-3.5 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3.5 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-black text-emerald-950">₹{amount} Successfully Transferred!</h4>
-                <p className="text-[11px] text-emerald-700 font-mono">
+                <h4 className="text-xs font-black text-amber-950">₹{amount} Successfully Transferred!</h4>
+                <p className="text-[11px] text-amber-700 font-mono">
                   Ref: {completedTxn?.txnId} • Deposited to {targetWorkerName}
                 </p>
               </div>
@@ -550,7 +550,7 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
                   <button
                     onClick={() => handleSimulateUpiPay('UPI_QR')}
                     disabled={isProcessing}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-[0.99] text-white text-xs font-black transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {isProcessing ? (
                       <>

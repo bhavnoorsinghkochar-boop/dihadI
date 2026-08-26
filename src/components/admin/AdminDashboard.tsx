@@ -94,7 +94,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
               </button>
               <div>
                 <h3 className="text-lg font-black text-white flex items-center gap-1.5">
-                  <Shield className="w-5 h-5 text-blue-400" />
+                  <Shield className="w-5 h-5 text-amber-400" />
                   {getT(currentLanguage, 'role_admin_title')}
                 </h3>
                 <p className="text-xs text-slate-400">
@@ -114,16 +114,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
             <button
               type="button"
               onClick={handleQuickDemo}
-              className="px-3 py-1.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 rounded-xl text-xs font-bold border border-blue-700 transition flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-amber-900/60 hover:bg-amber-800 text-amber-200 rounded-xl text-xs font-bold border border-amber-700 transition flex items-center gap-1.5"
             >
-              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Admin HQ Demo Access</span>
             </button>
           </div>
 
           {authError && (
-            <div className="bg-rose-950/70 border border-rose-800 text-rose-200 text-xs p-3 rounded-xl flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="bg-amber-950/70 border border-amber-800 text-amber-200 text-xs p-3 rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
               <span>{authError}</span>
             </div>
           )}
@@ -139,7 +139,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                   placeholder="ops@dihadi.co or admin"
                   value={adminId}
                   onChange={(e) => setAdminId(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-blue-500 pl-8 font-mono"
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-amber-500 pl-8 font-mono"
                   required
                 />
                 <User className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" />
@@ -156,7 +156,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                   placeholder="admin"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-blue-500 pl-8 font-mono"
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-amber-500 pl-8 font-mono"
                   required
                 />
                 <Lock className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" />
@@ -165,7 +165,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2 mt-4"
+              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2 mt-4"
             >
               <Lock className="w-4 h-4" />
               <span>{getT(currentLanguage, 'auth_login_btn')}</span>
@@ -212,7 +212,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
       <div className="bg-slate-800 rounded-t-3xl p-4 sm:p-5 border-b border-slate-700 shrink-0">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
               <Shield className="w-5 h-5" />
             </div>
             <div>
@@ -238,8 +238,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
 
         <div className="flex justify-between items-center text-xs text-slate-400 border-t border-slate-700/60 pt-2 mt-2">
           <span>{currentAdmin.name} ({currentAdmin.email})</span>
-          <span className="text-emerald-400 font-bold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-amber-400 font-bold flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
             Live Operations Active
           </span>
         </div>
@@ -280,13 +280,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
           onClick={() => setAdminTab('workers')}
           className={`flex-1 min-w-[100px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
             adminTab === 'workers'
-              ? 'bg-slate-800 text-blue-400 border-t-2 border-blue-500'
+              ? 'bg-slate-800 text-amber-400 border-t-2 border-amber-500'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
           <span>{getT(currentLanguage, 'admin_tab_all_workers')}</span>
-          <span className="px-1.5 py-0.2 bg-blue-500/30 text-blue-300 text-[10px] font-bold rounded-full">
+          <span className="px-1.5 py-0.2 bg-amber-500/30 text-amber-300 text-[10px] font-bold rounded-full">
             {workers.length}
           </span>
         </button>
@@ -295,13 +295,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
           onClick={() => setAdminTab('jobs')}
           className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${
             adminTab === 'jobs'
-              ? 'bg-slate-800 text-emerald-400 border-t-2 border-emerald-500'
+              ? 'bg-slate-800 text-amber-400 border-t-2 border-amber-500'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
           }`}
         >
           <Briefcase className="w-3.5 h-3.5" />
           <span>{getT(currentLanguage, 'admin_tab_live_jobs')}</span>
-          <span className="px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 text-[10px] font-bold rounded-full">
+          <span className="px-1.5 py-0.2 bg-amber-500/30 text-amber-300 text-[10px] font-bold rounded-full">
             {jobs.length}
           </span>
         </button>
@@ -314,25 +314,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
               <span>Admin Treasury</span>
-              <Wallet className="w-3 h-3 text-emerald-400" />
+              <Wallet className="w-3 h-3 text-amber-400" />
             </div>
-            <p className="text-lg font-black text-emerald-400 font-mono">₹{adminTreasuryBalance.toLocaleString('en-IN')}</p>
+            <p className="text-lg font-black text-amber-400 font-mono">₹{adminTreasuryBalance.toLocaleString('en-IN')}</p>
             <p className="text-[9px] text-amber-400 font-mono truncate">Rev: ₹{adminSubscriptionRevenue.toLocaleString('en-IN')}</p>
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
               <span>Auto Disbursed</span>
-              <ArrowDownRight className="w-3 h-3 text-blue-400" />
+              <ArrowDownRight className="w-3 h-3 text-amber-400" />
             </div>
-            <p className="text-lg font-black text-blue-400 font-mono">₹{adminWorkerPayoutsDisbursed.toLocaleString('en-IN')}</p>
+            <p className="text-lg font-black text-amber-400 font-mono">₹{adminWorkerPayoutsDisbursed.toLocaleString('en-IN')}</p>
             <p className="text-[9px] text-slate-400 font-mono">To Worker Wallets</p>
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
               <span>KYC Verified</span>
-              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <ShieldCheck className="w-3 h-3 text-amber-400" />
             </div>
             <p className="text-lg font-black text-white font-mono">{verifiedWorkersCount}</p>
             <p className="text-[9px] text-amber-400 font-mono">{pendingVerifications.length} Pending</p>
@@ -343,7 +343,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
         {adminTab === 'treasury' && (
           <div className="space-y-3">
             {/* Treasury Highlight Banner */}
-            <div className="bg-linear-to-r from-amber-500/10 via-slate-800 to-emerald-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
+            <div className="bg-linear-to-r from-amber-500/10 via-slate-800 to-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -373,7 +373,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                 </div>
 
                 <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                  <div className="flex items-center gap-1.5 text-amber-400 font-bold">
                     <ArrowDownRight className="w-3.5 h-3.5" />
                     <span>Automatic Worker Payouts</span>
                   </div>
@@ -407,8 +407,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                         <div className="flex items-center gap-2.5">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                             isCredit 
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
+                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                           }`}>
                             {isCredit ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                           </div>
@@ -422,7 +422,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
 
                         <div className="text-right shrink-0">
                           <span className={`font-mono font-black text-xs ${
-                            isCredit ? 'text-emerald-400' : 'text-blue-400'
+                            isCredit ? 'text-amber-400' : 'text-amber-400'
                           }`}>
                             {isCredit ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
                           </span>
@@ -477,7 +477,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                   onClick={() => setKycFilter('approved')}
                   className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
                     kycFilter === 'approved'
-                      ? 'bg-emerald-600 text-white font-black'
+                      ? 'bg-amber-600 text-white font-black'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -489,7 +489,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                   onClick={() => setKycFilter('all')}
                   className={`px-2.5 py-1 rounded-lg transition ${
                     kycFilter === 'all'
-                      ? 'bg-blue-600 text-white font-black'
+                      ? 'bg-amber-600 text-white font-black'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -520,19 +520,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                           <h4 className="font-bold text-white text-sm">{req.workerName}</h4>
                           <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md flex items-center gap-1 ${
                             req.status === 'approved'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                               : req.status === 'rejected'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                               : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                           }`}>
                             {req.status === 'approved' ? (
                               <>
-                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                <ShieldCheck className="w-3 h-3 text-amber-400" />
                                 <span>{getT(currentLanguage, 'admin_verified_status')}</span>
                               </>
                             ) : req.status === 'rejected' ? (
                               <>
-                                <X className="w-3 h-3 text-rose-400" />
+                                <X className="w-3 h-3 text-amber-400" />
                                 <span>Rejected</span>
                               </>
                             ) : (
@@ -545,12 +545,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5">{req.trade} • {req.experienceYears} Years Experience</p>
                       </div>
-                      <span className="text-[11px] font-mono text-blue-400">{req.phone}</span>
+                      <span className="text-[11px] font-mono text-amber-400">{req.phone}</span>
                     </div>
 
                     <div className="bg-slate-900/90 p-2.5 rounded-lg text-[11px] font-mono text-slate-300 flex justify-between items-center border border-slate-800">
                       <span>Aadhaar: {req.aadhaarNumber}</span>
-                      <span className={`font-bold ${req.status === 'approved' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <span className={`font-bold ${req.status === 'approved' ? 'text-amber-400' : 'text-amber-400'}`}>
                         {req.status === 'approved' ? 'Govt. Aadhaar Validated' : 'Awaiting Review'}
                       </span>
                     </div>
@@ -560,14 +560,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                         <>
                           <button
                             onClick={() => verifyWorkerByAdmin(req.id, 'approved')}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm"
+                            className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm"
                           >
                             <Check className="w-4 h-4" />
                             <span>{getT(currentLanguage, 'admin_verify_btn')}</span>
                           </button>
                           <button
                             onClick={() => verifyWorkerByAdmin(req.id, 'rejected')}
-                            className="px-4 bg-slate-700 hover:bg-rose-900/60 text-slate-300 hover:text-rose-200 font-bold py-2 rounded-lg transition flex items-center justify-center gap-1"
+                            className="px-4 bg-slate-700 hover:bg-amber-900/60 text-slate-300 hover:text-amber-200 font-bold py-2 rounded-lg transition flex items-center justify-center gap-1"
                           >
                             <X className="w-4 h-4" />
                             <span>{getT(currentLanguage, 'admin_reject_btn')}</span>
@@ -575,13 +575,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                         </>
                       ) : req.status === 'approved' ? (
                         <div className="flex w-full items-center justify-between">
-                          <span className="text-emerald-400 text-xs font-bold flex items-center gap-1">
+                          <span className="text-amber-400 text-xs font-bold flex items-center gap-1">
                             <Check className="w-3.5 h-3.5" />
                             Verified & Visible to Customers
                           </span>
                           <button
                             onClick={() => verifyWorkerByAdmin(req.id, 'rejected')}
-                            className="px-3 py-1 bg-slate-700/80 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 rounded-lg text-[10px] font-bold transition"
+                            className="px-3 py-1 bg-slate-700/80 hover:bg-amber-900/50 text-slate-400 hover:text-amber-300 rounded-lg text-[10px] font-bold transition"
                           >
                             {getT(currentLanguage, 'admin_revoke_btn')}
                           </button>
@@ -589,7 +589,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                       ) : (
                         <button
                           onClick={() => verifyWorkerByAdmin(req.id, 'approved')}
-                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-lg transition flex items-center justify-center gap-1"
+                          className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-1.5 rounded-lg transition flex items-center justify-center gap-1"
                         >
                           <Check className="w-3.5 h-3.5" />
                           <span>Re-approve & Verify Worker</span>
@@ -608,7 +608,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-bold text-white text-xs flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-400" />
+                <Users className="w-4 h-4 text-amber-400" />
                 {getT(currentLanguage, 'admin_all_registered_workers')} ({workers.length})
               </h3>
 
@@ -618,7 +618,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                   placeholder="Search name, phone, trade..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1 text-xs text-white pl-7 focus:outline-blue-500 w-full sm:w-56"
+                  className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1 text-xs text-white pl-7 focus:outline-amber-500 w-full sm:w-56"
                 />
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" />
               </div>
@@ -638,7 +638,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                           {w.name.charAt(0)}
                         </div>
                         <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-800 ${
-                          w.isOnline ? 'bg-emerald-500' : 'bg-slate-500'
+                          w.isOnline ? 'bg-amber-500' : 'bg-slate-500'
                         }`} />
                       </div>
 
@@ -647,10 +647,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                           <h4 className="font-bold text-white text-sm">{w.name}</h4>
                           <span className={`px-2 py-0.2 text-[10px] font-bold rounded-md flex items-center gap-1 ${
                             w.isVerified
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                               : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                           }`}>
-                            <ShieldCheck className={`w-3 h-3 ${w.isVerified ? 'text-emerald-400' : 'text-amber-400'}`} />
+                            <ShieldCheck className={`w-3 h-3 ${w.isVerified ? 'text-amber-400' : 'text-amber-400'}`} />
                             {w.isVerified ? getT(currentLanguage, 'admin_verified_status') : getT(currentLanguage, 'admin_unverified_status')}
                           </span>
                         </div>
@@ -665,14 +665,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                       {!w.isVerified ? (
                         <button
                           onClick={() => verifyWorkerDirectly(w.id, 'approved')}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-xs"
+                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-xs"
                         >
                           <Check className="w-3.5 h-3.5" />
                           <span>{getT(currentLanguage, 'admin_verify_now')}</span>
                         </button>
                       ) : (
-                        <span className="px-3 py-1 bg-emerald-950/60 border border-emerald-700/60 text-emerald-300 font-bold rounded-lg text-[11px] flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="px-3 py-1 bg-amber-950/60 border border-amber-700/60 text-amber-300 font-bold rounded-lg text-[11px] flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5 text-amber-400" />
                           <span>Verified</span>
                         </span>
                       )}
@@ -688,7 +688,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
         {adminTab === 'jobs' && (
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 space-y-2.5">
             <h3 className="font-bold text-white text-xs flex items-center gap-1.5">
-              <Briefcase className="w-4 h-4 text-emerald-400" />
+              <Briefcase className="w-4 h-4 text-amber-400" />
               <span>Live System Jobs ({jobs.length})</span>
             </h3>
 
@@ -708,7 +708,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-emerald-400 text-sm">₹{job.dailyWage}</span>
+                        <span className="font-mono font-bold text-amber-400 text-sm">₹{job.dailyWage}</span>
                         <span className="text-[9px] text-slate-400 block uppercase font-bold">{job.status}</span>
                       </div>
                     </div>

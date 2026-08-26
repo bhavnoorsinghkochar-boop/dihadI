@@ -230,8 +230,8 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-lg sm:text-xl font-black text-white">{worker.name}</h3>
                   {worker.isVerified ? (
-                    <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-[10px] font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-[10px] font-bold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-amber-400" />
                       UIDAI Aadhaar Verified
                     </span>
                   ) : (
@@ -306,26 +306,26 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                   </p>
                 </div>
 
-                <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 space-y-1">
-                  <div className="flex items-center justify-between text-emerald-800">
+                <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 space-y-1">
+                  <div className="flex items-center justify-between text-amber-800">
                     <span className="text-[10px] font-black uppercase tracking-wider">Completed</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <CheckCircle2 className="w-4 h-4 text-amber-600" />
                   </div>
                   <p className="text-2xl font-black text-slate-900">{completedCount}</p>
-                  <p className="text-[10px] text-emerald-700 font-semibold">
+                  <p className="text-[10px] text-amber-700 font-semibold">
                     {completedCount > 0 ? '100% Payout Rate' : '0 Assignments'}
                   </p>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200/80 rounded-2xl p-3.5 space-y-1">
-                  <div className="flex items-center justify-between text-blue-800">
+                <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 space-y-1">
+                  <div className="flex items-center justify-between text-amber-800">
                     <span className="text-[10px] font-black uppercase tracking-wider">On-Time Arrival</span>
-                    <Clock className="w-4 h-4 text-blue-600" />
+                    <Clock className="w-4 h-4 text-amber-600" />
                   </div>
                   <p className="text-2xl font-black text-slate-900">
                     {completedCount > 0 ? '100%' : 'N/A'}
                   </p>
-                  <p className="text-[10px] text-blue-700 font-semibold">
+                  <p className="text-[10px] text-amber-700 font-semibold">
                     {completedCount > 0 ? 'GPS Verified' : 'No jobs yet'}
                   </p>
                 </div>
@@ -382,7 +382,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div className="p-3 bg-white border border-slate-200 rounded-xl flex items-center gap-2.5 shadow-xs">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      worker.isVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      worker.isVerified ? 'bg-amber-100 text-amber-700' : 'bg-amber-100 text-amber-700'
                     }`}>
                       {worker.isVerified ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
                     </div>
@@ -397,7 +397,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                   </div>
 
                   <div className="p-3 bg-white border border-slate-200 rounded-xl flex items-center gap-2.5 shadow-xs">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                       <Users className="w-4 h-4" />
                     </div>
                     <div>
@@ -453,7 +453,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                       </>
                     ) : pdfExportSuccess ? (
                       <>
-                        <Check className="w-4 h-4 text-emerald-900" />
+                        <Check className="w-4 h-4 text-amber-900" />
                         <span>Downloaded PDF!</span>
                       </>
                     ) : (
@@ -467,11 +467,11 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 border-t border-amber-200/60">
                   <div className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span>UIDAI Digital Watermark</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span>OTP Verified Attendance</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -494,7 +494,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-400 block uppercase">Settled Earnings</span>
-                  <span className="text-sm font-black text-emerald-600 font-mono">₹{totalEarnings.toLocaleString('en-IN')}</span>
+                  <span className="text-sm font-black text-amber-600 font-mono">₹{totalEarnings.toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
@@ -520,7 +520,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-3">
                   <span>● Daily Rate: ₹{worker.dailyRate || 850}/day</span>
-                  <span className="text-emerald-400 font-bold">
+                  <span className="text-amber-400 font-bold">
                     {totalEarnings > 0 ? `₹${totalEarnings} settled directly to UPI` : '0 payout records'}
                   </span>
                 </div>
@@ -538,7 +538,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                     <div key={item.month} className="grid grid-cols-3 p-3 text-slate-800 hover:bg-slate-50 transition">
                       <span className="font-bold">{item.month}</span>
                       <span className="text-center font-mono">{item.jobs} Jobs</span>
-                      <span className="text-right font-mono font-black text-emerald-600">₹{item.earnings.toLocaleString('en-IN')}</span>
+                      <span className="text-right font-mono font-black text-amber-600">₹{item.earnings.toLocaleString('en-IN')}</span>
                     </div>
                   ))}
                 </div>
@@ -592,7 +592,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                         <span className="text-[10px] font-bold bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-200">
                           Trade: {rev.trade}
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-0.5">
+                        <span className="text-[10px] font-bold text-amber-700 flex items-center gap-0.5">
                           <CheckCircle2 className="w-3 h-3" /> OTP Verified
                         </span>
                         {rev.tags && rev.tags.length > 0 && rev.tags.map((t, idx) => (
@@ -618,7 +618,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
               onClick={handleShareStats}
               className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              <Share2 className="w-3.5 h-3.5 text-blue-600" />
+              <Share2 className="w-3.5 h-3.5 text-amber-600" />
               <span>{copiedLink ? 'Link Copied!' : 'Share Card'}</span>
             </button>
 
@@ -637,8 +637,8 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
                 </>
               ) : pdfExportSuccess ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-950" />
-                  <span className="text-emerald-950">PDF Saved!</span>
+                  <Check className="w-3.5 h-3.5 text-amber-950" />
+                  <span className="text-amber-950">PDF Saved!</span>
                 </>
               ) : (
                 <>

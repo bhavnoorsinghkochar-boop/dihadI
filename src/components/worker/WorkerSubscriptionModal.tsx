@@ -112,7 +112,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                   Worker VIP Pass
                 </span>
                 {isAlreadyVip && (
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-950 text-amber-300 px-2 py-0.5 rounded-full">
                     Active ({remainingZeroJobs} Left)
                   </span>
                 )}
@@ -136,7 +136,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
 
           {showSuccessState ? (
             <div className="text-center py-6 space-y-4 animate-in zoom-in-95">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 mx-auto flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400 text-amber-400 mx-auto flex items-center justify-center shadow-lg">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div className="space-y-1">
@@ -156,7 +156,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">Commission Rate:</span>
-                  <span className="font-black text-emerald-400 font-mono">0% (Zero Fee)</span>
+                  <span className="font-black text-amber-400 font-mono">0% (Zero Fee)</span>
                 </div>
                 <div className="flex items-center justify-between text-xs border-t border-slate-700/80 pt-2">
                   <span className="text-slate-400">New Wallet Balance:</span>
@@ -218,7 +218,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                 <button
                   onClick={handleConfirmUpiPayment}
                   disabled={isProcessing}
-                  className="w-1/2 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg"
+                  className="w-1/2 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isProcessing ? 'Verifying...' : 'Payment Done (Activate)'}</span>
@@ -239,7 +239,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                       {remainingZeroJobs} of {JOBS_COUNT} zero-fee jobs remaining
                     </p>
                     {totalSaved > 0 && (
-                      <p className="text-[11px] text-emerald-400 font-bold">
+                      <p className="text-[11px] text-amber-400 font-bold">
                         🎉 Saved ₹{totalSaved} in platform commission so far!
                       </p>
                     )}
@@ -263,7 +263,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-xs font-black">
+                    <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-xs font-black">
                       6 Jobs Pass
                     </span>
                   </div>
@@ -272,13 +272,13 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                 <div className="mt-4 pt-3 border-t border-slate-700/80 grid grid-cols-2 gap-3 text-center">
                   <div className="bg-slate-900/60 p-2.5 rounded-2xl border border-slate-800">
                     <span className="text-[10px] text-slate-400 block">Normal Commission</span>
-                    <span className="text-sm font-bold text-rose-400">20% Platform Fee</span>
+                    <span className="text-sm font-bold text-amber-400">20% Platform Fee</span>
                     <span className="text-[9px] text-slate-500 block">(-₹170/day)</span>
                   </div>
                   <div className="bg-amber-500/10 p-2.5 rounded-2xl border border-amber-500/30">
                     <span className="text-[10px] text-amber-400 font-bold block">With VIP Pass</span>
-                    <span className="text-sm font-black text-emerald-400">0% Commission</span>
-                    <span className="text-[9px] text-emerald-300 block font-bold">(Keep 100% Wage)</span>
+                    <span className="text-sm font-black text-amber-400">0% Commission</span>
+                    <span className="text-[9px] text-amber-300 block font-bold">(Keep 100% Wage)</span>
                   </div>
                 </div>
               </div>
@@ -290,10 +290,10 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                 </h4>
                 
                 <div className="grid grid-cols-1 gap-2 text-xs">
-                  <div className="flex items-start gap-2.5 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/40">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2.5 bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/40">
+                    <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-emerald-300">⚡ Instant Aadhaar Card Verification:</strong>
+                      <strong className="text-amber-300">⚡ Instant Aadhaar Card Verification:</strong>
                       <p className="text-slate-300 text-[11px]">
                         Get immediate verified green badge on your profile without waiting in the manual approval queue!
                       </p>
@@ -311,7 +311,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                   </div>
 
                   <div className="flex items-start gap-2.5 bg-slate-850 p-2.5 rounded-xl border border-slate-800">
-                    <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <TrendingUp className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                     <div>
                       <strong className="text-white">Save Up to ₹1,800 - ₹3,000+:</strong>
                       <p className="text-slate-400 text-[11px]">
@@ -356,7 +356,7 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-black">Direct Cut from Wallet</span>
-                        <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 text-[9px] font-bold rounded">
+                        <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 text-[9px] font-bold rounded">
                           Recommended
                         </span>
                       </div>
@@ -373,9 +373,9 @@ export const WorkerSubscriptionModal: React.FC<WorkerSubscriptionModalProps> = (
 
                 {/* Low Wallet Balance Helper */}
                 {selectedMethod === 'WALLET' && !hasEnoughWalletBalance && (
-                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3 text-xs space-y-2 animate-in fade-in">
-                    <div className="flex items-center gap-1.5 text-rose-300 font-bold">
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs space-y-2 animate-in fade-in">
+                    <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                       <span>Insufficient Wallet Balance (₹{walletBalance})</span>
                     </div>
                     <p className="text-[11px] text-slate-300">

@@ -94,6 +94,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     openTop5Shortlist,
     showNotification,
     acceptJobByWorker,
+    approveWorker,
+    rejectWorker,
     dispatchJobStartOtp,
     latestTop5Matches,
     latestMatchedJob,
@@ -151,7 +153,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
   const [directJobDescription, setDirectJobDescription] = useState<string>('');
 
   const [prepayBooking, setPrepayBooking] = useState<{
-    type: 'direct' | 'broadcast';
+    type: 'direct' | 'broadcast' | 'approve_escrow'; jobId?: string;
     amount: number;
     workerName: string;
   } | null>(null);
@@ -350,89 +352,67 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
   const processPrepaidBooking = () => {
     if (!prepayBooking || !currentCustomer) return;
-    
-    if (prepayBooking.type === 'direct' && bookingWorker) {
-      const workerTrade = bookingWorker.primaryTrade;
-      const workerDailyWage = bookingWorker.dailyRate;
-      const jobTitle = directJobTitle.trim() || `Hired ${bookingWorker.name} for ${workerTrade}`;
-
-      const createdJob = postJob({
-        title: jobTitle,
-        trade: workerTrade,
-        description: directJobDescription || `Direct booking for ${bookingWorker.name} (${workerTrade}).`,
-        customerName: currentCustomer.name,
-        customerPhone: currentCustomer.phone,
-        locationAddress: currentCustomer.address,
-        area: currentCustomer.area,
-        dailyWage: Number(workerDailyWage) || 850,
-        durationDays: Number(directJobDuration) || 1,
-      });
-
-      if (createdJob) {
-        acceptJobByWorker(createdJob.id, bookingWorker);
-        playSound('success');
-        showNotification(`Booked ${bookingWorker.name}! Start OTP is ${createdJob.otpCode}`);
-      }
-
-      setBookingWorker(null);
-      setDirectJobTitle('');
-      setDirectJobDescription('');
-      setActiveTab('my_bookings');
-    } else if (prepayBooking.type === 'broadcast') {
-      const createdJob = postJob({
-        title,
-        trade,
-        description: description || `Need verified ${trade} for daily work.`,
-        customerName: currentCustomer.name,
-        customerPhone: currentCustomer.phone,
-        locationAddress: currentCustomer.address,
-        area: currentCustomer.area,
-        dailyWage: Number(dailyWage) || 850,
-        durationDays: Number(durationDays) || 1,
-      });
-
-      setTitle('');
-      setDescription('');
-      setShowPostModal(false);
-      setActiveTab('my_bookings');
-      playSound('success');
-
-      if (createdJob) {
-        setTimeout(() => {
-          openTop5Shortlist(createdJob);
-        }, 300);
-      }
+    if (prepayBooking.type === 'approve_escrow' && prepayBooking.jobId) {
+      approveAndFundEscrow(prepayBooking.jobId);
     }
     setPrepayBooking(null);
   };
+
 
   const handlePostJobSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentCustomer) return;
     if (!title.trim()) {
-      showNotification('Missing Details', 'Please specify the work needed for this job.');
-      playSound('click');
+      showNotification("Missing Details", "Please specify the work needed for this job.");
+      playSound("click");
       return;
     }
-
-    const amount = (Number(dailyWage) || 850) * (Number(durationDays) || 1);
-    setPrepayBooking({
-      type: 'broadcast',
-      amount,
-      workerName: 'Kaamzo Escrow',
+    const createdJob = postJob({
+      title,
+      trade,
+      description: description || `Need verified ${trade} for daily work.`,
+      customerName: currentCustomer.name,
+      customerPhone: currentCustomer.phone,
+      locationAddress: currentCustomer.address,
+      area: currentCustomer.area,
+      dailyWage: Number(dailyWage) || 850,
+      durationDays: Number(durationDays) || 1,
     });
+    if (createdJob) {
+      setShowPostModal(false);
+      setActiveTab("my_bookings");
+    }
   };
 
   const handleConfirmDirectBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentCustomer || !bookingWorker) return;
 
-    const amount = Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1);
-    setPrepayBooking({
-      type: 'direct',
-      amount,
-      workerName: bookingWorker.name,
+    const workerTrade = bookingWorker.primaryTrade;
+    const workerDailyWage = bookingWorker.dailyRate;
+    const jobTitle = directJobTitle.trim() || `Hired ${bookingWorker.name} for ${workerTrade}`;
+
+    const createdJob = postJob({
+      title: jobTitle,
+      trade: workerTrade,
+      description: directJobDescription || `Direct booking for ${bookingWorker.name} (${workerTrade}).`,
+      customerName: currentCustomer.name,
+      customerPhone: currentCustomer.phone,
+      locationAddress: currentCustomer.address,
+      area: currentCustomer.area,
+      dailyWage: Number(workerDailyWage) || 850,
+      durationDays: Number(directJobDuration) || 1,
     });
+
+    if (createdJob) {
+      acceptJobByWorker(createdJob.id, bookingWorker);
+      playSound("success");
+      showNotification(`Booked ${bookingWorker.name}! Proceed to approve and pay.`);
+    }
+    setBookingWorker(null);
+    setDirectJobTitle("");
+    setDirectJobDescription("");
+    setActiveTab("my_bookings");
   };
 
   const resetFilters = () => {
@@ -510,22 +490,22 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     return (
       <div className={`bg-white flex flex-col h-full overflow-y-auto select-none ${isEmbedded ? 'w-full' : 'max-w-md mx-auto rounded-3xl border border-slate-200 shadow-xl'}`}>
         {/* Header */}
-        <div className="p-5 bg-blue-600 text-white shrink-0 rounded-t-3xl">
+        <div className="p-5 bg-amber-600 text-white shrink-0 rounded-t-3xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentRole('select_role')}
-                className="p-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition"
+                className="p-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg transition"
                 title={getT(currentLanguage, 'back_to_role_selection')}
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
                 <h3 className="text-lg font-black text-white flex items-center gap-1.5">
-                  <Building2 className="w-5 h-5 text-blue-200" />
+                  <Building2 className="w-5 h-5 text-amber-200" />
                   {getT(currentLanguage, 'role_customer_title')}
                 </h3>
-                <p className="text-xs text-blue-100">
+                <p className="text-xs text-amber-100">
                   {authTab === 'login' ? getT(currentLanguage, 'auth_tab_login') : getT(currentLanguage, 'auth_tab_register')}
                 </p>
               </div>
@@ -539,7 +519,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
             <button
               onClick={() => { setAuthTab('login'); setAuthError(null); }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                authTab === 'login' ? 'bg-white text-blue-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                authTab === 'login' ? 'bg-white text-amber-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               {getT(currentLanguage, 'auth_sign_in')}
@@ -547,7 +527,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
             <button
               onClick={() => { setAuthTab('register'); setAuthError(null); }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                authTab === 'register' ? 'bg-white text-blue-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                authTab === 'register' ? 'bg-white text-amber-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               {getT(currentLanguage, 'auth_register')}
@@ -555,8 +535,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           </div>
 
           {authError && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-3 rounded-xl flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
               <span>{authError}</span>
             </div>
           )}
@@ -577,8 +557,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                         onClick={() => handleQuickDemoLogin(acc.id, acc.password || '123')}
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition flex items-center gap-1 ${
                           acc.id === 'pooja' 
-                            ? 'bg-blue-50 hover:bg-blue-100 text-blue-950 border-blue-200' 
-                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-300'
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200' 
+                            : 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300'
                         }`}
                       >
                         <User className="w-3 h-3" />
@@ -590,7 +570,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                       <button
                         type="button"
                         onClick={() => handleQuickDemoLogin('pooja', '123')}
-                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-950 rounded-lg text-[11px] font-bold border border-blue-200 transition"
+                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 rounded-lg text-[11px] font-bold border border-amber-200 transition"
                       >
                         Pooja Verma (Model Town)
                       </button>
@@ -618,7 +598,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                       value={loginId}
                       onChange={(e) => setLoginId(e.target.value)}
                       required
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600 pl-8"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600 pl-8"
                     />
                     <User className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
                   </div>
@@ -630,7 +610,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     <button
                       type="button"
                       onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="text-[10px] text-blue-700 font-semibold flex items-center gap-1 hover:underline"
+                      className="text-[10px] text-amber-700 font-semibold flex items-center gap-1 hover:underline"
                     >
                       {showLoginPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                       <span>{showLoginPassword ? 'Hide' : 'Show Password'}</span>
@@ -643,7 +623,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600 pl-8 pr-9"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600 pl-8 pr-9"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
                     <button
@@ -658,7 +638,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-2xl shadow-md text-xs transition flex items-center justify-center gap-2 mt-4"
+                  className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3 rounded-2xl shadow-md text-xs transition flex items-center justify-center gap-2 mt-4"
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>{getT(currentLanguage, 'auth_login_btn')}</span>
@@ -677,7 +657,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   placeholder="e.g. Pooja Verma or Bhavnoor Singh"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                   required
                 />
               </div>
@@ -690,7 +670,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     placeholder="e.g. pooja"
                     value={regUserId}
                     onChange={(e) => setRegUserId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                   />
                 </div>
                 <div>
@@ -699,7 +679,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     <button
                       type="button"
                       onClick={() => setShowRegPassword(!showRegPassword)}
-                      className="text-[10px] text-blue-700 font-semibold"
+                      className="text-[10px] text-amber-700 font-semibold"
                     >
                       {showRegPassword ? 'Hide' : 'Show'}
                     </button>
@@ -711,7 +691,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
                       required
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 pr-8"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600 pr-8"
                     />
                     <button
                       type="button"
@@ -733,28 +713,28 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     type="text"
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-amber-600"
                     required
                   />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
                     <span>Gmail / Email</span>
-                    <span className="text-[9px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded">Security OTP</span>
+                    <span className="text-[9px] text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded">Security OTP</span>
                   </label>
                   <input
                     type="email"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     placeholder="name@gmail.com"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-amber-600"
                     required
                   />
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <button
                       type="button"
                       onClick={() => setRegEmail('bhavnoorsinghkochar@gmail.com')}
-                      className="text-[10px] text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold px-2 py-0.5 rounded-md border border-blue-200"
+                      className="text-[10px] text-amber-700 bg-amber-50 hover:bg-amber-100 font-semibold px-2 py-0.5 rounded-md border border-amber-200"
                     >
                       Use bhavnoorsinghkochar@gmail.com
                     </button>
@@ -776,10 +756,10 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     }
                   }}
                   disabled={isLocating}
-                  className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 transition disabled:opacity-50"
+                  className="flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 transition disabled:opacity-50"
                   title="Detect and snap to exact street address via GPS"
                 >
-                  <Crosshair className="w-3 h-3 text-blue-600" />
+                  <Crosshair className="w-3 h-3 text-amber-600" />
                   <span>{isLocating ? 'Resolving Address...' : 'Snap Real-World Address'}</span>
                 </button>
               </div>
@@ -793,7 +773,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     type="text"
                     value={regArea}
                     onChange={(e) => setRegArea(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                     required
                   />
                 </div>
@@ -804,7 +784,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     value={regUpi}
                     onChange={(e) => setRegUpi(e.target.value)}
                     placeholder="e.g. name@okhdfcbank"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-amber-600"
                     required
                   />
                 </div>
@@ -816,14 +796,14 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   type="text"
                   value={regAddress}
                   onChange={(e) => setRegAddress(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-2xl shadow-md text-xs transition flex items-center justify-center gap-2 mt-3"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-3 rounded-2xl shadow-md text-xs transition flex items-center justify-center gap-2 mt-3"
               >
                 <ShieldCheck className="w-4 h-4 text-amber-300" />
                 <span>Verify Gmail / SMS & Register</span>
@@ -884,7 +864,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               onClick={() => setActiveTab('find_workers')}
               className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                 activeTab === 'find_workers'
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
@@ -896,7 +876,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               onClick={() => setActiveTab('my_bookings')}
               className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                 activeTab === 'my_bookings'
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
@@ -904,7 +884,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               <span>My Bookings</span>
               {activeRequests.length > 0 && (
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  activeTab === 'my_bookings' ? 'bg-amber-400 text-slate-950' : 'bg-blue-600 text-white'
+                  activeTab === 'my_bookings' ? 'bg-amber-400 text-slate-950' : 'bg-amber-600 text-white'
                 }`}>
                   {activeRequests.length}
                 </span>
@@ -915,7 +895,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               onClick={() => setActiveTab('support')}
               className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                 activeTab === 'support'
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
@@ -950,7 +930,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
           <button
             onClick={() => setShowPostModal(true)}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Post a Job</span>
@@ -959,10 +939,10 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           <button
             id="header-verify-gmail-btn"
             onClick={() => setShowGmailVerifyModal(true)}
-            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-blue-200 cursor-pointer"
+            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-200 cursor-pointer"
             title="Verify Gmail with 6-digit OTP"
           >
-            <Mail className="w-3.5 h-3.5 text-blue-600" />
+            <Mail className="w-3.5 h-3.5 text-amber-600" />
             <span className="hidden sm:inline">Verify Gmail</span>
           </button>
 
@@ -972,7 +952,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           <div className="flex items-center gap-2.5">
             <div className="text-right hidden md:block">
               <p className="text-xs font-black text-slate-900 uppercase">{currentCustomer.name}</p>
-              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded-md border border-blue-100">
+              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded-md border border-amber-100">
                 Customer ({currentCustomer.area})
               </span>
             </div>
@@ -983,7 +963,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
             <button
               onClick={logoutCustomer}
-              className="px-2.5 py-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-200"
+              className="px-2.5 py-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-200"
               title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -999,7 +979,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           {/* A. Hero Search Banner (As shown in screenshot) */}
           <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
             {/* Background Decorative Rings */}
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-600/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="max-w-2xl space-y-5 z-10">
@@ -1052,7 +1032,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 <button
                   type="button"
                   onClick={() => setShowPostModal(true)}
-                  className="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2 shrink-0 border border-blue-400/30"
+                  className="px-5 py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2 shrink-0 border border-amber-400/30"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Post a Job</span>
@@ -1071,8 +1051,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
-                  <span className="flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-1 rounded-lg text-emerald-300 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="flex items-center gap-1.5 bg-amber-950/80 border border-amber-500/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                     Strict 10km GPS Radar
                   </span>
                   <span className="bg-slate-900/80 px-2 py-1 rounded-lg font-mono text-[11px] text-slate-300">
@@ -1095,7 +1075,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     Customer Gold Pass
                   </span>
                   {currentCustomer?.isPremiumCustomer && (
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-700 text-white px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-700 text-white px-2 py-0.5 rounded-full">
                       Active: 1 Month Free Service
                     </span>
                   )}
@@ -1135,7 +1115,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               {selectedTradeFilter !== 'All' && (
                 <button
                   onClick={() => setSelectedTradeFilter('All')}
-                  className="text-xs text-blue-600 font-bold hover:underline"
+                  className="text-xs text-amber-600 font-bold hover:underline"
                 >
                   Clear Selection (Show All)
                 </button>
@@ -1184,12 +1164,12 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
             <div className="lg:col-span-1 bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-5 sticky top-20">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h4 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                  <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+                  <SlidersHorizontal className="w-4 h-4 text-amber-600" />
                   <span>Filters</span>
                 </h4>
                 <button
                   onClick={resetFilters}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
+                  className="text-xs font-bold text-amber-600 hover:text-amber-800 transition flex items-center gap-1"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Reset</span>
@@ -1202,7 +1182,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 <select
                   value={selectedTradeFilter}
                   onChange={(e) => setSelectedTradeFilter(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-amber-600"
                 >
                   <option value="All">All Services & Trades</option>
                   <option value="Mason">Mason (राजमिस्त्री)</option>
@@ -1224,7 +1204,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   <button
                     type="button"
                     onClick={refreshCustomerGpsLocation}
-                    className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
+                    className="text-[10px] font-bold text-amber-600 hover:text-amber-800 flex items-center gap-0.5"
                     title="Refresh GPS location"
                   >
                     <Crosshair className="w-3 h-3" />
@@ -1237,27 +1217,27 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                     placeholder="e.g. Ludhiana or Delhi NCR"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold pl-8 focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold pl-8 focus:outline-amber-600"
                   />
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
                 </div>
               </div>
 
               {/* Strict 10km Radar Toggle */}
-              <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-1.5">
+              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-blue-950 flex items-center gap-1.5">
-                    <Radio className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                  <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                    <Radio className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                     Strict 10km Radar
                   </span>
                   <input
                     type="checkbox"
                     checked={strict10kmOnly}
                     onChange={(e) => setStrict10kmOnly(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                    className="w-4 h-4 text-amber-600 rounded cursor-pointer"
                   />
                 </div>
-                <p className="text-[10px] text-blue-800 leading-tight">
+                <p className="text-[10px] text-amber-800 leading-tight">
                   Guarantees all shown workers are within 10 km of your live GPS coordinates.
                 </p>
               </div>
@@ -1291,14 +1271,14 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     placeholder="Min ₹"
                     value={minWage}
                     onChange={(e) => setMinWage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600"
                   />
                   <input
                     type="number"
                     placeholder="Max ₹"
                     value={maxWage}
                     onChange={(e) => setMaxWage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600"
                   />
                 </div>
               </div>
@@ -1330,7 +1310,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     };
                     openTop5Shortlist(sampleJob);
                   }}
-                  className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md"
+                  className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-500 hover:to-amber-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
                   <span>Top-5 AI Shortlist</span>
@@ -1353,7 +1333,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h4 className="text-sm font-black text-slate-900">
-                    Showing <span className="text-blue-600">{filteredWorkers.length}</span> available workers
+                    Showing <span className="text-amber-600">{filteredWorkers.length}</span> available workers
                   </h4>
                   <p className="text-xs text-slate-500">
                     {strict10kmOnly ? 'All workers filtered within strict 10km GPS radius' : 'Showing all matched workers'}
@@ -1366,7 +1346,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                       onClick={() => setWorkerViewMode('list')}
                       className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                         workerViewMode === 'list'
-                          ? 'bg-white text-blue-600 shadow-xs'
+                          ? 'bg-white text-amber-600 shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -1376,7 +1356,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                       onClick={() => setWorkerViewMode('radar')}
                       className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
                         workerViewMode === 'radar'
-                          ? 'bg-blue-600 text-white shadow-xs'
+                          ? 'bg-amber-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -1391,34 +1371,34 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               {workerViewMode === 'radar' && (
                 <div className="bg-slate-950 text-white rounded-3xl p-6 border border-slate-800 space-y-4 shadow-xl">
                   <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
-                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                      <LocateFixed className="w-4 h-4 animate-spin text-emerald-400" />
+                    <div className="flex items-center gap-2 text-amber-400 font-bold">
+                      <LocateFixed className="w-4 h-4 animate-spin text-amber-400" />
                       <span>LIVE HYPERLOCAL RADAR • {currentCustomer.area}</span>
                       <span className="text-[11px] text-slate-400 font-mono">
                         ({currentCustomer.gpsLocation.lat.toFixed(4)}, {currentCustomer.gpsLocation.lng.toFixed(4)})
                       </span>
                     </div>
-                    <span className="text-xs text-emerald-300 font-mono bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/40">
+                    <span className="text-xs text-amber-300 font-mono bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-500/40">
                       Range: Strict 10.0 KM
                     </span>
                   </div>
 
                   {/* Circular Radar Sweep Display */}
-                  <div className="relative w-full aspect-square max-h-[380px] mx-auto bg-radial from-slate-900 to-slate-950 rounded-full border-2 border-emerald-500/30 flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-[15%] rounded-full border border-emerald-500/20" />
-                    <div className="absolute inset-[32%] rounded-full border border-emerald-500/20" />
-                    <div className="absolute inset-[50%] rounded-full border border-emerald-500/20" />
-                    <div className="absolute inset-[70%] rounded-full border border-emerald-500/20" />
+                  <div className="relative w-full aspect-square max-h-[380px] mx-auto bg-radial from-slate-900 to-slate-950 rounded-full border-2 border-amber-500/30 flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-[15%] rounded-full border border-amber-500/20" />
+                    <div className="absolute inset-[32%] rounded-full border border-amber-500/20" />
+                    <div className="absolute inset-[50%] rounded-full border border-amber-500/20" />
+                    <div className="absolute inset-[70%] rounded-full border border-amber-500/20" />
 
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-full h-[1px] bg-emerald-500/20" />
-                      <div className="h-full w-[1px] bg-emerald-500/20 absolute" />
+                      <div className="w-full h-[1px] bg-amber-500/20" />
+                      <div className="h-full w-[1px] bg-amber-500/20 absolute" />
                     </div>
 
-                    <div className="absolute inset-0 bg-conic-gradient from-emerald-500/20 via-transparent to-transparent animate-spin rounded-full pointer-events-none" style={{ animationDuration: '4s' }} />
+                    <div className="absolute inset-0 bg-conic-gradient from-amber-500/20 via-transparent to-transparent animate-spin rounded-full pointer-events-none" style={{ animationDuration: '4s' }} />
 
                     {/* Center Customer Marker */}
-                    <div className="relative z-10 w-9 h-9 rounded-full bg-blue-600 text-white border-2 border-white shadow-lg flex items-center justify-center text-xs font-black">
+                    <div className="relative z-10 w-9 h-9 rounded-full bg-amber-600 text-white border-2 border-white shadow-lg flex items-center justify-center text-xs font-black">
                       YOU
                     </div>
 
@@ -1453,11 +1433,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border ${
                               isSelected
                                 ? 'bg-amber-400 text-slate-950 border-white ring-2 ring-amber-400'
-                                : 'bg-slate-900 text-amber-300 border-emerald-400/80 shadow-md'
+                                : 'bg-slate-900 text-amber-300 border-amber-400/80 shadow-md'
                             }`}>
                               {w.name.charAt(0)}
                             </div>
-                            <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-slate-900 animate-pulse" />
+                            <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-slate-900 animate-pulse" />
                           </div>
                         </button>
                       );
@@ -1482,7 +1462,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                                 <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
                                   {selectedRadarWorker.name}
                                   {selectedRadarWorker.isVerified && (
-                                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                    <ShieldCheck className="w-4 h-4 text-amber-400" />
                                   )}
                                 </h4>
                                 <p className="text-xs text-slate-400">
@@ -1492,7 +1472,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                             </div>
 
                             <div className="text-right">
-                              <span className="text-base font-black text-emerald-400">₹{selectedRadarWorker.dailyRate}/day</span>
+                              <span className="text-base font-black text-amber-400">₹{selectedRadarWorker.dailyRate}/day</span>
                               <span className="text-xs text-slate-400 block font-mono">{trueDist} km away</span>
                             </div>
                           </div>
@@ -1504,7 +1484,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                                 { name: selectedRadarWorker.name, role: 'worker', phone: selectedRadarWorker.phone },
                                 `Hiring ${selectedRadarWorker.primaryTrade}`
                               )}
-                              className="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                              className="py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
                             >
                               <Phone className="w-4 h-4" />
                               <span>Call</span>
@@ -1535,7 +1515,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                                 jobGps: currentCustomer.gpsLocation,
                                 workerGps: selectedRadarWorker.gpsLocation,
                               })}
-                              className="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                              className="py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
                             >
                               <Navigation className="w-4 h-4" />
                               <span>GPS Track</span>
@@ -1595,7 +1575,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                         return (
                           <div
                             key={worker.id}
-                            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition flex flex-col justify-between space-y-4"
+                            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:shadow-md hover:border-amber-300 transition flex flex-col justify-between space-y-4"
                           >
                             <div className="space-y-3">
                               {/* Top Row: Avatar + Name + Verified Badge */}
@@ -1609,7 +1589,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                                       {worker.name}
                                     </h5>
                                     {worker.isVerified && (
-                                      <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold text-[11px] shrink-0">
+                                      <span className="inline-flex items-center gap-0.5 text-amber-600 font-bold text-[11px] shrink-0">
                                         <ShieldCheck className="w-3.5 h-3.5" />
                                         <span>verified</span>
                                       </span>
@@ -1629,14 +1609,14 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                                   <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
                                     <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                                     <span>{worker.location.city || currentCity.name}</span>
-                                    <span className="text-[10px] text-blue-600 font-semibold">({distanceKm} km away)</span>
+                                    <span className="text-[10px] text-amber-600 font-semibold">({distanceKm} km away)</span>
                                   </p>
                                 </div>
                               </div>
 
                               {/* Trade / Skill Tags */}
                               <div className="flex flex-wrap gap-1.5">
-                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100 uppercase tracking-wide">
+                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md text-[10px] font-bold border border-amber-100 uppercase tracking-wide">
                                   {worker.primaryTrade}
                                 </span>
                                 {(((worker as any).skills || worker.secondaryTrades || []) as string[]).slice(0, 2).map((skill) => (
@@ -1744,7 +1724,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               </p>
               <button
                 onClick={() => setActiveTab('find_workers')}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition inline-flex items-center gap-1.5"
+                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition inline-flex items-center gap-1.5"
               >
                 <Users className="w-4 h-4" />
                 <span>Find Workers Now</span>
@@ -1757,13 +1737,13 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   <div className="flex flex-wrap justify-between items-start gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 bg-blue-600 text-white text-[11px] font-bold rounded-md uppercase">
+                        <span className="px-2.5 py-0.5 bg-amber-600 text-white text-[11px] font-bold rounded-md uppercase">
                           {getTradeName(job.trade)}
                         </span>
                         <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md ${
                           job.status === 'broadcast' ? 'bg-amber-100 text-amber-800' :
-                          job.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
-                          job.status === 'completed_pending_payment' ? 'bg-emerald-100 text-emerald-800' :
+                          job.status === 'accepted' ? 'bg-amber-100 text-amber-800' :
+                          job.status === 'completed_pending_payment' ? 'bg-amber-100 text-amber-800' :
                           'bg-slate-100 text-slate-800'
                         }`}>
                           {job.status === 'broadcast' ? 'Broadcasting to 10km Radar' :
@@ -1772,8 +1752,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                            job.status}
                         </span>
 
-                        <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold rounded-md flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        <span className="px-2 py-0.5 bg-amber-50 border border-amber-300 text-amber-800 text-[11px] font-bold rounded-md flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-amber-600" />
                           <span>Prepaid Escrow Protected</span>
                         </span>
                       </div>
@@ -1786,7 +1766,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
                     <div className="text-right">
                       <span className="text-lg font-black text-slate-900">₹{job.dailyWage}</span>
-                      <span className="text-[10px] text-emerald-700 font-bold block">100% Escrow Held</span>
+                      {job.escrowStatus === 'pending' ? (
+                        <span className="text-[10px] text-red-600 font-bold block">Payment Pending</span>
+                      ) : (
+                        <span className="text-[10px] text-amber-700 font-bold block">100% Escrow Held</span>
+                      )}
                       {job.status !== 'paid_and_closed' && job.status !== 'cancelled' && (
                         <button
                           type="button"
@@ -1822,141 +1806,31 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openTop5Shortlist(job)}
-                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition border border-indigo-200 flex items-center gap-1"
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-lg text-xs transition border border-amber-200 flex items-center gap-1"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                         <span>Top-5 Shortlist</span>
                       </button>
-
-                      <button
-                        onClick={() => openMultiChannelModal(job)}
-                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg text-xs transition border border-amber-200 flex items-center gap-1"
-                      >
-                        <Radio className="w-3.5 h-3.5 text-amber-600" />
-                        <span>4-Channel Alert</span>
-                      </button>
-
-                      {job.assignedWorkerName && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveChatJob(job);
-                              setShowChatModal(true);
-                              playSound('click');
-                            }}
-                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-2xs"
-                            title="Quick Chat with Worker"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 text-slate-950" />
-                            <span>Quick Chat</span>
-                          </button>
-                          <button
-                            onClick={() => openGpsRadar(job)}
-                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs transition border border-blue-200 flex items-center gap-1"
-                          >
-                            <Navigation className="w-3.5 h-3.5 text-blue-600" />
-                            <span>GPS Radar</span>
-                          </button>
-                          <button
-                            onClick={() => startCall(
-                              { name: currentCustomer.name, role: 'customer', phone: currentCustomer.phone },
-                              { name: job.assignedWorkerName || 'Worker', role: 'worker', phone: job.assignedWorkerPhone || '+91 98101 55678' },
-                              job.title
-                            )}
-                            className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs transition"
-                            title="Call Worker"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
                     </div>
                   </div>
 
-                  {/* Top-5 Automated AI Match Recommendations */}
-                  {job.status === 'broadcast' && (
-                    <div className="bg-linear-to-r from-blue-50/80 via-indigo-50/50 to-amber-50/50 p-4 rounded-2xl border border-blue-200/80 shadow-xs space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-200/50 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-blue-600 text-white rounded-lg">
-                            <Sparkles className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h5 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                              <span>Automated AI Match Engine</span>
-                              <span className="px-2 py-0.2 bg-blue-600 text-white text-[10px] font-bold rounded-full">Top 5 Shortlisted</span>
-                            </h5>
-                            <p className="text-[11px] text-slate-600">
-                              Ranked by trade skills, proximity distance within 10km, and verified customer ratings.
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => openTop5Shortlist(job)}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs self-start sm:self-auto cursor-pointer"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                          <span>View Full Shortlist</span>
+                                    {/* Start-of-Work OTP Verification Hub or Payment Escrow */}
+                  {job.status === 'accepted' ? (
+                    <div className="bg-amber-100 p-4 rounded-2xl border border-amber-300 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-black text-slate-900 flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-amber-600" /> Worker Assigned</h4>
+                        <p className="text-xs text-slate-600 mt-1">Please pay the prepaid amount into escrow to approve this worker and release the start OTP.</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => rejectWorker(job.id)} className="px-5 py-2.5 bg-white border border-slate-300 hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-slate-700 font-black rounded-xl text-xs transition shadow-sm whitespace-nowrap cursor-pointer">
+                          Reject
+                        </button>
+                        <button type="button" onClick={() => setPrepayBooking({ type: 'approve_escrow', jobId: job.id, amount: job.dailyWage * job.durationDays, workerName: job.assignedWorkerName || 'Worker' })} className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-sm whitespace-nowrap cursor-pointer">
+                          Pay ₹{job.dailyWage * job.durationDays} to Approve
                         </button>
                       </div>
-
-                      {/* Horizontal Mini Cards for Top Matches */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
-                        {getTop5WorkersForJob(job).slice(0, 3).map((match, idx) => (
-                          <div
-                            key={match.worker.id}
-                            className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-2.5 hover:border-blue-400 transition"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="relative shrink-0">
-                                <img
-                                  src={match.worker.avatar}
-                                  alt={match.worker.name}
-                                  className="w-9 h-9 rounded-full object-cover border border-slate-200"
-                                />
-                                <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                                  #{idx + 1}
-                                </span>
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-bold text-slate-900 truncate flex items-center gap-1">
-                                  <span>{match.worker.name}</span>
-                                  {match.worker.isVerified && (
-                                    <ShieldCheck className="w-3 h-3 text-blue-600 shrink-0" />
-                                  )}
-                                </p>
-                                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                                  <span className="text-blue-600 font-bold">{match.matchScore}% Match</span>
-                                  <span>•</span>
-                                  <span>{match.distanceKm} km</span>
-                                  <span>•</span>
-                                  <span className="text-amber-600 font-bold">★ {match.worker.rating}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                acceptJobByWorker(job.id, match.worker);
-                                showNotification(`Assigned ${match.worker.name}! Start OTP: ${job.otpCode}`);
-                                playSound('success');
-                              }}
-                              className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold rounded-lg text-[11px] transition shrink-0 cursor-pointer"
-                              title={`Instant Hire ${match.worker.name}`}
-                            >
-                              Hire
-                            </button>
-                          </div>
-                        ))}
-                      </div>
                     </div>
-                  )}
-
-                  {/* Start-of-Work OTP Verification Hub */}
-                  {(job.status === 'accepted' || job.status === 'broadcast' || job.status === 'in_progress') && (
+                  ) : (job.status === 'approved' || job.status === 'broadcast' || job.status === 'in_progress') ? (
                     <div className="bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent p-4 rounded-2xl border border-amber-300/80 shadow-xs space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/60 pb-3">
                         <div className="space-y-0.5">
@@ -1996,9 +1870,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                           {isDispatchingOtp[job.id] ? (
                             <span className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
                           ) : dispatchedEmailOtpJobs[job.id] ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <Check className="w-3.5 h-3.5 text-amber-600" />
                           ) : (
-                            <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                            <Mail className="w-3.5 h-3.5 text-amber-600" />
                           )}
                           <span>
                             {dispatchedEmailOtpJobs[job.id] ? 'Sent to Email (Gmail)' : 'Send to my Email'}
@@ -2008,20 +1882,20 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                         <button
                           type="button"
                           onClick={() => handleShareOtpWhatsApp(job)}
-                          className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl border border-emerald-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl border border-amber-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                           title="Share OTP directly via WhatsApp"
                         >
-                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <MessageCircle className="w-3.5 h-3.5 text-amber-600" />
                           <span>Share on WhatsApp</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleSendOtpSms(job)}
-                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold rounded-xl border border-blue-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl border border-amber-200 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                           title="Send OTP via SMS text"
                         >
-                          <Phone className="w-3.5 h-3.5 text-blue-600" />
+                          <Phone className="w-3.5 h-3.5 text-amber-600" />
                           <span>Send via SMS</span>
                         </button>
 
@@ -2048,8 +1922,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                         >
                           {copiedOtpJobId === job.id ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              <span className="text-emerald-700 font-bold">Copied!</span>
+                              <Check className="w-3.5 h-3.5 text-amber-600" />
+                              <span className="text-amber-700 font-bold">Copied!</span>
                             </>
                           ) : (
                             <>
@@ -2059,6 +1933,24 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                           )}
                         </button>
                       </div>
+                    </div>
+                  ) : null}
+
+                  {/* Raise Complaint Action Banner for Active Jobs */}
+                  {(job.status === 'accepted' || job.status === 'in_progress' || job.status === 'broadcast') && (
+                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs mt-4">
+                      <span className="text-[11px] text-slate-600 font-medium">Worker not arrived or left site?</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setComplaintJob(job);
+                          playSound('click');
+                        }}
+                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg border border-amber-200 text-[11px] transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <AlertTriangle className="w-3 h-3 text-amber-600" />
+                        <span>Raise Complaint for Refund</span>
+                      </button>
                     </div>
                   )}
 
@@ -2101,9 +1993,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                           setComplaintJob(job);
                           playSound('click');
                         }}
-                        className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold rounded-lg border border-rose-200 text-[11px] transition flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg border border-amber-200 text-[11px] transition flex items-center gap-1 cursor-pointer"
                       >
-                        <AlertTriangle className="w-3 h-3 text-rose-600" />
+                        <AlertTriangle className="w-3 h-3 text-amber-600" />
                         <span>Raise Complaint for Refund</span>
                       </button>
                     </div>
@@ -2111,14 +2003,15 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
                   {job.status === 'completed_pending_payment' && (
                     currentCustomer?.isPremiumCustomer ? (
-                      <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-emerald-500/10 p-4 rounded-2xl border-2 border-amber-300 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                      <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-amber-500/10 p-4 rounded-2xl border-2 border-amber-300 flex flex-wrap items-center justify-between gap-3 shadow-xs">
                         <div>
                           <div className="flex items-center gap-1.5">
                             <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
                             <h5 className="text-xs font-black text-slate-950">Work Completed • Covered by Gold Membership</h5>
                           </div>
                           <p className="text-[11px] text-slate-700 mt-0.5">
-                            Worker wage of ₹{job.workerPayout} will be disbursed directly from Admin Treasury. <strong>₹0 charged to your account.</strong>
+                            Worker wage of ₹{job.workerPayout} will be disbursed directly from Admin Treasury. <strong>₹0 charged to your account.</strong><br/>
+                            <strong className="text-amber-800">The worker has completed the job. Please leave a rating and review for your experience!</strong>
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2128,9 +2021,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                               setComplaintJob(job);
                               playSound('click');
                             }}
-                            className="px-3 py-2 bg-white hover:bg-rose-50 text-rose-700 font-bold rounded-xl border border-rose-300 text-xs transition flex items-center gap-1 cursor-pointer"
+                            className="px-3 py-2 bg-white hover:bg-amber-50 text-amber-700 font-bold rounded-xl border border-amber-300 text-xs transition flex items-center gap-1 cursor-pointer"
                           >
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                             <span>Raise Dispute</span>
                           </button>
                           <button
@@ -2144,10 +2037,10 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+                      <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <h5 className="text-xs font-black text-emerald-950">Work Completed Successfully!</h5>
-                          <p className="text-[11px] text-emerald-800">Worker has requested wage release of ₹{job.workerPayout}.</p>
+                          <h5 className="text-xs font-black text-amber-950">Work Completed Successfully!</h5>
+                          <p className="text-[11px] text-amber-800 font-bold mt-1">The worker has completed the job. Please leave a rating and review for your experience!</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -2156,15 +2049,15 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                               setComplaintJob(job);
                               playSound('click');
                             }}
-                            className="px-3 py-2 bg-white hover:bg-rose-50 text-rose-700 font-bold rounded-xl border border-rose-300 text-xs transition flex items-center gap-1 cursor-pointer"
+                            className="px-3 py-2 bg-white hover:bg-amber-50 text-amber-700 font-bold rounded-xl border border-amber-300 text-xs transition flex items-center gap-1 cursor-pointer"
                           >
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                             <span>Raise Dispute</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setRatingJob(job)}
-                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Confirm Work & Release Escrow</span>
@@ -2193,12 +2086,12 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
                   <Phone className="w-4 h-4" />
                 </div>
                 <h4 className="text-xs font-black text-slate-900">IVR Voice Helpline</h4>
                 <p className="text-[11px] text-slate-500">Toll-free voice assistance available in Hindi, Punjabi & English.</p>
-                <p className="text-xs font-mono font-bold text-blue-600">1800-DIHADI-HELP</p>
+                <p className="text-xs font-mono font-bold text-amber-600">1800-DIHADI-HELP</p>
               </div>
 
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
@@ -2207,7 +2100,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 </div>
                 <h4 className="text-xs font-black text-slate-900">100% Aadhaar KYC Guarantee</h4>
                 <p className="text-[11px] text-slate-500">Every worker in the 10km radius is verified with physical trade proof.</p>
-                <span className="text-[10px] font-bold text-emerald-600">Active Protection</span>
+                <span className="text-[10px] font-bold text-amber-600">Active Protection</span>
               </div>
             </div>
 
@@ -2254,7 +2147,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   placeholder={`e.g. Need ${bookingWorker.primaryTrade} for 1 day work`}
                   value={directJobTitle}
                   onChange={(e) => setDirectJobTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600 font-medium"
                   required
                 />
               </div>
@@ -2268,7 +2161,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     max="30"
                     value={directJobDuration}
                     onChange={(e) => setDirectJobDuration(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600 font-medium"
                     required
                   />
                 </div>
@@ -2290,7 +2183,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   value={directJobDescription}
                   onChange={(e) => setDirectJobDescription(e.target.value)}
                   placeholder="e.g. Bring standard tools, reach location by 9:00 AM."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600 font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600 font-medium"
                 />
               </div>
 
@@ -2311,17 +2204,17 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   </p>
                 </div>
               ) : (
-                <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl space-y-2 text-slate-800">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
-                    <span className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                <div className="p-3.5 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2 text-slate-800">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-200">
+                    <span className="text-[11px] font-black text-amber-950 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-700" />
                       <span>Upfront Prepaid Escrow (Before Work)</span>
                     </span>
-                    <span className="text-xs font-mono font-black text-emerald-800">
+                    <span className="text-xs font-mono font-black text-amber-800">
                       ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-emerald-900 leading-snug">
+                  <p className="text-[11px] text-amber-900 leading-snug">
                     🛡️ <strong>100% Protected:</strong> Employer prepays wage before work starts. Funds remain locked in the Dihadi Escrow Vault and are only released when you confirm satisfactory work completion. <strong>100% refundable upon complaint review if worker is absent.</strong>
                   </p>
                 </div>
@@ -2346,7 +2239,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 ) : (
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>Prepay ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)} & Book</span>
@@ -2364,7 +2257,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-4 animate-in fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-amber-600 text-white font-black flex items-center justify-center text-sm shadow-xs">
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
@@ -2388,7 +2281,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   placeholder="e.g. Electrical rewiring for 3-BHK or Mason for wall repair"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                   required
                 />
               </div>
@@ -2399,7 +2292,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   <select
                     value={trade}
                     onChange={(e) => setTrade(e.target.value as TradeType)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600"
                   >
                     <option value="Mason">Mason (राजमिस्त्री)</option>
                     <option value="Painter">Painter (पेंटर)</option>
@@ -2421,7 +2314,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     step="50"
                     value={dailyWage}
                     onChange={(e) => setDailyWage(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-amber-600"
                     required
                   />
                 </div>
@@ -2436,7 +2329,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                     max="30"
                     value={durationDays}
                     onChange={(e) => setDurationDays(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                     required
                   />
                 </div>
@@ -2459,7 +2352,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g. Need worker on site by 8:30 AM. Cement and materials provided."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-blue-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                 />
               </div>
 
@@ -2480,24 +2373,24 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   </p>
                 </div>
               ) : (
-                <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl space-y-2 text-slate-800">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200">
-                    <span className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                <div className="p-3.5 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2 text-slate-800">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-200">
+                    <span className="text-[11px] font-black text-amber-950 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-700" />
                       <span>Upfront Prepaid Escrow (Before Work Starts)</span>
                     </span>
-                    <span className="text-xs font-mono font-black text-emerald-800">
+                    <span className="text-xs font-mono font-black text-amber-800">
                       ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-emerald-900 leading-snug">
+                  <p className="text-[11px] text-amber-900 leading-snug">
                     🛡️ <strong>100% Escrow Guarantee:</strong> Employer prepays total wage into secure escrow vault before job broadcast. Funds are only disbursed when worker finishes work with your verified approval. <strong>100% refundable upon complaint review if worker is absent or leaves.</strong>
                   </p>
                 </div>
               )}
 
-              <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-[11px] text-indigo-900 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+              <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-[11px] text-amber-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>Our AI engine will instantly rank and alert the Top 5 nearest workers within 10 km.</span>
               </div>
 
@@ -2520,7 +2413,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 ) : (
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>Prepay ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)} & Broadcast</span>
@@ -2538,7 +2431,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 font-black flex items-center justify-center text-sm shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 font-black flex items-center justify-center text-sm shadow-xs">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
@@ -2559,7 +2452,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               <p className="font-bold text-slate-900">{complaintJob.title}</p>
               <div className="flex items-center justify-between text-slate-600 text-[11px]">
                 <span>Assigned Worker: <strong>{complaintJob.assignedWorkerName || 'Broadcasting'}</strong></span>
-                <span className="font-mono text-emerald-700 font-bold">Escrow: ₹{complaintJob.escrowPrepaidAmount || ((complaintJob.dailyWage || 850) * (complaintJob.durationDays || 1))}</span>
+                <span className="font-mono text-amber-700 font-bold">Escrow: ₹{complaintJob.escrowPrepaidAmount || ((complaintJob.dailyWage || 850) * (complaintJob.durationDays || 1))}</span>
               </div>
             </div>
 
@@ -2569,7 +2462,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 <select
                   value={complaintReason}
                   onChange={(e) => setComplaintReason(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-rose-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600"
                   required
                 >
                   <option value="Worker did not arrive at site / Absent">Worker did not arrive at site / Absent (ਗੈਰ-ਹਾਜ਼ਰ)</option>
@@ -2587,7 +2480,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   value={complaintDetails}
                   onChange={(e) => setComplaintDetails(e.target.value)}
                   placeholder="Provide any additional context, e.g. waited 2 hours, worker phone switched off, etc."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-rose-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-amber-600"
                 />
               </div>
 
@@ -2613,7 +2506,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 <button
                   type="submit"
                   disabled={isSubmittingComplaint}
-                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingComplaint ? (
                     <span>Registering...</span>

@@ -149,7 +149,7 @@ export const WorkerAvatarUploadModal: React.FC<WorkerAvatarUploadModalProps> = (
                 />
               </div>
 
-              <div className="absolute bottom-0 right-0 p-1.5 bg-emerald-500 text-white rounded-full border-2 border-white shadow-md">
+              <div className="absolute bottom-0 right-0 p-1.5 bg-amber-500 text-white rounded-full border-2 border-white shadow-md">
                 <ShieldCheck className="w-4 h-4" />
               </div>
             </div>
@@ -167,10 +167,10 @@ export const WorkerAvatarUploadModal: React.FC<WorkerAvatarUploadModalProps> = (
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isProcessing}
-              className="p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-400 rounded-2xl transition flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer disabled:opacity-50"
+              className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-400 rounded-2xl transition flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer disabled:opacity-50"
             >
-              <UploadCloud className="w-6 h-6 text-blue-600" />
-              <span className="font-bold text-blue-950 text-xs">Choose File</span>
+              <UploadCloud className="w-6 h-6 text-amber-600" />
+              <span className="font-bold text-amber-950 text-xs">Choose File</span>
               <span className="text-[10px] text-slate-500">From phone/gallery</span>
             </button>
 
@@ -206,8 +206,8 @@ export const WorkerAvatarUploadModal: React.FC<WorkerAvatarUploadModalProps> = (
 
           {/* Error Banner */}
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex items-center gap-2 text-xs animate-fade-in font-medium">
-              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl flex items-center gap-2 text-xs animate-fade-in font-medium">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -255,7 +255,7 @@ export const WorkerAvatarUploadModal: React.FC<WorkerAvatarUploadModalProps> = (
 
           {/* Success Banner */}
           {isSaved && (
-            <div className="p-3 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-bold shadow-md animate-fade-in">
+            <div className="p-3 bg-amber-600 text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-bold shadow-md animate-fade-in">
               <Check className="w-4 h-4" />
               <span>Photo updated successfully!</span>
             </div>

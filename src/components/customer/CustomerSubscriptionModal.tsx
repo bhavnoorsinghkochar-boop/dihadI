@@ -96,7 +96,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
                   Customer Gold Club
                 </span>
                 {isAlreadyPremium && (
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-700 text-white px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-700 text-white px-2 py-0.5 rounded-full">
                     Active Member
                   </span>
                 )}
@@ -120,7 +120,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
 
           {showSuccessState ? (
             <div className="text-center py-6 space-y-4 animate-in zoom-in-95">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-500 text-emerald-600 mx-auto flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-500 text-amber-600 mx-auto flex items-center justify-center shadow-lg">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div className="space-y-1">
@@ -136,11 +136,11 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600">Admin Account Balance Received:</span>
-                  <span className="font-black text-emerald-700 font-mono">₹{PRICE.toLocaleString('en-IN')}</span>
+                  <span className="font-black text-amber-700 font-mono">₹{PRICE.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600">Worker Wage Auto-Disbursement:</span>
-                  <span className="font-bold text-blue-700">⚡ Auto-Paid by Admin to Worker Wallet</span>
+                  <span className="font-bold text-amber-700">⚡ Auto-Paid by Admin to Worker Wallet</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600">Free Service Duration:</span>
@@ -148,7 +148,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600">Platform Surcharge:</span>
-                  <span className="font-black text-emerald-600">₹0 (100% Free)</span>
+                  <span className="font-black text-amber-600">₹0 (100% Free)</span>
                 </div>
               </div>
 
@@ -206,7 +206,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
                 <button
                   onClick={handleConfirmUpiPayment}
                   disabled={isProcessing}
-                  className="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md"
+                  className="w-1/2 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isProcessing ? 'Verifying...' : 'Payment Done (Activate)'}</span>
@@ -218,19 +218,19 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
             <>
               {/* Active Plan Banner if already subscribed */}
               {isAlreadyPremium && (
-                <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3 flex items-center justify-between">
+                <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
                       Active Gold Membership
                     </span>
                     <p className="text-xs font-black text-slate-900">
                       1 Month Free Service Active {expiryDateFormatted && `(Until ${expiryDateFormatted})`}
                     </p>
-                    <p className="text-[11px] text-emerald-800 font-medium">
+                    <p className="text-[11px] text-amber-800 font-medium">
                       ✨ Worker wages auto-disbursed by Admin directly to worker wallets!
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-black">
+                  <span className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-[10px] font-black">
                     Active
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
                   </div>
 
                   <div className="flex items-start gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <Zap className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <Zap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <strong className="text-slate-900">Priority 10km GPS Radar Broadcast:</strong>
                       <p className="text-slate-500 text-[11px]">
@@ -297,7 +297,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
                   </div>
 
                   <div className="flex items-start gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <FileText className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <FileText className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <strong className="text-slate-900">Free Verified KYC Dossier Reports:</strong>
                       <p className="text-slate-500 text-[11px]">
@@ -348,7 +348,7 @@ export const CustomerSubscriptionModal: React.FC<CustomerSubscriptionModalProps>
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
-                    <CreditCard className="w-4 h-4 text-blue-600 shrink-0" />
+                    <CreditCard className="w-4 h-4 text-amber-600 shrink-0" />
                     <div>
                       <div className="font-black text-[11px]">Debit / Card</div>
                       <div className="text-[9px] text-slate-400">Instant Online Pay</div>

@@ -79,8 +79,8 @@ const SingleChatToast: React.FC<SingleToastProps> = ({ item, onDismiss, onOpenCh
         <div className="flex items-center gap-2 min-w-0">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
             isWorker 
-              ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400' 
-              : 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+              ? 'bg-amber-500/20 border border-amber-500/40 text-amber-400' 
+              : 'bg-amber-500/20 border border-amber-500/40 text-amber-400'
           }`}>
             <MessageSquare className="w-4 h-4 animate-pulse" />
           </div>
@@ -89,8 +89,8 @@ const SingleChatToast: React.FC<SingleToastProps> = ({ item, onDismiss, onOpenCh
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md border ${
                 isWorker
-                  ? 'bg-emerald-950/80 border-emerald-700/60 text-emerald-300'
-                  : 'bg-blue-950/80 border-blue-700/60 text-blue-300'
+                  ? 'bg-amber-950/80 border-amber-700/60 text-amber-300'
+                  : 'bg-amber-950/80 border-amber-700/60 text-amber-300'
               }`}>
                 {isWorker ? '👷 Worker Message' : '🏢 Employer Message'}
               </span>
@@ -99,7 +99,7 @@ const SingleChatToast: React.FC<SingleToastProps> = ({ item, onDismiss, onOpenCh
               </span>
             </div>
             <p className="text-xs font-bold text-slate-100 truncate mt-1">
-              From: <span className={isWorker ? 'text-emerald-300' : 'text-blue-300'}>{item.senderName}</span>{' '}
+              From: <span className={isWorker ? 'text-amber-300' : 'text-amber-300'}>{item.senderName}</span>{' '}
               <span className="text-slate-400 font-normal">({isWorker ? 'Skilled Worker' : 'Work Requester'})</span>
             </p>
           </div>
@@ -143,7 +143,7 @@ const SingleChatToast: React.FC<SingleToastProps> = ({ item, onDismiss, onOpenCh
       {/* Action Footer */}
       <div className="flex items-center justify-between gap-2 pt-0.5">
         <span className="text-[10px] text-slate-400 flex items-center gap-1">
-          <CheckCheck className="w-3 h-3 text-emerald-400" />
+          <CheckCheck className="w-3 h-3 text-amber-400" />
           <span>Real-time Dihadi Chat</span>
         </span>
 
@@ -163,7 +163,7 @@ const SingleChatToast: React.FC<SingleToastProps> = ({ item, onDismiss, onOpenCh
       {/* Shrinking Progress Bar */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800">
         <div 
-          className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-75"
+          className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-75"
           style={{ width: `${progress}%` }}
         />
       </div>

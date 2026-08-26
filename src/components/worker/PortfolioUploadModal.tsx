@@ -249,7 +249,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                 <FolderPlus className="w-4 h-4 text-amber-500" />
                 <span>Add New Work Sample</span>
               </h4>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                 +20% Employer Trust Score
               </span>
             </div>
@@ -272,10 +272,10 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                     {isProcessingFile ? (
                       <RefreshCw className="w-6 h-6 text-amber-500 animate-spin" />
                     ) : (
-                      <UploadCloud className="w-6 h-6 text-blue-600" />
+                      <UploadCloud className="w-6 h-6 text-amber-600" />
                     )}
                     <div>
-                      <span className="font-bold text-blue-900 text-xs block">Choose File</span>
+                      <span className="font-bold text-amber-900 text-xs block">Choose File</span>
                       <span className="text-[9px] text-slate-400">JPG, PNG, WebP</span>
                     </div>
                   </button>
@@ -355,7 +355,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                     referrerPolicy="no-referrer"
                   />
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 block">Ready to Publish</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 block">Ready to Publish</span>
                     <p className="font-bold text-slate-900 text-xs">{title || 'Untitled Work'}</p>
                     <span className="text-[10px] text-slate-500">{trade} • {area}</span>
                   </div>
@@ -363,7 +363,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setImagePreview(null)}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg transition cursor-pointer"
                   title="Remove Preview"
                 >
                   <X className="w-4 h-4" />
@@ -380,7 +380,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Boundary Wall Masonry"
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-blue-600"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-amber-600"
                   required
                 />
               </div>
@@ -390,7 +390,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                 <select
                   value={trade}
                   onChange={(e) => setTrade(e.target.value as TradeType)}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-blue-600"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-amber-600"
                 >
                   <option value="Mason">Mason</option>
                   <option value="Painter">Painter</option>
@@ -410,14 +410,14 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
                   placeholder="e.g. Model Town, Ludhiana"
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-blue-600"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-amber-600"
                 />
               </div>
             </div>
 
             {validationError && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 animate-fade-in">
-                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+              <div className="bg-amber-50 border border-amber-200 text-amber-700 p-2.5 rounded-xl text-xs font-bold flex items-center gap-2 animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                 <span>{validationError}</span>
               </div>
             )}
@@ -443,7 +443,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
 
           {/* Success Toast banner */}
           {uploadSuccess && (
-            <div className="bg-emerald-600 text-white p-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md animate-fade-in">
+            <div className="bg-amber-600 text-white p-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md animate-fade-in">
               <Check className="w-4 h-4" />
               <span>Portfolio image successfully added and visible to employers!</span>
             </div>
@@ -453,7 +453,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-blue-600" />
+                <ImageIcon className="w-4 h-4 text-amber-600" />
                 <span>Published Work Samples ({portfolioItems.length})</span>
               </h4>
               <span className="text-[10px] text-slate-500">Visible to customer before booking</span>
@@ -496,11 +496,11 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
-                      <span className="text-emerald-700 font-bold">♥ {item.likes} Hirer Likes</span>
+                      <span className="text-amber-700 font-bold">♥ {item.likes} Hirer Likes</span>
                       <button
                         type="button"
                         onClick={() => handleDeleteItem(item.id)}
-                        className="text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer"
+                        className="text-slate-400 hover:text-amber-600 transition p-1 cursor-pointer"
                         title="Delete photo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

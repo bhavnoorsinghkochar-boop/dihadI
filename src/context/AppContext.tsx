@@ -162,6 +162,9 @@ interface AppContextType {
   updateWorkerAvatar: (avatarUrl: string) => void;
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void;
   acceptJobByWorker: (jobId: string, workerToAssign?: WorkerProfile) => void;
+  approveAndFundEscrow: (jobId: string) => void;
+  approveWorker: (jobId: string) => void;
+  rejectWorker: (jobId: string) => void;
   startJobWithOtp: (jobId: string, otp: string) => boolean;
   completeJobByWorker: (jobId: string) => void;
   withdrawWorkerEarnings: (customUpi?: string) => void;
@@ -2228,9 +2231,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       platformFee,
       workerPayout,
       isPaid: false,
-      isEscrowPrepaid: true,
+      isEscrowPrepaid: false,
       escrowPrepaidAmount: totalGross,
-      escrowStatus: 'held_in_escrow',
+      escrowStatus: 'pending',
       escrowPrepaidAt: new Date().toISOString(),
     };
 
@@ -2307,6 +2310,137 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Worker accepts a broadcast job or is assigned by customer hire
+  
+  const approveWorker = (jobId: string) => {
+    let jobOtp = '';
+    let customerId = '';
+    let workerId = '';
+    
+    setJobs(prev => prev.map(job => {
+      if (job.id === jobId) {
+        jobOtp = job.otpCode || '';
+        customerId = job.customerId;
+        workerId = job.assignedWorkerId || '';
+        const updated = { ...job, status: 'approved' as const };
+        syncJobToFirestore(updated);
+        return updated;
+      }
+      return job;
+    }));
+    
+    // Auto-inject OTP into in-app chat
+    if (jobOtp && customerId && workerId) {
+      try {
+        const conversationId = [customerId, workerId].sort().join('_');
+        const storageKey = `dihadi_chat_v7_${conversationId}`;
+        const existingRaw = localStorage.getItem(storageKey);
+        const history = existingRaw ? JSON.parse(existingRaw) : [];
+        const newMessage = {
+          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+          senderId: customerId,
+          text: `SYSTEM: Customer approved! Your secure Start OTP is ${jobOtp}`,
+          timestamp: Date.now()
+        };
+        history.push(newMessage);
+        localStorage.setItem(storageKey, JSON.stringify(history));
+        
+        window.dispatchEvent(new CustomEvent('dihadi_chat_sync', { detail: { key: storageKey } }));
+        window.dispatchEvent(new CustomEvent('dihadi_chat_message_event', {
+          detail: {
+            conversationId,
+            senderId: customerId,
+            senderName: "System",
+            receiverId: workerId,
+            text: newMessage.text,
+            jobId: jobId
+          }
+        }));
+      } catch (err) {
+        console.warn('Could not inject OTP to chat', err);
+      }
+    }
+
+    playSound("success");
+    showNotification("Worker Approved", "Worker approved! OTP automatically sent to in-app chat.");
+  };
+
+  const rejectWorker = (jobId: string) => {
+    setJobs(prev => prev.map(job => {
+      if (job.id === jobId) {
+        const updated = { 
+          ...job, 
+          status: 'broadcast' as const,
+          assignedWorkerId: null,
+          assignedWorkerName: null,
+          assignedWorkerPhone: null
+        };
+        syncJobToFirestore(updated);
+        return updated;
+      }
+      return job;
+    }));
+    playSound("alert");
+    showNotification("Worker Rejected", "Job has been re-broadcasted to other workers.");
+  };
+
+  const approveAndFundEscrow = (jobId: string) => {
+    let jobOtp = '';
+    let customerId = '';
+    let workerId = '';
+    setJobs(prev => prev.map(job => {
+      if (job.id === jobId) {
+        jobOtp = job.otpCode || '';
+        customerId = job.customerId;
+        workerId = job.assignedWorkerId || '';
+        const updated = {
+          ...job,
+          status: 'approved' as const,
+          isEscrowPrepaid: true,
+          escrowStatus: "held_in_escrow" as const,
+          escrowPrepaidAt: new Date().toISOString()
+        };
+        syncJobToFirestore(updated);
+        return updated;
+      }
+      return job;
+    }));
+    
+    // Auto-inject OTP into in-app chat
+    if (jobOtp && customerId && workerId) {
+      try {
+        const conversationId = [customerId, workerId].sort().join('_');
+        const storageKey = `dihadi_chat_v7_${conversationId}`;
+        const existingRaw = localStorage.getItem(storageKey);
+        const history = existingRaw ? JSON.parse(existingRaw) : [];
+        const newMessage = {
+          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+          senderId: customerId,
+          text: `SYSTEM: Customer approved & paid escrow! Your secure Start OTP is ${jobOtp}`,
+          timestamp: Date.now()
+        };
+        history.push(newMessage);
+        localStorage.setItem(storageKey, JSON.stringify(history));
+        
+        window.dispatchEvent(new CustomEvent('dihadi_chat_sync', { detail: { key: storageKey } }));
+        window.dispatchEvent(new CustomEvent('dihadi_chat_message_event', {
+          detail: {
+            conversationId,
+            senderId: customerId,
+            senderName: "System",
+            receiverId: workerId,
+            text: newMessage.text,
+            jobId: jobId
+          }
+        }));
+      } catch (err) {
+        console.warn('Could not inject OTP to chat', err);
+      }
+    }
+    
+    playSound("success");
+    showNotification("Worker Approved & Escrow Funded", "Worker approved! OTP automatically sent to in-app chat.");
+  };
+
   const acceptJobByWorker = (jobId: string, workerToAssign?: WorkerProfile) => {
     const worker = workerToAssign || currentWorker;
     if (!worker) {
@@ -2367,7 +2501,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     playSound('success');
-    showNotification(`Job assigned to ${worker.name}! Start OTP: ${targetJob?.otpCode || updatedAcceptedJob?.otpCode}`);
+    showNotification(`Your job has been accepted by ${worker.name}. Do you want to approve or reject this worker?`);
   };
 
   // Worker starts work by entering OTP
@@ -2382,7 +2516,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
       syncJobToFirestore(updated);
       playSound('success');
-      showNotification('OTP Verified! Work status: In Progress.');
+      showNotification('OTP Verified! Job officially started.');
       return true;
     } else {
       playSound('alert');
@@ -3380,6 +3514,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateWorkerAvatar,
         updateWorkerProfile,
         acceptJobByWorker,
+        approveAndFundEscrow,
+        approveWorker,
+        rejectWorker,
         startJobWithOtp,
         completeJobByWorker,
         withdrawWorkerEarnings,

@@ -149,7 +149,7 @@ export const RateEmployeeModal: React.FC<RateEmployeeModalProps> = ({
               <div>
                 <h4 className="text-sm font-black text-white flex items-center gap-1.5">
                   {workerName}
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <ShieldCheck className="w-4 h-4 text-amber-400" />
                 </h4>
                 <p className="text-xs text-amber-300 font-medium">
                   {workerTrade} • {jobTitle}
@@ -158,7 +158,7 @@ export const RateEmployeeModal: React.FC<RateEmployeeModalProps> = ({
             </div>
             <div className="text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Status</span>
-              <span className="text-xs font-bold text-emerald-400">Job Finished</span>
+              <span className="text-xs font-bold text-amber-400">Job Finished</span>
             </div>
           </div>
 

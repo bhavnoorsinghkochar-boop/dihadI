@@ -58,7 +58,7 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
                   Important Security Advisory
                 </span>
                 {isPostRating && (
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                  <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Job Rated
                   </span>
                 )}
@@ -84,48 +84,48 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-slate-700 text-xs flex-1">
           
           {/* Card 1: The Critical Off-Platform Warning (RED/AMBER THEME) */}
-          <div className="bg-rose-50/90 border-2 border-rose-300 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-xs">
+          <div className="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-xs">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
                 <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="text-sm font-black text-rose-950 uppercase tracking-wide">
+                <h4 className="text-sm font-black text-amber-950 uppercase tracking-wide">
                   ⚠️ Warning: Never Hire or Work Directly Outside the App
                 </h4>
-                <p className="text-xs text-rose-900 mt-1 leading-relaxed font-medium">
-                  If you again hire or engage with {workerName ? <span className="font-black text-rose-950">{workerName}</span> : 'workers'} <strong>directly in private without booking through our official Dihadi App</strong>:
+                <p className="text-xs text-amber-900 mt-1 leading-relaxed font-medium">
+                  If you again hire or engage with {workerName ? <span className="font-black text-amber-950">{workerName}</span> : 'workers'} <strong>directly in private without booking through our official Dihadi App</strong>:
                 </p>
               </div>
             </div>
 
-            <div className="bg-white/80 border border-rose-200 rounded-xl p-3 space-y-1.5 text-[11px] text-rose-900 ml-0 sm:ml-11">
+            <div className="bg-white/80 border border-amber-200 rounded-xl p-3 space-y-1.5 text-[11px] text-amber-900 ml-0 sm:ml-11">
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
                 <span><strong>No Damage Liability:</strong> We are <strong>NOT responsible</strong> for any damage to you, your family, or your home/property.</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
                 <span><strong>No Arrival Protection:</strong> If the worker arrives or fails to show up, we cannot enforce arrival or accountability.</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
                 <span><strong>No Refund or Escrow:</strong> Any cash paid privately outside the app is completely at your own risk.</span>
               </div>
             </div>
           </div>
 
           {/* Card 2: 100% Full App Protection Guarantee (EMERALD/BLUE THEME) */}
-          <div className="bg-emerald-50/90 border-2 border-emerald-300 rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+          <div className="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
                 <ShieldCheck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="text-sm font-black text-emerald-950 uppercase tracking-wide">
+                <h4 className="text-sm font-black text-amber-950 uppercase tracking-wide">
                   🛡️ When You Book Through Our App, We Are 100% Accountable
                 </h4>
-                <p className="text-xs text-emerald-900 mt-0.5 leading-relaxed font-medium">
+                <p className="text-xs text-amber-900 mt-0.5 leading-relaxed font-medium">
                   Every booking created on the Dihadi platform is fully covered by our comprehensive legal & financial protection shield:
                 </p>
               </div>
@@ -134,9 +134,9 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
             {/* Feature Checklist Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               {/* Point 1: 100% Accountability */}
-              <div className="bg-white rounded-xl p-3 border border-emerald-200 space-y-1">
-                <div className="flex items-center gap-1.5 text-emerald-900 font-black text-xs">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="bg-white rounded-xl p-3 border border-amber-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>Total App Accountability</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-snug">
@@ -145,9 +145,9 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
               </div>
 
               {/* Point 2: 100% Money-Back Refund Guarantee */}
-              <div className="bg-white rounded-xl p-3 border border-emerald-200 space-y-1">
-                <div className="flex items-center gap-1.5 text-emerald-900 font-black text-xs">
-                  <RotateCcw className="w-4 h-4 text-blue-600 shrink-0" />
+              <div className="bg-white rounded-xl p-3 border border-amber-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs">
+                  <RotateCcw className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>100% Instant Refund</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-snug">
@@ -156,8 +156,8 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
               </div>
 
               {/* Point 3: Govt. Aadhaar Card Tracking */}
-              <div className="bg-white rounded-xl p-3 border border-emerald-200 space-y-1">
-                <div className="flex items-center gap-1.5 text-emerald-900 font-black text-xs">
+              <div className="bg-white rounded-xl p-3 border border-amber-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs">
                   <FileCheck2 className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>Govt. Aadhaar Card on File</span>
                 </div>
@@ -167,8 +167,8 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
               </div>
 
               {/* Point 4: Live GPS Radar & Prepaid Escrow */}
-              <div className="bg-white rounded-xl p-3 border border-emerald-200 space-y-1">
-                <div className="flex items-center gap-1.5 text-emerald-900 font-black text-xs">
+              <div className="bg-white rounded-xl p-3 border border-amber-200 space-y-1">
+                <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs">
                   <Lock className="w-4 h-4 text-purple-600 shrink-0" />
                   <span>Prepaid Escrow Vault</span>
                 </div>
@@ -182,7 +182,7 @@ export const AppProtectionGuaranteeModal: React.FC<AppProtectionGuaranteeModalPr
           {/* Quick Summary Pill Banner */}
           <div className="p-3 bg-slate-900 text-white rounded-xl flex items-center justify-between gap-2 text-[11px]">
             <div className="flex items-center gap-2">
-              <Radio className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+              <Radio className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
               <span className="font-medium text-slate-300">
                 Always book via <span className="text-amber-400 font-bold">Dihadi App</span> for guaranteed safety, Aadhaar tracking & refunds.
               </span>

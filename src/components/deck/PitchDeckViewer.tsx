@@ -217,7 +217,7 @@ export const PitchDeckViewer: React.FC = () => {
                   />
                   <div>
                     <h3 className="font-extrabold text-base text-slate-900">{member.name}</h3>
-                    <p className="text-xs text-blue-600 font-semibold mt-0.5">{member.role}</p>
+                    <p className="text-xs text-amber-600 font-semibold mt-0.5">{member.role}</p>
                   </div>
                 </div>
               ))}
@@ -252,9 +252,9 @@ export const PitchDeckViewer: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               {slide.items?.map((item) => (
-                <div key={item.title} className="bg-white p-5 rounded-2xl border border-rose-100 shadow-xs space-y-1.5">
-                  <h3 className="font-bold text-base text-rose-900 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                <div key={item.title} className="bg-white p-5 rounded-2xl border border-amber-100 shadow-xs space-y-1.5">
+                  <h3 className="font-bold text-base text-amber-900 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                     {item.title}
                   </h3>
                   <p className="text-xs text-slate-600 leading-relaxed">{item.desc}</p>
@@ -292,8 +292,8 @@ export const PitchDeckViewer: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               {slide.pillars?.map((p, i) => (
-                <div key={p.title} className="bg-white p-6 rounded-2xl border border-blue-200 shadow-sm space-y-2 text-center">
-                  <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto font-black text-sm border border-blue-100">
+                <div key={p.title} className="bg-white p-6 rounded-2xl border border-amber-200 shadow-sm space-y-2 text-center">
+                  <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mx-auto font-black text-sm border border-amber-100">
                     0{i + 1}
                   </div>
                   <h3 className="font-extrabold text-base text-slate-900">{p.title}</h3>
@@ -314,7 +314,7 @@ export const PitchDeckViewer: React.FC = () => {
               {slide.revenueStreams?.map((r) => (
                 <div key={r.name} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
                   <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                     {r.name}
                   </h3>
                   <p className="text-xs text-slate-600 leading-relaxed">{r.desc}</p>
@@ -362,9 +362,9 @@ export const PitchDeckViewer: React.FC = () => {
               <p className="text-xs text-slate-500 mt-0.5">{slide.subtitle}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-emerald-50/70 border border-emerald-200 p-3.5 rounded-2xl space-y-1">
-                <h3 className="font-extrabold text-xs text-emerald-900 uppercase">STRENGTHS</h3>
-                <ul className="text-[11px] text-emerald-800 space-y-0.5 list-disc list-inside">
+              <div className="bg-amber-50/70 border border-amber-200 p-3.5 rounded-2xl space-y-1">
+                <h3 className="font-extrabold text-xs text-amber-900 uppercase">STRENGTHS</h3>
+                <ul className="text-[11px] text-amber-800 space-y-0.5 list-disc list-inside">
                   {slide.swot?.strengths.map((s, i) => (
                     <li key={i}>{s}</li>
                   ))}
@@ -380,18 +380,18 @@ export const PitchDeckViewer: React.FC = () => {
                 </ul>
               </div>
 
-              <div className="bg-blue-50/70 border border-blue-200 p-3.5 rounded-2xl space-y-1">
-                <h3 className="font-extrabold text-xs text-blue-900 uppercase">OPPORTUNITIES</h3>
-                <ul className="text-[11px] text-blue-800 space-y-0.5 list-disc list-inside">
+              <div className="bg-amber-50/70 border border-amber-200 p-3.5 rounded-2xl space-y-1">
+                <h3 className="font-extrabold text-xs text-amber-900 uppercase">OPPORTUNITIES</h3>
+                <ul className="text-[11px] text-amber-800 space-y-0.5 list-disc list-inside">
                   {slide.swot?.opportunities.map((o, i) => (
                     <li key={i}>{o}</li>
                   ))}
                 </ul>
               </div>
 
-              <div className="bg-rose-50/70 border border-rose-200 p-3.5 rounded-2xl space-y-1">
-                <h3 className="font-extrabold text-xs text-rose-900 uppercase">THREATS</h3>
-                <ul className="text-[11px] text-rose-800 space-y-0.5 list-disc list-inside">
+              <div className="bg-amber-50/70 border border-amber-200 p-3.5 rounded-2xl space-y-1">
+                <h3 className="font-extrabold text-xs text-amber-900 uppercase">THREATS</h3>
+                <ul className="text-[11px] text-amber-800 space-y-0.5 list-disc list-inside">
                   {slide.swot?.threats.map((t, i) => (
                     <li key={i}>{t}</li>
                   ))}
@@ -441,7 +441,7 @@ export const PitchDeckViewer: React.FC = () => {
               setCurrentSlide(0);
             }
           }}
-          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+          className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer"
         >
           <span>{currentSlide === slides.length - 1 ? 'Restart Deck' : 'Next Slide'}</span>
           <ArrowRight className="w-3.5 h-3.5" />

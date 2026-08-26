@@ -109,11 +109,11 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
         <div className="bg-slate-950/90 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
-            <div className="flex items-center gap-1.5 bg-rose-600/20 border border-rose-500/40 text-rose-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
-              <Play className="w-3 h-3 fill-rose-300" />
+            <div className="flex items-center gap-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+              <Play className="w-3 h-3 fill-amber-300" />
               <span>Membership Feature Spotlight</span>
             </div>
           </div>
@@ -168,7 +168,7 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
               }}
               className={`flex-1 py-2 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 ${
                 activeTab === 'worker'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                   : 'bg-slate-800/70 text-slate-400 hover:text-white'
               }`}
             >
@@ -191,12 +191,12 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
                 </>
               ) : (
                 <>
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-white">Worker VIP Pass & Verification</h4>
-                    <p className="text-[10px] text-emerald-400">Instant Govt. Aadhaar Green Badge + 0% Commission</p>
+                    <p className="text-[10px] text-amber-400">Instant Govt. Aadhaar Green Badge + 0% Commission</p>
                   </div>
                 </>
               )}
@@ -212,11 +212,11 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
 
           {showActivatedSuccess ? (
             <div className="text-center py-6 space-y-4 animate-in zoom-in-95">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 mx-auto flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400 text-amber-400 mx-auto flex items-center justify-center shadow-lg">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-black text-white">Membership Activated!</h3>
-              <p className="text-xs text-emerald-300 font-medium px-4">
+              <p className="text-xs text-amber-300 font-medium px-4">
                 {successMessage}
               </p>
               <button
@@ -260,7 +260,7 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
               {/* Key Features for Customers */}
               <div className="space-y-2 text-xs">
                 <div className="flex items-start gap-2.5 bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-white">Admin Automated Wallet Transfers:</strong>
                     <p className="text-slate-400 text-[11px]">
@@ -280,7 +280,7 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
                 </div>
 
                 <div className="flex items-start gap-2.5 bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
-                  <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-white">Free Verified Aadhaar KYC Dossiers:</strong>
                     <p className="text-slate-400 text-[11px]">
@@ -305,13 +305,13 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
             /* Worker VIP Pass Spotlight */
             <div className="space-y-4 animate-in fade-in">
               {/* Highlight Hero Card */}
-              <div className="bg-gradient-to-br from-emerald-500/20 via-emerald-400/10 to-slate-900 border-2 border-emerald-400/80 rounded-3xl p-5 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-amber-500/20 via-amber-400/10 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-5 relative overflow-hidden">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-400 text-slate-950 px-2 py-0.5 rounded-md inline-block">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md inline-block">
                       ⚡ FAST-TRACK VERIFICATION & VIP
                     </span>
-                    <h3 className="text-2xl font-black text-emerald-300 leading-tight">
+                    <h3 className="text-2xl font-black text-amber-300 leading-tight">
                       Worker VIP Pass
                     </h3>
                     <p className="text-xs text-slate-300">
@@ -320,13 +320,13 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-black text-white font-mono">₹2,000</div>
-                    <span className="text-[10px] text-emerald-400 font-bold block">6 Jobs Pass</span>
+                    <span className="text-[10px] text-amber-400 font-bold block">6 Jobs Pass</span>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-emerald-400/30 bg-emerald-950/40 p-3 rounded-2xl border border-emerald-500/30">
-                  <div className="flex items-center gap-2 text-xs text-emerald-200 font-bold">
-                    <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="mt-4 pt-3 border-t border-amber-400/30 bg-amber-950/40 p-3 rounded-2xl border border-amber-500/30">
+                  <div className="flex items-center gap-2 text-xs text-amber-200 font-bold">
+                    <UserCheck className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>Includes Instant Govt. Aadhaar Card Verification — Skip the Admin Approval Queue!</span>
                   </div>
                 </div>
@@ -334,10 +334,10 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
 
               {/* Key Features for Workers */}
               <div className="space-y-2 text-xs">
-                <div className="flex items-start gap-2.5 bg-emerald-950/40 p-3 rounded-2xl border border-emerald-500/40">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 bg-amber-950/40 p-3 rounded-2xl border border-amber-500/40">
+                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-emerald-300">Instant Aadhaar KYC Verification:</strong>
+                    <strong className="text-amber-300">Instant Aadhaar KYC Verification:</strong>
                     <p className="text-slate-300 text-[11px]">
                       Your profile is instantly upgraded to "Aadhaar Verified" with an official green badge, attracting 3x more direct customer bookings.
                     </p>
@@ -369,7 +369,7 @@ export const SubscriptionPromoModal: React.FC<SubscriptionPromoModalProps> = ({
               <button
                 onClick={handleActivateWorkerVip}
                 disabled={isProcessing}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 hover:opacity-90 disabled:opacity-50 text-slate-950 font-black text-sm rounded-2xl transition shadow-xl flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:opacity-90 disabled:opacity-50 text-slate-950 font-black text-sm rounded-2xl transition shadow-xl flex items-center justify-center gap-2 cursor-pointer"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>{isProcessing ? 'Activating VIP Pass...' : 'Activate VIP Pass & Aadhaar (₹2,000)'}</span>

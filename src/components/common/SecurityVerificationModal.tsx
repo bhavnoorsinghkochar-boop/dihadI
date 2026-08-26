@@ -361,15 +361,15 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
         className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 flex flex-col max-h-[94vh]"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white p-4 sm:p-5 flex items-center justify-between shrink-0">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white p-4 sm:p-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-black text-white flex items-center gap-1.5">
                 <span>Account Verification</span>
-                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-bold rounded-full border border-blue-400/20 uppercase">
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-full border border-amber-400/20 uppercase">
                   {role === 'worker' ? 'Worker KYC' : 'Employer'}
                 </span>
               </h3>
@@ -404,11 +404,11 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
               }}
               className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 method === 'email'
-                  ? 'bg-white text-blue-900 shadow-xs border border-slate-200'
+                  ? 'bg-white text-amber-900 shadow-xs border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Mail className="w-3.5 h-3.5 text-blue-600" />
+              <Mail className="w-3.5 h-3.5 text-amber-600" />
               <span>Verify via Gmail</span>
             </button>
 
@@ -429,19 +429,19 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+              <Smartphone className="w-3.5 h-3.5 text-amber-600" />
               <span>Verify via SMS</span>
             </button>
           </div>
 
           {/* STEP 1: Input Field with Send OTP Button */}
-          <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+          <div className="bg-gradient-to-br from-slate-50 to-amber-50/40 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
             <div className="flex items-center justify-between">
               <label 
                 htmlFor="verification-target-input"
                 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5"
               >
-                {method === 'email' ? <Mail className="w-3.5 h-3.5 text-blue-600" /> : <Smartphone className="w-3.5 h-3.5 text-emerald-600" />}
+                {method === 'email' ? <Mail className="w-3.5 h-3.5 text-amber-600" /> : <Smartphone className="w-3.5 h-3.5 text-amber-600" />}
                 <span>{method === 'email' ? 'Gmail Address' : 'Mobile Phone Number'}</span>
               </label>
               
@@ -452,13 +452,13 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                     setStep('input');
                     setInlineError(null);
                   }}
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                  className="text-[11px] font-bold text-amber-600 hover:text-amber-800 cursor-pointer"
                 >
                   Change {method === 'email' ? 'Email' : 'Number'}
                 </button>
               ) : (
                 method === 'email' && (
-                  <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
                     Google Workspace
                   </span>
                 )
@@ -479,8 +479,8 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   }}
                   placeholder="yourname@gmail.com"
                   className={`flex-1 bg-white border ${
-                    validationError ? 'border-rose-400 focus:border-rose-600' : 'border-slate-300 focus:border-blue-600'
-                  } rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500 transition`}
+                    validationError ? 'border-amber-400 focus:border-amber-600' : 'border-slate-300 focus:border-amber-600'
+                  } rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-100 disabled:bg-slate-100 disabled:text-slate-500 transition`}
                 />
               ) : (
                 <input
@@ -495,8 +495,8 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   }}
                   placeholder="+91 98100 12345"
                   className={`flex-1 bg-white border ${
-                    validationError ? 'border-rose-400 focus:border-rose-600' : 'border-slate-300 focus:border-blue-600'
-                  } rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500 transition`}
+                    validationError ? 'border-amber-400 focus:border-amber-600' : 'border-slate-300 focus:border-amber-600'
+                  } rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-100 disabled:bg-slate-100 disabled:text-slate-500 transition`}
                 />
               )}
 
@@ -506,7 +506,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   type="button"
                   onClick={() => handleSendOtp(false)}
                   disabled={isSendingOtp}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 text-white rounded-xl text-xs font-bold shrink-0 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer min-w-[95px]"
+                  className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] disabled:opacity-50 text-white rounded-xl text-xs font-bold shrink-0 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer min-w-[95px]"
                 >
                   {isSendingOtp ? (
                     <>
@@ -524,7 +524,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
             </div>
 
             {validationError && (
-              <p className="text-[11px] font-semibold text-rose-600 flex items-center gap-1">
+              <p className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{validationError}</span>
               </p>
@@ -539,7 +539,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   htmlFor="security-otp-input"
                   className="text-xs font-bold text-slate-800 flex items-center gap-1.5"
                 >
-                  <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                  <KeyRound className="w-3.5 h-3.5 text-amber-600" />
                   <span>Enter 6-Digit OTP from your {method === 'email' ? 'Gmail' : 'SMS'}</span>
                 </label>
                 <div className="flex items-center gap-1 text-[10px] text-slate-400">
@@ -567,18 +567,18 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                     }
                   }}
                   placeholder="• • • • • •"
-                  className="w-full text-center tracking-[0.45em] font-mono text-2xl font-black bg-slate-50 border border-slate-300 rounded-2xl py-3 text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 shadow-inner transition"
+                  className="w-full text-center tracking-[0.45em] font-mono text-2xl font-black bg-slate-50 border border-slate-300 rounded-2xl py-3 text-slate-900 focus:outline-none focus:bg-white focus:border-amber-600 focus:ring-2 focus:ring-amber-100 shadow-inner transition"
                 />
               </div>
 
               {/* Dev / 1-Tap Autofill Helper */}
               {generatedOtp && (
-                <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-2.5 flex items-center justify-between gap-2">
+                <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-2.5 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-mono font-bold text-[10px] flex items-center justify-center">
+                    <span className="w-6 h-6 rounded-lg bg-amber-600 text-white font-mono font-bold text-[10px] flex items-center justify-center">
                       OTP
                     </span>
-                    <span className="text-xs font-mono font-black text-emerald-950">{generatedOtp}</span>
+                    <span className="text-xs font-mono font-black text-amber-950">{generatedOtp}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
@@ -586,13 +586,13 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                       onClick={handleCopyCode}
                       className="text-[11px] font-bold text-slate-700 hover:text-slate-900 px-2 py-1 bg-white rounded-lg border border-slate-200 flex items-center gap-1 cursor-pointer transition"
                     >
-                      {copiedCode ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copiedCode ? <Check className="w-3 h-3 text-amber-600" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedCode ? 'Copied' : 'Copy'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={handle1TapAutofill}
-                      className="text-[11px] font-black text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition shadow-xs"
+                      className="text-[11px] font-black text-white bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition shadow-xs"
                     >
                       <Sparkles className="w-3 h-3 text-amber-300" />
                       <span>Autofill</span>
@@ -607,7 +607,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                 type="button"
                 onClick={handleVerifyOtp}
                 disabled={isVerifyingOtp || enteredOtp.length < 6}
-                className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] disabled:opacity-40 text-white font-black py-3.5 rounded-2xl shadow-md text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer mt-1"
+                className="w-full bg-amber-600 hover:bg-amber-700 active:scale-[0.99] disabled:opacity-40 text-white font-black py-3.5 rounded-2xl shadow-md text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer mt-1"
               >
                 {isVerifyingOtp ? (
                   <>
@@ -616,7 +616,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                    <CheckCircle2 className="w-4 h-4 text-amber-300" />
                     <span>Verify & Complete Registration</span>
                   </>
                 )}
@@ -636,7 +636,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                     type="button"
                     onClick={() => handleSendOtp(true)}
                     disabled={isSendingOtp}
-                    className="font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50 flex items-center gap-1 cursor-pointer transition"
+                    className="font-bold text-amber-600 hover:text-amber-800 disabled:opacity-50 flex items-center gap-1 cursor-pointer transition"
                   >
                     {isSendingOtp ? (
                       <>
@@ -659,9 +659,9 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
           {inlineSuccess && (
             <div 
               id="security-modal-success-banner"
-              className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs p-3 rounded-2xl flex items-start gap-2 animate-in fade-in"
+              className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-3 rounded-2xl flex items-start gap-2 animate-in fade-in"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="font-medium leading-relaxed">{inlineSuccess}</p>
             </div>
           )}
@@ -670,9 +670,9 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
           {inlineError && (
             <div 
               id="security-modal-error-banner"
-              className="bg-rose-50 border border-rose-200 text-rose-900 text-xs p-3 rounded-2xl flex items-start gap-2 animate-in fade-in"
+              className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-3 rounded-2xl flex items-start gap-2 animate-in fade-in"
             >
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="font-medium leading-relaxed">{inlineError}</p>
             </div>
           )}
@@ -684,7 +684,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                 <button
                   type="button"
                   onClick={handleOpenGmail}
-                  className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-1 transition cursor-pointer"
+                  className="text-slate-600 hover:text-amber-600 font-semibold flex items-center gap-1 transition cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5 text-red-500" />
                   <span>Open Gmail Inbox</span>
@@ -695,7 +695,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   type="button"
                   onClick={handleConnectGoogle}
                   disabled={isAuthorizingGoogle}
-                  className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer transition"
+                  className="text-amber-600 hover:text-amber-800 font-bold flex items-center gap-1 cursor-pointer transition"
                 >
                   {isAuthorizingGoogle ? (
                     <>
@@ -704,7 +704,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                     </>
                   ) : isGoogleConnected ? (
                     <>
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                      <CheckCircle className="w-3.5 h-3.5 text-amber-500" />
                       <span>Google Linked</span>
                     </>
                   ) : (
@@ -722,9 +722,9 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                   onClick={() => {
                     window.location.href = `sms:${cleanPhone}?body=Dihadi%20Verification%20Code:%20${generatedOtp}`;
                   }}
-                  className="text-slate-600 hover:text-emerald-600 font-semibold flex items-center gap-1 transition cursor-pointer"
+                  className="text-slate-600 hover:text-amber-600 font-semibold flex items-center gap-1 transition cursor-pointer"
                 >
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                  <Smartphone className="w-3.5 h-3.5 text-amber-600" />
                   <span>Open SMS Messages</span>
                   <ExternalLink className="w-3 h-3 opacity-60" />
                 </button>

@@ -80,7 +80,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md border-2 ${
-                isOnline ? 'bg-emerald-500/20 text-emerald-400 border-emerald-400/40' : 'bg-slate-800 text-slate-400 border-slate-700'
+                isOnline ? 'bg-amber-500/20 text-amber-400 border-amber-400/40' : 'bg-slate-800 text-slate-400 border-slate-700'
               }`}>
                 <Clock className="w-5 h-5" />
               </div>
@@ -107,14 +107,14 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
           {/* 1. Live Radar Broadcasting Switch */}
           <div className={`p-4 rounded-2xl border transition-all ${
             isOnline 
-              ? 'bg-emerald-50/80 border-emerald-300 ring-1 ring-emerald-400' 
+              ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-400' 
               : 'bg-slate-50 border-slate-200'
           }`}>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Live GPS Broadcast</span>
                 <h4 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                  <Radio className={`w-4 h-4 ${isOnline ? 'text-emerald-600 animate-pulse' : 'text-slate-400'}`} />
+                  <Radio className={`w-4 h-4 ${isOnline ? 'text-amber-600 animate-pulse' : 'text-slate-400'}`} />
                   <span>{isOnline ? 'Online • Ready for Direct Jobs' : 'Offline • Invisible to Employers'}</span>
                 </h4>
                 <p className="text-[11px] text-slate-600">
@@ -129,7 +129,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
                 onClick={() => { setIsOnline(!isOnline); playSound('click'); }}
                 className={`p-3 rounded-2xl border font-bold text-xs transition flex items-center gap-1.5 shadow-sm ${
                   isOnline 
-                    ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-500' 
+                    ? 'bg-amber-600 text-white border-amber-700 hover:bg-amber-500' 
                     : 'bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300'
                 }`}
               >
@@ -236,7 +236,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
               <select
                 value={maxRadiusKm}
                 onChange={(e) => setMaxRadiusKm(Number(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-blue-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-amber-600"
               >
                 <option value={2}>Within 2 km (Walking)</option>
                 <option value={5}>Within 5 km (Bicycle)</option>
@@ -251,7 +251,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
                 type="number"
                 value={minExpectedWage}
                 onChange={(e) => setMinExpectedWage(Number(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-blue-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-amber-600"
               />
             </div>
           </div>
@@ -283,7 +283,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
               placeholder="e.g. Equipped with tools, ready for immediate work"
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-blue-600 resize-none font-medium"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-amber-600 resize-none font-medium"
             />
           </div>
 

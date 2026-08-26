@@ -53,6 +53,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
+import { Logo } from '../common/Logo';
 import { SecurityVerificationModal, GmailOtpVerificationModal, GmailOtpVerificationSection } from '../common/SecurityVerificationModal';
 import { RateEmployeeModal } from '../common/RateEmployeeModal';
 import { QuickChatModal, ChatTarget } from '../common/QuickChatModal';
@@ -105,6 +106,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     refundEscrowToCustomer,
     raiseJobComplaint,
     openSubscriptionPromo,
+    approveAndFundEscrow,
   } = useApp();
 
   // Subscription Modal State
@@ -848,14 +850,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           {/* Logo */}
           <div 
             onClick={() => setActiveTab('find_workers')}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 font-black flex items-center justify-center text-lg italic shadow-xs group-hover:scale-105 transition">
-              K
-            </div>
-            <span className="text-lg font-black tracking-tight text-slate-900">
-              Kaam<span className="text-amber-500">zo</span>
-            </span>
+            <Logo className="scale-[0.6] origin-left group-hover:scale-[0.65] transition-transform" />
           </div>
 
           {/* Sub Navigation Tabs */}
@@ -908,25 +905,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
         {/* Right User & Quick Post Job Actions */}
         <div className="flex items-center gap-3">
           {/* Gold Club Membership Button */}
-          <button
-            onClick={() => {
-              playSound('click');
-              setShowCustomerSubscriptionModal(true);
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer ${
-              currentCustomer?.isPremiumCustomer
-                ? 'bg-amber-500/20 text-amber-800 border border-amber-400 hover:bg-amber-500/30'
-                : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:opacity-90'
-            }`}
-            title="Dihadi Gold: 1 Month Free Service"
-          >
-            <Crown className="w-3.5 h-3.5 shrink-0" />
-            <span>
-              {currentCustomer?.isPremiumCustomer
-                ? 'Gold Member (1 Mo Free)'
-                : 'Dihadi Gold (1 Mo Free)'}
-            </span>
-          </button>
+
 
           <button
             onClick={() => setShowPostModal(true)}
@@ -1061,48 +1040,6 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Dihadi Gold Club Callout Banner */}
-          <div className="bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 border-2 border-amber-400/70 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
-                <Crown className="w-7 h-7" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full">
-                    Customer Gold Pass
-                  </span>
-                  {currentCustomer?.isPremiumCustomer && (
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-700 text-white px-2 py-0.5 rounded-full">
-                      Active: 1 Month Free Service
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-base sm:text-lg font-black text-slate-900">
-                  Dihadi Gold: Get 1 Month 100% Free Service & ₹0 Booking Fees
-                </h3>
-                <p className="text-xs text-slate-600">
-                  Plan fee: <strong>₹1,500</strong> for 30 days of unlimited 0% platform surcharge bookings, priority radar dispatch & free KYC dossiers!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                playSound('click');
-                setShowCustomerSubscriptionModal(true);
-              }}
-              className="px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-2xl transition shadow-md flex items-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Crown className="w-4 h-4" />
-              <span>
-                {currentCustomer?.isPremiumCustomer
-                  ? 'Manage Gold Membership'
-                  : 'Get 1 Month Free Pass (₹1,500)'}
-              </span>
-            </button>
           </div>
 
           {/* B. Popular Services Category Chips (As shown in screenshot) */}
@@ -1748,7 +1685,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                         }`}>
                           {job.status === 'broadcast' ? 'Broadcasting to 10km Radar' :
                            job.status === 'accepted' ? 'Worker Assigned (Share Start OTP)' :
-                           job.status === 'completed_pending_payment' ? 'Work Completed (Payment Due)' :
+                           job.status === 'completed_pending_payment' ? 'Work Completed (Release Escrow)' :
                            job.status}
                         </span>
 
@@ -1766,7 +1703,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
 
                     <div className="text-right">
                       <span className="text-lg font-black text-slate-900">₹{job.dailyWage}</span>
-                      {job.escrowStatus === 'pending' ? (
+                      {!job.isEscrowPrepaid && job.escrowStatus === 'pending' ? (
                         <span className="text-[10px] text-red-600 font-bold block">Payment Pending</span>
                       ) : (
                         <span className="text-[10px] text-amber-700 font-bold block">100% Escrow Held</span>
@@ -2002,7 +1939,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                   )}
 
                   {job.status === 'completed_pending_payment' && (
-                    currentCustomer?.isPremiumCustomer ? (
+                    false ? (
                       <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-amber-500/10 p-4 rounded-2xl border-2 border-amber-300 flex flex-wrap items-center justify-between gap-3 shadow-xs">
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -2032,7 +1969,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                             className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>Confirm & Release (₹0 Free)</span>
+                            <span>Confirm & Rate Worker</span>
                           </button>
                         </div>
                       </div>
@@ -2060,7 +1997,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                             className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>Confirm Work & Release Escrow</span>
+                            <span>Confirm Work & Rate Worker</span>
                           </button>
                         </div>
                       </div>
@@ -2187,39 +2124,6 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 />
               </div>
 
-              {/* Upfront Prepaid Escrow Breakdown */}
-              {currentCustomer.isPremiumCustomer ? (
-                <div className="p-3.5 bg-gradient-to-r from-amber-500/20 to-amber-500/10 border-2 border-amber-400 rounded-2xl space-y-2 text-slate-900">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-300">
-                    <span className="text-[11px] font-black text-slate-950 flex items-center gap-1.5">
-                      <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
-                      <span>Dihadi Gold Plan Active (Covered by ₹15,000)</span>
-                    </span>
-                    <span className="text-xs font-mono font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
-                      ₹0 (Free Service)
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-800 leading-snug">
-                    👑 <strong>Unlimited Free Booking:</strong> Worker daily wage of ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)} is covered by your Gold Subscription and will be disbursed directly from Admin Treasury upon confirmation.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-3.5 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2 text-slate-800">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-200">
-                    <span className="text-[11px] font-black text-amber-950 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-amber-700" />
-                      <span>Upfront Prepaid Escrow (Before Work)</span>
-                    </span>
-                    <span className="text-xs font-mono font-black text-amber-800">
-                      ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-amber-900 leading-snug">
-                    🛡️ <strong>100% Protected:</strong> Employer prepays wage before work starts. Funds remain locked in the Dihadi Escrow Vault and are only released when you confirm satisfactory work completion. <strong>100% refundable upon complaint review if worker is absent.</strong>
-                  </p>
-                </div>
-              )}
-
               <div className="pt-2 flex items-center gap-2">
                 <button
                   type="button"
@@ -2228,23 +2132,13 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 >
                   Cancel
                 </button>
-                {currentCustomer.isPremiumCustomer ? (
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span>Use My Subscription (₹0 Free) & Book</span>
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Prepay ₹{Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1)} & Book</span>
-                  </button>
-                )}
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Direct Book Worker</span>
+                </button>
               </div>
             </form>
           </div>
@@ -2357,38 +2251,6 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
               </div>
 
               {/* Upfront Prepaid Escrow Breakdown for Broadcast Job */}
-              {currentCustomer.isPremiumCustomer ? (
-                <div className="p-3.5 bg-gradient-to-r from-amber-500/20 to-amber-500/10 border-2 border-amber-400 rounded-2xl space-y-2 text-slate-900">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-300">
-                    <span className="text-[11px] font-black text-slate-950 flex items-center gap-1.5">
-                      <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
-                      <span>Dihadi Gold Plan Active (Covered by ₹15,000)</span>
-                    </span>
-                    <span className="text-xs font-mono font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
-                      ₹0 (Free Service)
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-800 leading-snug">
-                    👑 <strong>Unlimited Free Broadcast:</strong> Job wage of ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)} is covered by your Gold Subscription and will be disbursed directly from Admin Treasury to the worker upon your work approval.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-3.5 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2 text-slate-800">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-amber-200">
-                    <span className="text-[11px] font-black text-amber-950 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-amber-700" />
-                      <span>Upfront Prepaid Escrow (Before Work Starts)</span>
-                    </span>
-                    <span className="text-xs font-mono font-black text-amber-800">
-                      ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-amber-900 leading-snug">
-                    🛡️ <strong>100% Escrow Guarantee:</strong> Employer prepays total wage into secure escrow vault before job broadcast. Funds are only disbursed when worker finishes work with your verified approval. <strong>100% refundable upon complaint review if worker is absent or leaves.</strong>
-                  </p>
-                </div>
-              )}
-
               <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-[11px] text-amber-900 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>Our AI engine will instantly rank and alert the Top 5 nearest workers within 10 km.</span>
@@ -2402,23 +2264,13 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                 >
                   Cancel
                 </button>
-                {currentCustomer.isPremiumCustomer ? (
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span>Use My Subscription (₹0 Free) & Broadcast</span>
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Prepay ₹{(Number(dailyWage) || 850) * (Number(durationDays) || 1)} & Broadcast</span>
-                  </button>
-                )}
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Post Job & Broadcast</span>
+                </button>
               </div>
             </form>
           </div>
@@ -2594,15 +2446,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
         }}
       />
 
-      {/* Customer Gold Membership (1 Month Free Service) Modal */}
-      {currentCustomer && (
-        <CustomerSubscriptionModal
-          isOpen={showCustomerSubscriptionModal}
-          onClose={() => setShowCustomerSubscriptionModal(false)}
-          customer={currentCustomer}
-          onSubscribe={(method) => subscribeCustomerPremium(currentCustomer.id, method)}
-        />
-      )}
+
 
       {/* Prepay Escrow Payment Modal during booking */}
       {prepayBooking && (
@@ -2615,7 +2459,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           workerTrade={prepayBooking.type === 'direct' && bookingWorker ? bookingWorker.primaryTrade : trade}
           isWorkerReceiving={false}
           isPrepaidEscrowPayment={true}
-          isCustomerSubscriptionActive={currentCustomer?.isPremiumCustomer}
+          isCustomerSubscriptionActive={false}
           jobTitle={prepayBooking.type === 'direct' ? directJobTitle : title}
           onPaymentSuccess={() => {
             processPrepaidBooking();

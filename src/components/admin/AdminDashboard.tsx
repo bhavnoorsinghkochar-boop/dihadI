@@ -317,7 +317,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
               <Wallet className="w-3 h-3 text-amber-400" />
             </div>
             <p className="text-lg font-black text-amber-400 font-mono">₹{adminTreasuryBalance.toLocaleString('en-IN')}</p>
-            <p className="text-[9px] text-amber-400 font-mono truncate">Rev: ₹{adminSubscriptionRevenue.toLocaleString('en-IN')}</p>
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
@@ -347,43 +346,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isEmbedded = fal
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <Crown className="w-4 h-4" />
+                    <Coins className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-                      Admin Subscription & Auto-Payout Treasury
+                      Admin Escrow Treasury
                     </h3>
                     <p className="text-[11px] text-slate-400">
-                      Customer ₹15,000 Gold Memberships & Worker VIP subscriptions flow into Admin Account.
+                      Prepaid escrow funds flow through here and are disbursed to workers upon approval.
                     </p>
                   </div>
                 </div>
               </div>
-
-              {/* Mechanism Breakdown */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-amber-400 font-bold">
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                    <span>Customer ₹15,000 Inflow</span>
-                  </div>
-                  <p className="text-slate-300">
-                    Customers pay ₹15,000 for Gold Membership (1 month free service & zero commission). 100% of this money is received in the Admin Account.
-                  </p>
-                </div>
-
-                <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-amber-400 font-bold">
-                    <ArrowDownRight className="w-3.5 h-3.5" />
-                    <span>Automatic Worker Payouts</span>
-                  </div>
-                  <p className="text-slate-300">
-                    When a Gold Customer hires a worker, the Admin Treasury automatically sends the worker's daily wage directly into their digital wallet.
-                  </p>
-                </div>
-              </div>
             </div>
-
             {/* Live Treasury Transaction Audit Log */}
             <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { getT } from '../utils/translations';
+import { Logo } from './common/Logo';
 import { 
   HardHat, 
   Briefcase, 
@@ -59,12 +60,12 @@ export const RoleSelectScreen: React.FC = () => {
           {getT(currentLanguage, 'sdg_alignment')}
         </div>
 
-        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-          Kaam<span className="text-amber-500">zo</span>
-          <span className="block text-xl sm:text-2xl font-bold text-slate-700 mt-2">
+        <div className="flex flex-col items-center">
+          <Logo className="scale-[1.3] sm:scale-[1.7] origin-center mb-6 mt-4" />
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-700 mt-4 text-center">
             {getT(currentLanguage, 'choose_portal_title')}
-          </span>
-        </h1>
+          </h2>
+        </div>
 
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
           {getT(currentLanguage, 'choose_portal_sub')}

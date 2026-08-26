@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Logo } from '../common/Logo';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -185,9 +186,9 @@ export const PitchDeckViewer: React.FC = () => {
             <div className="inline-block px-4 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-full text-xs font-black uppercase tracking-wider">
               {slide.tagline}
             </div>
-            <h1 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight">
-              Kaam<span className="text-amber-500">zo</span>
-            </h1>
+            <div className="flex justify-center w-full">
+              <Logo className="scale-[1.8] sm:scale-[2.2] origin-center my-6" />
+            </div>
             <p className="text-xl sm:text-2xl font-bold text-slate-700">
               {slide.subtitle}
             </p>

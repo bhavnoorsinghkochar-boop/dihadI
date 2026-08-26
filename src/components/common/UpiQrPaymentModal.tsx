@@ -15,7 +15,7 @@ import {
   Share2,
   Star,
   MessageSquare
-} from 'lucide-react';
+, Crown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playSound } from '../../utils/audio';
 import { useApp } from '../../context/AppContext';

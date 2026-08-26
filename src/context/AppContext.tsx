@@ -2257,11 +2257,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Spoken voice assistant feedback
       speak(`New ${newJob.trade} job posted. Top 5 compatible workers suggested near ${newJob.area}.`);
     } else {
-      showNotification(`New ${newJob.trade} job broadcasted. OTP: ${otpCode}`);
+      showNotification(`New ${newJob.trade} job broadcasted.`);
     }
-
-    // Auto-dispatch Start OTP to customer email & phone
-    dispatchJobStartOtp(newJob);
     return newJob;
   };
 
@@ -2312,24 +2309,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Worker accepts a broadcast job or is assigned by customer hire
   
   const approveWorker = (jobId: string) => {
-    let jobOtp = '';
-    let customerId = '';
-    let workerId = '';
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const updated = { ...job, status: 'approved' as const };
+    setJobs(prev => prev.map(j => j.id === jobId ? updated : j));
+    syncJobToFirestore(updated);
     
-    setJobs(prev => prev.map(job => {
-      if (job.id === jobId) {
-        jobOtp = job.otpCode || '';
-        customerId = job.customerId;
-        workerId = job.assignedWorkerId || '';
-        const updated = { ...job, status: 'approved' as const };
-        syncJobToFirestore(updated);
-        return updated;
-      }
-      return job;
-    }));
-    
+    // Dispatch OTP now that worker is approved
+    setTimeout(() => dispatchJobStartOtp(updated), 500);
+
     // Auto-inject OTP into in-app chat
-    if (jobOtp && customerId && workerId) {
+    if (updated.otpCode && updated.customerPhone && updated.assignedWorkerId) {
+      let customerId = updated.customerPhone;
+      let workerId = updated.assignedWorkerId;
+      let jobOtp = updated.otpCode;
       try {
         const conversationId = [customerId, workerId].sort().join('_');
         const storageKey = `dihadi_chat_v7_${conversationId}`;
@@ -2384,29 +2378,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const approveAndFundEscrow = (jobId: string) => {
-    let jobOtp = '';
-    let customerId = '';
-    let workerId = '';
-    setJobs(prev => prev.map(job => {
-      if (job.id === jobId) {
-        jobOtp = job.otpCode || '';
-        customerId = job.customerId;
-        workerId = job.assignedWorkerId || '';
-        const updated = {
-          ...job,
-          status: 'approved' as const,
-          isEscrowPrepaid: true,
-          escrowStatus: "held_in_escrow" as const,
-          escrowPrepaidAt: new Date().toISOString()
-        };
-        syncJobToFirestore(updated);
-        return updated;
-      }
-      return job;
-    }));
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const updated = {
+      ...job,
+      status: 'approved' as const,
+      isEscrowPrepaid: true,
+      escrowStatus: "held_in_escrow" as const,
+      escrowPrepaidAt: new Date().toISOString()
+    };
+
+    setJobs(prev => prev.map(j => j.id === jobId ? updated : j));
+    syncJobToFirestore(updated);
     
+    // Dispatch OTP now that worker is approved
+    setTimeout(() => dispatchJobStartOtp(updated), 500);
+
     // Auto-inject OTP into in-app chat
-    if (jobOtp && customerId && workerId) {
+    if (updated.otpCode && updated.customerPhone && updated.assignedWorkerId) {
+      let customerId = updated.customerPhone;
+      let workerId = updated.assignedWorkerId;
+      let jobOtp = updated.otpCode;
       try {
         const conversationId = [customerId, workerId].sort().join('_');
         const storageKey = `dihadi_chat_v7_${conversationId}`;
@@ -2491,7 +2484,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (updatedAcceptedJob) {
       syncJobToFirestore(updatedAcceptedJob);
-      dispatchJobStartOtp(updatedAcceptedJob);
     }
 
     // If customer has Gold Membership (₹15,000 plan), Admin automatically disburses worker wage to worker's wallet
@@ -2571,6 +2563,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       workerPayout: payout,
       zeroCommissionApplied: zeroCommissionUsed,
       status: 'paid_and_closed',
+      escrowStatus: 'released_to_worker',
       isPaid: true,
       rating: rating,
       review: review,
@@ -2693,13 +2686,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setWorkers((prev) =>
         prev.map((w) => {
           if (w.id === job.assignedWorkerId) {
-            const count = Math.max(1, w.reviewCount || 1);
-            const updatedRating = Number((((w.rating * count) - (job.rating || 5.0) + rating) / count).toFixed(1));
+            const count = w.reviewCount || 0;
+            const isNewRating = job.rating === undefined;
+            let newCount = count;
+            let updatedRating = w.rating;
+
+            if (isNewRating) {
+              newCount = count + 1;
+              updatedRating = count === 0 ? rating : Number((((w.rating * count) + rating) / newCount).toFixed(1));
+            } else {
+              const safeCount = Math.max(1, count);
+              updatedRating = Number((((w.rating * safeCount) - (job.rating || 5.0) + rating) / safeCount).toFixed(1));
+            }
+
             const updatedW: WorkerProfile = {
               ...w,
               rating: Math.min(5.0, Math.max(1.0, updatedRating)),
+              reviewCount: newCount,
             };
+            
             syncWorkerToFirestore(updatedW);
+            
+            // Fix: Sync the state if the currently logged-in worker is the one being updated
+            if (currentWorker && currentWorker.id === updatedW.id) {
+              setCurrentWorker(updatedW);
+            }
+            
             return updatedW;
           }
           return w;

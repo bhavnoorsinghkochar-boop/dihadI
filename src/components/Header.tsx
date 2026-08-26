@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Language, CityInfo } from '../types';
 import { getT } from '../utils/translations';
+import { Logo } from './common/Logo';
 import { 
   Presentation, 
   Volume2, 
@@ -67,22 +68,12 @@ export const Header: React.FC = () => {
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8 shadow-xs shrink-0 z-30 sticky top-0">
       {/* Brand & Active Role Status */}
       <div className="flex items-center gap-3">
-        <div 
-          onClick={() => setCurrentRole('select_role')}
-          className="w-10 h-10 bg-slate-900 hover:bg-slate-800 transition rounded-xl flex items-center justify-center text-white font-black italic text-xl cursor-pointer shadow-xs select-none shrink-0"
-          title="Return to Role Selection"
-        >
-          K
-        </div>
-
-        <div>
+        <Logo 
+          onClick={() => setCurrentRole('select_role')} 
+          className="shrink-0 scale-[0.7] sm:scale-90 origin-left" 
+        />
+        <div className="hidden sm:block">
           <div className="flex items-center gap-2">
-            <h1 
-              onClick={() => setCurrentRole('select_role')}
-              className="text-base sm:text-lg font-black text-slate-900 tracking-tight cursor-pointer flex items-center gap-1"
-            >
-              Kaam<span className="text-amber-500 font-extrabold">zo</span>
-            </h1>
 
             {/* Active Role Tag */}
             <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200 flex items-center gap-1">

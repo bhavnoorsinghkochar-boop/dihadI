@@ -61,7 +61,8 @@ import {
   MicOff,
   Crown,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckCheck
 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 import { getGoogleMapsDirectionsUrl, calculateDistanceKm } from '../../utils/geo';
@@ -1343,26 +1344,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
             <span className="hidden sm:inline">{currentWorker.isOnline ? 'Online (Broadcasting)' : 'Offline'}</span>
           </button>
 
-          {/* Zero Commission VIP Pass Badge / Button */}
-          <button
-            onClick={() => {
-              playSound('click');
-              setShowSubscriptionModal(true);
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer ${
-              (currentWorker.zeroCommissionJobsRemaining || 0) > 0
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
-                : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:opacity-90 shadow-sm'
-            }`}
-            title="Get 6 Jobs with 0% Platform Commission"
-          >
-            <Crown className="w-3.5 h-3.5 shrink-0" />
-            <span>
-              {(currentWorker.zeroCommissionJobsRemaining || 0) > 0
-                ? `0% VIP (${currentWorker.zeroCommissionJobsRemaining} Left)`
-                : '0% Comm. Pass'}
-            </span>
-          </button>
+
 
           {/* Wallet Balance Badge */}
           <div className="bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded-xl flex items-center gap-2">
@@ -2331,7 +2313,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                             type="button"
                             onClick={() => {
                               if (window.confirm('Mark this job as finished? Customer will be notified to release payment.')) {
-                                finishJobByWorker(job.id);
+                                completeJobByWorker(job.id);
                               }
                             }}
                             className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
@@ -2787,7 +2769,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                         </div>
                       ) : (
                         <div className="bg-amber-100 p-3 rounded-2xl text-center text-xs font-bold text-amber-900">
-                          Waiting for Employer UPI Escrow Release...
+                          Waiting for Employer Rating & Escrow Release...
                         </div>
                       )}
                     </div>
@@ -2815,69 +2797,6 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
         {/* TAB 4: WALLET & EARNINGS BREAKDOWN */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
-            {/* VIP Zero-Commission Feature Card */}
-            <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 border-2 border-amber-400/60 rounded-3xl p-5 sm:p-6 relative overflow-hidden shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
-                    <Crown className="w-7 h-7" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full">
-                        Worker VIP Subscription
-                      </span>
-                      {(currentWorker.zeroCommissionJobsRemaining || 0) > 0 && (
-                        <span className="text-[10px] font-black uppercase tracking-wider bg-amber-600 text-white px-2 py-0.5 rounded-full">
-                          Active Pass
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                      0% Commission VIP Pass (₹2,000)
-                    </h3>
-                    <p className="text-xs text-slate-600 max-w-xl">
-                      Get <strong>6 jobs with 0% platform commission</strong> (keep 100% of employer wage). The ₹2,000 fee can be <strong>directly deducted from your wallet balance</strong>!
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:items-end gap-2 shrink-0">
-                  <div className="text-right">
-                    <span className="text-xs text-slate-500 block">VIP Status:</span>
-                    <span className="text-sm font-black text-slate-900">
-                      {(currentWorker.zeroCommissionJobsRemaining || 0) > 0
-                        ? `🌟 ${currentWorker.zeroCommissionJobsRemaining} of 6 Jobs Remaining`
-                        : 'Not Active'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      playSound('click');
-                      setShowSubscriptionModal(true);
-                    }}
-                    className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span>
-                      {(currentWorker.zeroCommissionJobsRemaining || 0) > 0
-                        ? 'Manage / Top-up VIP Pass'
-                        : 'Activate Pass (Pay ₹2,000)'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {(currentWorker.commissionSavedTotal || 0) > 0 && (
-                <div className="mt-4 pt-3 border-t border-amber-300/60 flex items-center justify-between text-xs">
-                  <span className="text-slate-600">Total Platform Fees Saved:</span>
-                  <span className="font-black text-amber-700 font-mono">
-                    🎉 ₹{currentWorker.commissionSavedTotal} Saved in Platform Fees
-                  </span>
-                </div>
-              )}
-            </div>
-
             {/* Financial Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 text-white rounded-3xl p-5 space-y-2 border border-slate-800 shadow-md">
@@ -3492,14 +3411,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
         }}
       />
 
-      {/* 0% Commission VIP Pass Subscription Modal */}
-      <WorkerSubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-        worker={currentWorker}
-        onSubscribe={(method) => subscribeWorkerPremium(currentWorker.id, method)}
-        onTopUpWallet={(amount) => topUpWorkerWallet(amount)}
-      />
+
     </div>
   );
 };

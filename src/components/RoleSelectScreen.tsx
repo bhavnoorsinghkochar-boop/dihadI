@@ -2,6 +2,8 @@ import React from "react";
 import { useApp } from "../context/AppContext";
 import { getT } from "../utils/translations";
 import { Logo } from "./common/Logo";
+import { GoogleSSOButton } from "./common/GoogleSSOButton";
+import { SSORolePickerModal } from "./common/SSORolePickerModal";
 import {
   HardHat,
   Briefcase,
@@ -26,6 +28,9 @@ export const RoleSelectScreen: React.FC = () => {
     currentCustomer,
     currentCity,
     speak,
+    ssoGoogleUser,
+    isSSORoleModalOpen,
+    setIsSSORoleModalOpen,
   } = useApp();
 
   const handleSelectRole = (
@@ -79,9 +84,9 @@ export const RoleSelectScreen: React.FC = () => {
       {/* Top Banner / Hero */}
       <div className="text-center space-y-3 max-w-2xl">
         {/* User-facing Trust Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-100/90 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-[#FFE57F] rounded-full text-xs font-black uppercase tracking-wider shadow-xs">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-          <span>{getT(currentLanguage, "hero_trust_badge")}</span>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#efef01] border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-[#FFE57F] rounded-full text-xs font-black uppercase tracking-wider shadow-xs">
+          <span className="w-2.5 h-2.5 rounded-full text-[#361400] bg-[#463900] animate-pulse"></span>
+          <span className="text-[#0c0c0c]">{getT(currentLanguage, "hero_trust_badge")}</span>
         </div>
 
         <div className="flex flex-col items-center">
@@ -94,6 +99,15 @@ export const RoleSelectScreen: React.FC = () => {
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium max-w-xl mx-auto">
           {getT(currentLanguage, "choose_portal_sub")}
         </p>
+
+        {/* Global Google SSO 1-Click Fast Auth */}
+        <div className="pt-2 max-w-xl mx-auto w-full">
+          <GoogleSSOButton
+            variant="hero"
+            label="Continue with Google SSO"
+            subLabel="Fast 1-click access for Workers & Employers with instant identity verification"
+          />
+        </div>
       </div>
 
       {/* 2 Primary Role Selection Cards: Worker & Customer */}
@@ -117,11 +131,11 @@ export const RoleSelectScreen: React.FC = () => {
                 {/* Prominent Audio/TTS Button for Workers */}
                 <button
                   onClick={handleSpeakWorkerCard}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/80 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-amber-950 dark:text-[#FFE57F] rounded-xl text-xs font-bold transition border border-amber-300 dark:border-amber-700/60 shadow-2xs min-h-[36px]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#efef01] hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-[#090908] rounded-xl text-xs font-bold transition border border-amber-300 dark:border-amber-700/60 shadow-2xs min-h-[36px]"
                   title="Listen in Voice Audio"
                   aria-label="Listen to worker card audio"
                 >
-                  <Volume2 className="w-4 h-4 text-amber-600 dark:text-[#FCD33F] shrink-0" />
+                  <Volume2 className="w-4 h-4 text-[#000000] shrink-0" />
                   <span>{getT(currentLanguage, "speak_worker_card")}</span>
                 </button>
               </div>
@@ -251,6 +265,12 @@ export const RoleSelectScreen: React.FC = () => {
           <span>{getT(currentLanguage, "admin_footer_link")}</span>
         </button>
       </div>
+      {/* SSO Role Selection Modal for New / Multi-Role Users */}
+      <SSORolePickerModal
+        isOpen={isSSORoleModalOpen}
+        onClose={() => setIsSSORoleModalOpen(false)}
+        googleUser={ssoGoogleUser}
+      />
     </div>
   );
 };

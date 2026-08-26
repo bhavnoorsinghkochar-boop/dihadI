@@ -28,7 +28,8 @@ import {
   ResolvedAddress,
 } from "../utils/geo";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import {
   COLLECTIONS,
   syncWorkerToFirestore,
@@ -349,7 +350,19 @@ interface AppContextType {
   refreshWorkerGpsLocation: () => void;
   resolveDispute: (id: string) => void;
 
-  // Global Controls
+  // Global Controls & SSO
+  signInWithGoogleSSO: (
+    preferredRole?: "worker" | "customer" | "admin"
+  ) => Promise<{ success: boolean; user?: any; isNewUser?: boolean; error?: string }>;
+  ssoGoogleUser: {
+    displayName?: string | null;
+    email?: string | null;
+    photoURL?: string | null;
+    uid: string;
+  } | null;
+  setSsoGoogleUser: (user: any | null) => void;
+  isSSORoleModalOpen: boolean;
+  setIsSSORoleModalOpen: (open: boolean) => void;
   isFirebaseConnected: boolean;
   connectedCluster: { connectUrl: string; controlUrl: string; workUrl: string };
   resetToZero: () => void;
@@ -513,6 +526,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const saved = localStorage.getItem("dihadi_current_admin_v6");
     return saved ? JSON.parse(saved) : null;
   });
+  /* SSO Google User & Role Selection Modal State */
+  const [ssoGoogleUser, setSsoGoogleUser] = useState<{
+    displayName?: string | null;
+    email?: string | null;
+    photoURL?: string | null;
+    uid: string;
+  } | null>(null);
+  const [isSSORoleModalOpen, setIsSSORoleModalOpen] = useState<boolean>(false);
   /*  Admin Treasury & Automated Payouts State  */ const [
     adminTreasuryBalance,
     setAdminTreasuryBalance,
@@ -1483,6 +1504,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.clear();
     setWorkers([]);
     setJobs([]);
+    setCustomerAccounts([]);
+    setWorkerAccounts([]);
     setVerifications([]);
     setDisputes([]);
     setCurrentWorker(null);
@@ -2245,6 +2268,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     password: string,
   ): { success: boolean; error?: string } => {
     const clean = adminIdOrEmail.trim().toLowerCase();
+
+    // Strict Gmail Verification for Admin Access
+    if (clean.includes("@gmail.com")) {
+      const isAllowed =
+        clean === "bhavnoorsinghkochar@gmail.com" ||
+        clean === "bhanoorsinghkochar@gmail.com";
+      if (!isAllowed) {
+        return {
+          success: false,
+          error:
+            "Access Denied: Only bhavnoorsinghkochar@gmail.com is authorized to access the Admin Platform. No other Gmail account has admin privileges.",
+        };
+      }
+      loginAdmin({
+        name: "Bhavnoor Singh Kochar",
+        email: clean,
+      });
+      return { success: true };
+    }
+
     if (
       clean === "admin" ||
       clean === "ops@dihadi.co" ||
@@ -2262,22 +2305,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       loginAdmin({ name: "Dihadi Operations Admin", email: "ops@dihadi.co" });
       return { success: true };
     }
-    /* Allow custom admin username with password */
-    loginAdmin({
-      name: adminIdOrEmail,
-      email: `${clean.replace(/\s+/g, "")}@dihadi.co`,
-    });
-    return { success: true };
+
+    // Reject any other unauthorized email
+    return {
+      success: false,
+      error:
+        "Access Denied: Only bhavnoorsinghkochar@gmail.com is authorized to access the Admin Platform.",
+    };
   };
   /*  Admin Login helper  */ const loginAdmin = (data: {
     name: string;
     email: string;
   }) => {
+    const cleanEmail = (data.email || "").toLowerCase().trim();
+    const isBhavnoor =
+      cleanEmail === "bhavnoorsinghkochar@gmail.com" ||
+      cleanEmail === "bhanoorsinghkochar@gmail.com";
+
     const admin: AdminProfile = {
       id: `adm-${Date.now().toString().slice(-4)}`,
-      name: data.name || "Dihadi Operations Admin",
-      email: data.email || "ops@dihadi.co",
-      role: "Operations Lead",
+      name: isBhavnoor
+        ? data.name || "Bhavnoor Singh Kochar"
+        : data.name || "Dihadi Operations Admin",
+      email: data.email || "bhavnoorsinghkochar@gmail.com",
+      role: isBhavnoor ? "Super Admin / Platform Owner" : "Operations Lead",
     };
     setCurrentAdmin(admin);
     playSound("success");
@@ -2288,6 +2339,152 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     playSound("click");
     showNotification("Admin logged out.");
   };
+
+  /* =========================================================================
+     Single Sign-On (SSO) with Google Auth Provider
+     ========================================================================= */
+  const signInWithGoogleSSO = async (
+    preferredRole?: "worker" | "customer" | "admin"
+  ): Promise<{ success: boolean; user?: any; isNewUser?: boolean; error?: string }> => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const email = user.email || `${user.uid}@gmail.com`;
+      const name = user.displayName || email.split("@")[0] || "Kaamzo User";
+      const photoURL = user.photoURL || undefined;
+
+      const googleUserPayload = {
+        displayName: name,
+        email: email,
+        photoURL: photoURL,
+        uid: user.uid,
+      };
+      setSsoGoogleUser(googleUserPayload);
+
+      // 1. If explicit role requested:
+      if (preferredRole === "worker") {
+        const found = workerAccounts.find(
+          (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+        );
+        if (found) {
+          loginWorkerWithAuth(found.id, found.password || "google_sso_123");
+        } else {
+          const tempPass = "google_sso_123";
+          registerWorkerWithAuth({
+            userId: email,
+            password: tempPass,
+            name: name,
+            phone: user.phoneNumber || "+91 98101 55678",
+            email: email,
+            isEmailVerified: true,
+            primaryTrade: "Mason",
+            dailyRate: 850,
+            experienceYears: 4,
+            area: currentCity?.defaultArea || "Model Town",
+            aadhaarNumber: "7829-4412-9901",
+            upiId: `${email.split("@")[0]}@okaxis`,
+          });
+          loginWorkerWithAuth(email, tempPass);
+        }
+        if (photoURL) {
+          updateWorkerAvatar(photoURL);
+        }
+        setCurrentRole("worker");
+        playSound("success");
+        return { success: true, user: googleUserPayload, isNewUser: !found };
+      }
+
+      if (preferredRole === "customer") {
+        const found = customerAccounts.find(
+          (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+        );
+        if (found) {
+          loginCustomerWithAuth(found.id, found.password || "google_sso_123");
+        } else {
+          const tempPass = "google_sso_123";
+          registerCustomerWithAuth({
+            userId: email,
+            password: tempPass,
+            name: name,
+            phone: user.phoneNumber || "+91 99100 88221",
+            email: email,
+            isEmailVerified: true,
+            area: currentCity?.defaultArea || "Model Town",
+            address: `House 142, ${currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}`,
+            upiId: `${email.split("@")[0]}@okhdfcbank`,
+          });
+          loginCustomerWithAuth(email, tempPass);
+        }
+        setCurrentRole("customer");
+        playSound("success");
+        return { success: true, user: googleUserPayload, isNewUser: !found };
+      }
+
+      if (preferredRole === "admin") {
+        const cleanEmail = email.trim().toLowerCase();
+        const isAuthorizedAdmin =
+          cleanEmail === "bhavnoorsinghkochar@gmail.com" ||
+          cleanEmail === "bhanoorsinghkochar@gmail.com" ||
+          cleanEmail === "ops@dihadi.co" ||
+          cleanEmail === "admin@dihadi.co";
+
+        if (!isAuthorizedAdmin) {
+          return {
+            success: false,
+            error: `Access Denied: Only bhavnoorsinghkochar@gmail.com is authorized to access the Admin Platform. (${email} is not authorized).`,
+          };
+        }
+
+        loginAdmin({
+          name: name || "Bhavnoor Singh Kochar",
+          email: email,
+        });
+        setCurrentRole("admin");
+        playSound("success");
+        return { success: true, user: googleUserPayload };
+      }
+
+      // 2. Auto-detect from role selector without pre-selection
+      const foundWorker = workerAccounts.find(
+        (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+      );
+      const foundCustomer = customerAccounts.find(
+        (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+      );
+
+      if (foundWorker && !foundCustomer) {
+        loginWorkerWithAuth(foundWorker.id, foundWorker.password || "google_sso_123");
+        if (photoURL) updateWorkerAvatar(photoURL);
+        setCurrentRole("worker");
+        playSound("success");
+        return { success: true, user: googleUserPayload, isNewUser: false };
+      }
+
+      if (foundCustomer && !foundWorker) {
+        loginCustomerWithAuth(foundCustomer.id, foundCustomer.password || "google_sso_123");
+        setCurrentRole("customer");
+        playSound("success");
+        return { success: true, user: googleUserPayload, isNewUser: false };
+      }
+
+      // If user hasn't chosen role yet or both exist, prompt with SSO Role Selection modal
+      setIsSSORoleModalOpen(true);
+      return { success: true, user: googleUserPayload, isNewUser: true };
+    } catch (err: any) {
+      if (err?.code === "auth/cancelled-popup-request" || err?.code === "auth/popup-closed-by-user") {
+        console.warn("User cancelled the Google popup sign-in.");
+        return { success: false, error: "Popup closed by user." };
+      }
+      console.error("Google SSO Login Error:", err);
+      return {
+        success: false,
+        error: err?.message || "Failed to sign in with Google SSO.",
+      };
+    }
+  };
+
   /* Employer posts a job */ const postJob = (jobData: {
     title: string;
     trade: TradeType;
@@ -3848,6 +4045,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         seedMoreWorkersForVerification,
         refreshWorkerGpsLocation,
         resolveDispute,
+        signInWithGoogleSSO,
+        ssoGoogleUser,
+        setSsoGoogleUser,
+        isSSORoleModalOpen,
+        setIsSSORoleModalOpen,
         resetToZero,
         seedSampleData,
         isFirebaseConnected,

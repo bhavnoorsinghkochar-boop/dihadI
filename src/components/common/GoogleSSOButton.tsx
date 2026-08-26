@@ -48,8 +48,10 @@ export const GoogleSSOButton: React.FC<GoogleSSOButtonProps> = ({
         if (onSuccess) onSuccess(result.user);
       } else {
         const err = result.error || "Google SSO authentication failed.";
-        setErrorMessage(err);
-        if (onError) onError(err);
+        if (err !== "Popup closed by user.") {
+          setErrorMessage(err);
+          if (onError) onError(err);
+        }
       }
     } catch (err: any) {
       console.error("SSO Error:", err);

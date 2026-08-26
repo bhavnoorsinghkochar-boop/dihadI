@@ -1,6 +1,6 @@
 import React from "react";
 import { useApp } from "../../context/AppContext";
-import { HardHat, Briefcase, X, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { HardHat, Briefcase, X, ArrowRight, ShieldCheck, Shield, Sparkles } from "lucide-react";
 import { playSound } from "../../utils/audio";
 
 interface SSORolePickerModalProps {
@@ -24,6 +24,7 @@ export const SSORolePickerModal: React.FC<SSORolePickerModalProps> = ({
     loginCustomerWithAuth,
     registerWorkerWithAuth,
     loginWorkerWithAuth,
+    loginAdmin,
     setCurrentRole,
     currentCity,
     showNotification,
@@ -33,6 +34,24 @@ export const SSORolePickerModal: React.FC<SSORolePickerModalProps> = ({
 
   const email = googleUser.email || googleUser.uid;
   const name = googleUser.displayName || "Kaamzo User";
+  const cleanEmail = email.toLowerCase().trim();
+  const isAuthorizedAdmin =
+    cleanEmail === "bhavnoorsinghkochar@gmail.com" ||
+    cleanEmail === "bhanoorsinghkochar@gmail.com";
+
+  const handleSelectAdmin = () => {
+    playSound("success");
+    loginAdmin({
+      name: name || "Bhavnoor Singh Kochar",
+      email: email,
+    });
+    setCurrentRole("admin");
+    showNotification(
+      "Admin Access Granted",
+      `Welcome Administrator ${name}! Operations Headquarters initialized.`
+    );
+    onClose();
+  };
 
   const handleSelectCustomer = () => {
     playSound("success");
@@ -133,8 +152,37 @@ export const SSORolePickerModal: React.FC<SSORolePickerModalProps> = ({
           </p>
         </div>
 
-        {/* 2 Options */}
+        {/* Role Options */}
         <div className="space-y-3">
+          {/* Platform Super Admin (Only visible for authorized admin email bhavnoorsinghkochar@gmail.com) */}
+          {isAuthorizedAdmin && (
+            <button
+              type="button"
+              onClick={handleSelectAdmin}
+              className="w-full text-left p-4 rounded-2xl border-2 border-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition flex items-center justify-between group cursor-pointer shadow-xs"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h5 className="text-sm font-black text-amber-950 dark:text-[#FCD33F]">
+                      Platform Super Admin
+                    </h5>
+                    <span className="px-1.5 py-0.2 bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 text-[10px] font-black rounded">
+                      Authorized Admin
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Governance access to Treasury, Escrow, KYC & Live Ops
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-amber-600 dark:text-[#FCD33F] transition shrink-0" />
+            </button>
+          )}
+
           {/* Customer / Employer */}
           <button
             type="button"

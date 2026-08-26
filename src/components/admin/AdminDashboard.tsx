@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { getT } from "../../utils/translations";
+import { GoogleSSOButton } from "../common/GoogleSSOButton";
 import {
   Shield,
   Check,
@@ -51,9 +52,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     disburseWorkerWageFromAdmin,
     subscribeCustomerPremium,
     currentCustomer,
+    resetToZero,
+    seedSampleData,
   } = useApp();
-  const [adminId, setAdminId] = useState("ops@dihadi.co");
-  const [adminPassword, setAdminPassword] = useState("admin");
+  const [adminId, setAdminId] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   /* Admin navigation tabs: 'treasury' | 'kyc' | 'workers' | 'jobs' */ const [
     adminTab,
@@ -71,11 +74,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!res.success) {
       setAuthError(res.error || getT(currentLanguage, "auth_error_invalid"));
     }
-  };
-  const handleQuickDemo = () => {
-    setAdminId("ops@dihadi.co");
-    setAdminPassword("admin");
-    loginAdminWithAuth("ops@dihadi.co", "admin");
   };
   /* IF NOT LOGGED IN: Show Admin Login */ if (!currentAdmin) {
     return (
@@ -113,60 +111,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>{" "}
         </div>{" "}
         <div className="p-5 space-y-4 flex-1">
-          {" "}
-          {/* Quick Demo Login */}{" "}
-          <div className="space-y-1.5">
-            {" "}
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              {" "}
-              {getT(currentLanguage, "demo_quick_login")}{" "}
-            </span>{" "}
-            <button
-              type="button"
-              onClick={handleQuickDemo}
-              className="px-3 py-1.5 bg-amber-900/60 hover:bg-amber-800 text-amber-200 rounded-xl text-xs font-bold border border-amber-700 transition flex items-center gap-1.5"
-            >
-              {" "}
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />{" "}
-              <span>Admin HQ Demo Access</span>{" "}
-            </button>{" "}
-          </div>{" "}
+          {/* Strict Admin Whitelist Notice */}
           {authError && (
-            <div className="bg-amber-950/70 border border-amber-800 text-amber-200 text-xs p-3 rounded-xl flex items-center gap-2">
-              {" "}
-              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />{" "}
-              <span>{authError}</span>{" "}
+            <div className="bg-rose-950/70 border border-rose-800 text-rose-200 text-xs p-3 rounded-xl flex items-start gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{authError}</span>
             </div>
-          )}{" "}
+          )}
+
           <form onSubmit={handleAdminLogin} className="space-y-3 text-xs">
-            {" "}
             <div>
-              {" "}
               <label className="font-bold text-slate-300 block mb-1">
-                {" "}
-                {getT(currentLanguage, "admin_email_label")}{" "}
-              </label>{" "}
+                {getT(currentLanguage, "admin_email_label")}
+              </label>
               <div className="relative">
-                {" "}
                 <input
                   type="text"
-                  placeholder="ops@dihadi.co or admin"
+                  placeholder="bhavnoorsinghkochar@gmail.com"
                   value={adminId}
                   onChange={(e) => setAdminId(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-amber-500 pl-8 font-mono"
                   required
-                />{" "}
-                <User className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" />{" "}
-              </div>{" "}
-            </div>{" "}
+                />
+                <User className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" />
+              </div>
+            </div>
             <div>
-              {" "}
               <label className="font-bold text-slate-300 block mb-1">
-                {" "}
-                {getT(currentLanguage, "auth_password_label")}{" "}
-              </label>{" "}
+                {getT(currentLanguage, "auth_password_label")}
+              </label>
               <div className="relative">
-                {" "}
                 <input
                   type="password"
                   placeholder="admin"
@@ -174,18 +148,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setAdminPassword(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-amber-500 pl-8 font-mono"
                   required
-                />{" "}
-                <Lock className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" />{" "}
-              </div>{" "}
-            </div>{" "}
+                />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" />
+              </div>
+            </div>
             <button
               type="submit"
-              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2 mt-4"
+              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-3 rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2 mt-4 cursor-pointer"
             >
-              {" "}
-              <Lock className="w-4 h-4" />{" "}
-              <span>{getT(currentLanguage, "auth_login_btn")}</span>{" "}
-            </button>{" "}
+              <Lock className="w-4 h-4" />
+              <span>{getT(currentLanguage, "auth_login_btn")}</span>
+            </button>
+
+            <div className="pt-2">
+              <GoogleSSOButton
+                roleTarget="admin"
+                variant="dark"
+                label="Sign in with Authorized Google Account"
+                onError={(err) => setAuthError(err)}
+              />
+            </div>
           </form>{" "}
         </div>{" "}
       </div>
@@ -250,16 +232,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </h2>{" "}
             </div>{" "}
           </div>{" "}
-          <div className="flex items-center gap-2">
-            {" "}
+                    <div className="flex items-center gap-2">
+            <button
+              onClick={() => seedSampleData()}
+              className="px-2 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+              title="Seed Sample Data"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Seed Data</span>
+            </button>
+            <button
+              onClick={() => resetToZero()}
+              className="px-2 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+              title="Reset Platform"
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset Platform</span>
+            </button>
             <button
               onClick={logoutAdmin}
               className="p-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg transition"
               title={getT(currentLanguage, "auth_logout_btn")}
             >
-              {" "}
-              <LogOut className="w-3.5 h-3.5" />{" "}
-            </button>{" "}
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>{" "}
         </div>{" "}
         <div className="flex justify-between items-center text-xs text-slate-400 border-t border-slate-700/60 pt-2 mt-2">

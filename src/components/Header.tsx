@@ -159,14 +159,14 @@ export const Header: React.FC = () => {
                 setShowLangMenu(false);
                 setShowSettingsMenu(false);
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-amber-950 dark:text-amber-100 hover:bg-amber-100/70 dark:hover:bg-[#333333] rounded-lg text-xs font-bold transition min-h-[36px]"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[#4f4843] bg-[#ffc800] hover:bg-amber-100/70 dark:hover:bg-[#333333] rounded-lg text-xs font-bold transition min-h-[36px]"
               title="Change active operating city"
             >
-              <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-[#FCD33F] shrink-0" />
+              <MapPin className="w-3.5 h-3.5 text-[#1c1c1c] border-[#202020] shrink-0" />
               <span className="max-w-[85px] sm:max-w-[120px] truncate">
                 {currentCity ? currentCity.name : "Ludhiana"}
               </span>
-              <ChevronDown className="w-3 h-3 text-amber-700 dark:text-amber-300 opacity-80" />
+              <ChevronDown className="w-3 h-3 text-[#101010] opacity-80" />
             </button>
             <button
               onClick={() => detectAndSetLiveLocation()}
@@ -360,35 +360,11 @@ export const Header: React.FC = () => {
                 <span className="text-[10px] text-amber-700 dark:text-[#FCD33F] font-bold">Play</span>
               </div>
 
-              {/* Dev & Testing Divider */}
-              <div className="my-1 border-t border-slate-100 dark:border-[#333333]" />
-              <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-                Developer Controls
-              </div>
+              
 
-              {/* Reset State Action */}
-              <button
-                onClick={() => {
-                  resetToZero();
-                  setShowSettingsMenu(false);
-                }}
-                className="w-full px-3.5 py-2 text-left text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 transition"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>{getT(currentLanguage, "dev_reset")}</span>
-              </button>
+              
 
-              {/* Seed Sample Data Action */}
-              <button
-                onClick={() => {
-                  seedSampleData();
-                  setShowSettingsMenu(false);
-                }}
-                className="w-full px-3.5 py-2 text-left text-xs font-semibold text-amber-700 dark:text-[#FFE57F] hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 transition"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>{getT(currentLanguage, "dev_seed")}</span>
-              </button>
+              
             </div>
           )}
         </div>

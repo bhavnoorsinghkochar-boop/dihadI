@@ -735,7 +735,7 @@ export const SecurityVerificationModal: React.FC<SecurityVerificationModalProps>
                     const text = encodeURIComponent(`*Dihadi Passcode*\nYour verification code is: *${generatedOtp}*`);
                     window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${text}`, '_blank');
                   }}
-                  className="text-[#25D366] hover:underline font-bold flex items-center gap-1 cursor-pointer transition"
+                  className="text-amber-500 hover:underline font-bold flex items-center gap-1 cursor-pointer transition"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>WhatsApp SMS</span>

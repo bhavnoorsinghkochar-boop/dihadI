@@ -689,19 +689,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProtectionModalData(null);
   };
 
-  // Check if promo ad should be shown on app start/reopen
+  // Subscription promo ad on app start/reopen is disabled as requested by the user
+  /*
   useEffect(() => {
-    const roleKey = currentRole === 'worker' ? 'worker' : 'customer';
-    const hasSeenInSession = sessionStorage.getItem(`dihadi_promo_shown_${roleKey}_v6`);
-    if (!hasSeenInSession && (currentRole === 'customer' || currentRole === 'worker')) {
-      const timer = setTimeout(() => {
-        setPromoInitialRole(roleKey);
-        setIsSubscriptionPromoOpen(true);
-        sessionStorage.setItem(`dihadi_promo_shown_${roleKey}_v6`, 'true');
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
+    // Promo logic removed
   }, [currentRole]);
+  */
 
   // Registered credentials database
   const [workerAccounts, setWorkerAccounts] = useState<UserAccount[]>(() => {

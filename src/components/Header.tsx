@@ -15,7 +15,9 @@ import {
   MapPin,
   Compass,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -24,6 +26,8 @@ export const Header: React.FC = () => {
     setCurrentRole,
     currentLanguage,
     setCurrentLanguage,
+    isDarkMode,
+    toggleTheme,
     currentCity,
     setCurrentCity,
     supportedCities,
@@ -65,7 +69,7 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-3">
         <div 
           onClick={() => setCurrentRole('select_role')}
-          className="w-10 h-10 bg-[#0F172A] hover:bg-slate-800 transition rounded-xl flex items-center justify-center text-white font-black italic text-xl cursor-pointer shadow-xs select-none shrink-0"
+          className="w-10 h-10 bg-slate-900 hover:bg-slate-800 transition rounded-xl flex items-center justify-center text-white font-black italic text-xl cursor-pointer shadow-xs select-none shrink-0"
           title="Return to Role Selection"
         >
           K
@@ -197,6 +201,15 @@ export const Header: React.FC = () => {
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span className="hidden xl:inline text-[11px] font-bold">{getT(currentLanguage, 'reset_button')}</span>
+        </button>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition"
+          title="Toggle Light/Dark Mode"
+        >
+          {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
         {/* Audio Helper Button */}

@@ -179,7 +179,7 @@ export const PitchDeckViewer: React.FC = () => {
       </div>
 
       {/* Slide Body */}
-      <div className="flex-1 p-8 sm:p-10 bg-[#FAFAFA] flex flex-col justify-center">
+      <div className="flex-1 p-8 sm:p-10 bg-slate-50 flex flex-col justify-center">
         {slide.type === 'cover' && (
           <div className="text-center space-y-6 max-w-2xl mx-auto">
             <div className="inline-block px-4 py-1.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-full text-xs font-black uppercase tracking-wider">

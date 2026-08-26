@@ -539,8 +539,8 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
               </div>
 
               {/* WhatsApp Message Preview */}
-              <div className="bg-[#0b141a] p-3 rounded-xl border border-emerald-900/40 text-xs text-slate-200 font-sans space-y-2 relative">
-                <div className="bg-[#005c4b] p-3 rounded-xl text-white space-y-1.5 shadow-md max-w-md">
+              <div className="bg-slate-950 p-3 rounded-xl border border-emerald-900/40 text-xs text-slate-200 font-sans space-y-2 relative">
+                <div className="bg-emerald-900 p-3 rounded-xl text-white space-y-1.5 shadow-md max-w-md">
                   <p className="font-bold text-amber-300 flex items-center gap-1">
                     <span>⚡ Dihadi Instant Job Alert!</span>
                   </p>

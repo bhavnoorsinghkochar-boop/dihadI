@@ -58,6 +58,8 @@ interface AppContextType {
   setCurrentRole: (role: AppRole) => void;
   currentLanguage: Language;
   setCurrentLanguage: (lang: Language) => void;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
 
   // City & Live Geolocation
   currentCity: CityInfo;
@@ -532,7 +534,22 @@ const DEFAULT_INITIAL_VERIFICATIONS: VerificationRequest[] = [
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentRole, setCurrentRole] = useState<AppRole>('select_role');
   const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
-  
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('kaamzo_theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('kaamzo_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('kaamzo_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
   // Platform collections
   const [workers, setWorkers] = useState<WorkerProfile[]>(() => {
     const saved = localStorage.getItem('dihadi_workers_zero_v6');
@@ -2405,9 +2422,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let actualPlatformFee = job.platformFee;
     let zeroCommissionUsed = false;
 
-    // Check if assigned worker has active Zero Commission VIP Pass (6 jobs with 0% platform fee)
+    // Check if assigned worker has active Zero Commission VIP Pass or is a premium worker
     const targetWorker = workers.find((w) => w.id === job.assignedWorkerId);
-    if (targetWorker && (targetWorker.zeroCommissionJobsRemaining || 0) > 0) {
+    if (targetWorker && ((targetWorker.zeroCommissionJobsRemaining || 0) > 0 || targetWorker.isPremiumWorker)) {
       const fullGross = (job.dailyWage || 850) * (job.durationDays || 1);
       payout = fullGross;
       actualPlatformFee = 0;
@@ -3309,6 +3326,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentRole,
         currentLanguage,
         setCurrentLanguage,
+        isDarkMode,
+        toggleTheme,
         currentCity,
         setCurrentCity,
         supportedCities: SUPPORTED_CITIES,

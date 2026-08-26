@@ -216,7 +216,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
         
         {/* Header */}
-        <div className="bg-[#0F172A] text-white p-5 sm:p-6 relative shrink-0">
+        <div className="bg-slate-900 text-white p-5 sm:p-6 relative shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xl shadow-md border-2 border-amber-300">
@@ -475,7 +475,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
                       }}
                       referrerPolicy="no-referrer"
                     />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-[#0F172A]/80 text-amber-300 text-[9px] font-black rounded-md backdrop-blur-xs">
+                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-slate-900/80 text-amber-300 text-[9px] font-black rounded-md backdrop-blur-xs">
                       {item.trade}
                     </span>
 
@@ -519,7 +519,7 @@ export const PortfolioUploadModal: React.FC<PortfolioUploadModalProps> = ({
           <button
             type="button"
             onClick={() => { onClose(); playSound('click'); }}
-            className="px-5 py-2.5 bg-[#0F172A] hover:bg-slate-800 text-white font-black rounded-xl text-xs transition cursor-pointer"
+            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl text-xs transition cursor-pointer"
           >
             Done
           </button>

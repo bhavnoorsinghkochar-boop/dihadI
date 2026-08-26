@@ -54,7 +54,7 @@ const MainLayout: React.FC = () => {
   } = useApp();
 
   return (
-    <div className="w-full min-h-screen bg-[#F1F5F9] flex flex-col font-sans text-slate-800">
+    <div className="w-full min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
       {/* Toast Notification Banner */}
       {notification && (
         <div className="bg-slate-900 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-md sticky top-0 z-50 border-b border-slate-700 animate-in slide-in-from-top-2">

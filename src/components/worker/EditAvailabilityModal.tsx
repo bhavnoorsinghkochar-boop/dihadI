@@ -76,7 +76,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
       <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
         
         {/* Header */}
-        <div className="bg-[#0F172A] text-white p-5 relative shrink-0">
+        <div className="bg-slate-900 text-white p-5 relative shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md border-2 ${
@@ -218,7 +218,7 @@ export const EditAvailabilityModal: React.FC<EditAvailabilityModalProps> = ({
                     onClick={() => toggleDay(day)}
                     className={`flex-1 min-w-[42px] py-2 rounded-xl text-center font-bold text-xs transition border ${
                       isSelected
-                        ? 'bg-[#0F172A] text-white border-slate-900 shadow-xs'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >

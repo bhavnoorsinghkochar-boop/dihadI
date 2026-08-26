@@ -338,7 +338,7 @@ export async function generateWorkerPerformancePdf(data: PerformanceReportData):
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(5, 150, 105);
-      const payout = j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8);
+      const payout = j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8);
       doc.text(`Rs. ${payout}`, margin + 120, currentY + 7);
 
       const hasRating = (typeof j.rating === 'number' && j.rating > 0) || 

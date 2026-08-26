@@ -107,7 +107,7 @@ export const WorkerAvatarUploadModal: React.FC<WorkerAvatarUploadModalProps> = (
       <div className="bg-white rounded-3xl max-w-lg w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
         
         {/* Header */}
-        <div className="bg-[#0F172A] text-white p-5 relative shrink-0">
+        <div className="bg-slate-900 text-white p-5 relative shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg shadow-md border-2 border-amber-300">

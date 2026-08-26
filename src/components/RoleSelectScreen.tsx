@@ -115,7 +115,7 @@ export const RoleSelectScreen: React.FC = () => {
             </div>
           </div>
 
-          <button className="w-full bg-[#0F172A] group-hover:bg-amber-500 group-hover:text-slate-950 text-white py-3 rounded-2xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm">
+          <button className="w-full bg-slate-900 group-hover:bg-amber-500 group-hover:text-slate-950 text-white py-3 rounded-2xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm">
             <UserCheck className="w-4 h-4" />
             <span>{getT(currentLanguage, 'role_worker_btn')}</span>
             <ArrowRight className="w-4 h-4" />

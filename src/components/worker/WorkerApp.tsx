@@ -215,7 +215,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
         const sum = ratedJobs.reduce((acc, j) => acc + (j.rating || j.customerRating || j.ratingGiven || 0), 0);
         calcRating = Number((sum / ratedJobs.length).toFixed(1));
       }
-      const totalEarned = completedJobs.reduce((sum, j) => sum + (j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8)), 0);
+      const totalEarned = completedJobs.reduce((sum, j) => sum + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0);
 
       // Customer map for repeat hirer rate
       const customerMap: Record<string, number> = {};
@@ -283,7 +283,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     }
 
     const completedCount = completedJobs.length;
-    const totalEarned = completedJobs.reduce((sum, j) => sum + (j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8)), 0);
+    const totalEarned = completedJobs.reduce((sum, j) => sum + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0);
     const onTimeRate = completedCount > 0 ? 100 : 0;
 
     let label = '';
@@ -800,7 +800,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     return (
       <div className={`bg-white flex flex-col h-full overflow-y-auto select-none ${isEmbedded ? 'w-full' : 'max-w-md mx-auto rounded-3xl border border-slate-200 shadow-xl'}`}>
         {/* Header */}
-        <div className="p-6 bg-[#0F172A] text-white shrink-0 rounded-t-3xl">
+        <div className="p-6 bg-slate-900 text-white shrink-0 rounded-t-3xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -1173,7 +1173,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
     <div className={`bg-slate-50 text-slate-900 flex flex-col min-h-screen select-none ${isEmbedded ? 'w-full' : 'max-w-7xl mx-auto rounded-3xl border border-slate-200/80 shadow-2xl overflow-hidden'}`}>
       
       {/* 1. Header Navigation Bar */}
-      <nav className="bg-[#0F172A] text-white px-4 sm:px-6 lg:px-8 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-md">
+      <nav className="bg-slate-900 text-white px-4 sm:px-6 lg:px-8 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-md">
         {/* Left Branding & Live Radar Badge */}
         <div className="flex items-center gap-3">
           <button
@@ -1208,7 +1208,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
               <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                 <Camera className="w-4 h-4 text-white" />
               </div>
-              <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0F172A] ${
+              <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900 ${
                 currentWorker.isOnline ? 'bg-emerald-500' : 'bg-slate-400'
               }`} />
             </div>
@@ -1596,7 +1596,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
           <div className="space-y-6">
             
             {/* A. Hero Banner & GPS Radar Status */}
-            <div className="bg-[#0b192c] text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
 

@@ -57,6 +57,7 @@ import { SecurityVerificationModal, GmailOtpVerificationModal, GmailOtpVerificat
 import { RateEmployeeModal } from '../common/RateEmployeeModal';
 import { QuickChatModal, ChatTarget } from '../common/QuickChatModal';
 import { CustomerSubscriptionModal } from './CustomerSubscriptionModal';
+import { UpiQrPaymentModal } from '../common/UpiQrPaymentModal';
 
 interface CustomerAppProps {
   isEmbedded?: boolean;
@@ -148,6 +149,12 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
   const [directJobTitle, setDirectJobTitle] = useState<string>('');
   const [directJobDuration, setDirectJobDuration] = useState<number>(1);
   const [directJobDescription, setDirectJobDescription] = useState<string>('');
+
+  const [prepayBooking, setPrepayBooking] = useState<{
+    type: 'direct' | 'broadcast';
+    amount: number;
+    workerName: string;
+  } | null>(null);
 
   // Login form states
   const [loginId, setLoginId] = useState('pooja');
@@ -341,6 +348,64 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
     return t;
   };
 
+  const processPrepaidBooking = () => {
+    if (!prepayBooking || !currentCustomer) return;
+    
+    if (prepayBooking.type === 'direct' && bookingWorker) {
+      const workerTrade = bookingWorker.primaryTrade;
+      const workerDailyWage = bookingWorker.dailyRate;
+      const jobTitle = directJobTitle.trim() || `Hired ${bookingWorker.name} for ${workerTrade}`;
+
+      const createdJob = postJob({
+        title: jobTitle,
+        trade: workerTrade,
+        description: directJobDescription || `Direct booking for ${bookingWorker.name} (${workerTrade}).`,
+        customerName: currentCustomer.name,
+        customerPhone: currentCustomer.phone,
+        locationAddress: currentCustomer.address,
+        area: currentCustomer.area,
+        dailyWage: Number(workerDailyWage) || 850,
+        durationDays: Number(directJobDuration) || 1,
+      });
+
+      if (createdJob) {
+        acceptJobByWorker(createdJob.id, bookingWorker);
+        playSound('success');
+        showNotification(`Booked ${bookingWorker.name}! Start OTP is ${createdJob.otpCode}`);
+      }
+
+      setBookingWorker(null);
+      setDirectJobTitle('');
+      setDirectJobDescription('');
+      setActiveTab('my_bookings');
+    } else if (prepayBooking.type === 'broadcast') {
+      const createdJob = postJob({
+        title,
+        trade,
+        description: description || `Need verified ${trade} for daily work.`,
+        customerName: currentCustomer.name,
+        customerPhone: currentCustomer.phone,
+        locationAddress: currentCustomer.address,
+        area: currentCustomer.area,
+        dailyWage: Number(dailyWage) || 850,
+        durationDays: Number(durationDays) || 1,
+      });
+
+      setTitle('');
+      setDescription('');
+      setShowPostModal(false);
+      setActiveTab('my_bookings');
+      playSound('success');
+
+      if (createdJob) {
+        setTimeout(() => {
+          openTop5Shortlist(createdJob);
+        }, 300);
+      }
+    }
+    setPrepayBooking(null);
+  };
+
   const handlePostJobSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentCustomer) return;
@@ -350,63 +415,24 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
       return;
     }
 
-    const createdJob = postJob({
-      title,
-      trade,
-      description: description || `Need verified ${trade} for daily work.`,
-      customerName: currentCustomer.name,
-      customerPhone: currentCustomer.phone,
-      locationAddress: currentCustomer.address,
-      area: currentCustomer.area,
-      dailyWage: Number(dailyWage) || 850,
-      durationDays: Number(durationDays) || 1,
+    const amount = (Number(dailyWage) || 850) * (Number(durationDays) || 1);
+    setPrepayBooking({
+      type: 'broadcast',
+      amount,
+      workerName: 'Kaamzo Escrow',
     });
-
-    setTitle('');
-    setDescription('');
-    setShowPostModal(false);
-    setActiveTab('my_bookings');
-    playSound('success');
-
-    // Automatically open Top 5 Shortlist modal for the newly posted job
-    if (createdJob) {
-      setTimeout(() => {
-        openTop5Shortlist(createdJob);
-      }, 300);
-    }
   };
 
   const handleConfirmDirectBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentCustomer || !bookingWorker) return;
 
-    const workerTrade = bookingWorker.primaryTrade;
-    const workerDailyWage = bookingWorker.dailyRate;
-    const jobTitle = directJobTitle.trim() || `Hired ${bookingWorker.name} for ${workerTrade}`;
-
-    const createdJob = postJob({
-      title: jobTitle,
-      trade: workerTrade,
-      description: directJobDescription || `Direct booking for ${bookingWorker.name} (${workerTrade}).`,
-      customerName: currentCustomer.name,
-      customerPhone: currentCustomer.phone,
-      locationAddress: currentCustomer.address,
-      area: currentCustomer.area,
-      dailyWage: Number(workerDailyWage) || 850,
-      durationDays: Number(directJobDuration) || 1,
+    const amount = Number(bookingWorker.dailyRate) * (Number(directJobDuration) || 1);
+    setPrepayBooking({
+      type: 'direct',
+      amount,
+      workerName: bookingWorker.name,
     });
-
-    if (createdJob) {
-      // Direct accept by chosen worker
-      acceptJobByWorker(createdJob.id, bookingWorker);
-      playSound('success');
-      showNotification(`Booked ${bookingWorker.name}! Start OTP is ${createdJob.otpCode}`);
-    }
-
-    setBookingWorker(null);
-    setDirectJobTitle('');
-    setDirectJobDescription('');
-    setActiveTab('my_bookings');
   };
 
   const resetFilters = () => {
@@ -971,7 +997,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
       {activeTab === 'find_workers' && (
         <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto w-full">
           {/* A. Hero Search Banner (As shown in screenshot) */}
-          <div className="bg-[#0b192c] text-white rounded-3xl p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
             {/* Background Decorative Rings */}
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -2109,11 +2135,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                           </button>
                           <button
                             type="button"
-                            onClick={() => openUpiPayment(job)}
+                            onClick={() => setRatingJob(job)}
                             className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
-                            <Crown className="w-4 h-4" />
-                            <span>Use My Subscription (Release ₹0 Free)</span>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Confirm & Release (₹0 Free)</span>
                           </button>
                         </div>
                       </div>
@@ -2137,11 +2163,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
                           </button>
                           <button
                             type="button"
-                            onClick={() => openUpiPayment(job)}
+                            onClick={() => setRatingJob(job)}
                             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
-                            <CreditCard className="w-4 h-4" />
-                            <span>Release UPI Payment (₹{job.workerPayout})</span>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Confirm Work & Release Escrow</span>
                           </button>
                         </div>
                       </div>
@@ -2653,7 +2679,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           existingReview={ratingJob.review}
           existingTags={ratingJob.ratingTags}
           onSubmitRating={(jobId, stars, review, tags) => {
-            rateWorkerJob(jobId, stars, review, tags);
+            if (ratingJob.status === 'completed_pending_payment') {
+              releasePaymentByCustomer(jobId, stars, review, 'ESCROW_WALLET', `ESCROW-${Date.now()}`, tags);
+            } else {
+              rateWorkerJob(jobId, stars, review, tags);
+            }
             setRatingJob(null);
           }}
         />
@@ -2678,6 +2708,25 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ isEmbedded = false }) 
           onClose={() => setShowCustomerSubscriptionModal(false)}
           customer={currentCustomer}
           onSubscribe={(method) => subscribeCustomerPremium(currentCustomer.id, method)}
+        />
+      )}
+
+      {/* Prepay Escrow Payment Modal during booking */}
+      {prepayBooking && (
+        <UpiQrPaymentModal
+          isOpen={!!prepayBooking}
+          onClose={() => setPrepayBooking(null)}
+          amount={prepayBooking.amount}
+          totalWage={prepayBooking.amount}
+          workerName={prepayBooking.workerName}
+          workerTrade={prepayBooking.type === 'direct' && bookingWorker ? bookingWorker.primaryTrade : trade}
+          isWorkerReceiving={false}
+          isPrepaidEscrowPayment={true}
+          isCustomerSubscriptionActive={currentCustomer?.isPremiumCustomer}
+          jobTitle={prepayBooking.type === 'direct' ? directJobTitle : title}
+          onPaymentSuccess={() => {
+            processPrepaidBooking();
+          }}
         />
       )}
     </div>

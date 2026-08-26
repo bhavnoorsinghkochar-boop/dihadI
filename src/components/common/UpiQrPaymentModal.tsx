@@ -40,6 +40,7 @@ interface UpiQrPaymentModalProps {
   isWorkerReceiving?: boolean;
   isCustomerSubscriptionActive?: boolean;
   jobTitle?: string;
+  isPrepaidEscrowPayment?: boolean;
   onPaymentSuccess?: (paidVia: 'UPI_QR' | 'UPI_DIRECT', txnId: string, rating?: number, review?: string, tags?: string[]) => void;
 }
 
@@ -80,6 +81,7 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
   isWorkerReceiving = false,
   isCustomerSubscriptionActive = false,
   jobTitle,
+  isPrepaidEscrowPayment = false,
   onPaymentSuccess,
 }) => {
   const { openProtectionModal, currentCustomer } = useApp();
@@ -132,8 +134,8 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
         console.debug(e);
       }
 
-      if (!isWorkerReceiving) {
-        // Move to rating step for customer
+      if (!isWorkerReceiving && !isPrepaidEscrowPayment) {
+        // Move to rating step for customer when releasing payment
         setCompletedTxn({ method, txnId });
         setStep('rating');
       } else {

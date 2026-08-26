@@ -48,7 +48,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
 
   // 1. Calculate Real Financials & Completed Job Counts strictly from completed assignments
   const totalEarnings = useMemo(() => {
-    return completedJobs.reduce((sum, j) => sum + (j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8)), 0);
+    return completedJobs.reduce((sum, j) => sum + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0);
   }, [completedJobs]);
 
   const completedCount = useMemo(() => {
@@ -130,7 +130,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
     };
 
     completedJobs.forEach((j) => {
-      const payout = j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8);
+      const payout = j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8);
       // Group by completed date if available, default to current month
       let targetMonth = currentMonthLabel;
       const dateStr = j.completionDate || j.completedAt || j.postedAt;
@@ -220,7 +220,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
         
         {/* Modal Header */}
-        <div className="bg-[#0F172A] text-white p-5 sm:p-6 relative shrink-0">
+        <div className="bg-slate-900 text-white p-5 sm:p-6 relative shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xl shadow-md border-2 border-amber-300">
@@ -652,7 +652,7 @@ export const PerformanceStatsModal: React.FC<PerformanceStatsModalProps> = ({
           <button
             type="button"
             onClick={() => { onClose(); playSound('click'); }}
-            className="px-5 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-black rounded-xl text-xs transition cursor-pointer ml-auto"
+            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl text-xs transition cursor-pointer ml-auto"
           >
             Done
           </button>

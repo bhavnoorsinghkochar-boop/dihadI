@@ -98,7 +98,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
 
   // Real Overall Statistics exclusively from actual completed jobs
   const totalEarned = useMemo(() => {
-    return displayJobs.reduce((sum, j) => sum + (j.workerPayout || j.dailyWage || Math.round((j.dailyWage || 850) * 0.8)), 0);
+    return displayJobs.reduce((sum, j) => sum + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0);
   }, [displayJobs]);
 
   const ratedList = useMemo(() => {
@@ -370,7 +370,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                 Showing {filteredJobs.length} Past Completed Assignment{filteredJobs.length !== 1 ? 's' : ''}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                Total Settled: <strong className="text-emerald-700 font-mono">₹{filteredJobs.reduce((acc, j) => acc + (j.workerPayout || Math.round((j.dailyWage || 850) * 0.8)), 0)}</strong>
+                Total Settled: <strong className="text-emerald-700 font-mono">₹{filteredJobs.reduce((acc, j) => acc + (j.workerPayout !== undefined ? j.workerPayout : Math.round((j.dailyWage || 850) * 0.8)), 0)}</strong>
               </span>
             </div>
 
@@ -392,7 +392,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
               <div className="space-y-4">
                 {filteredJobs.map((job) => {
                   const grossWage = job.dailyWage || 850;
-                  const platformFee = job.platformFee || Math.round(grossWage * 0.2);
+                  const platformFee = job.platformFee !== undefined ? job.platformFee : Math.round(grossWage * 0.2);
                   const workerPayout = job.workerPayout || (grossWage - platformFee);
                   const completionDateStr = job.completionDate || job.completedAt || job.postedAt || 'Recently';
                   const hasExplicitRating = (typeof job.rating === 'number' && job.rating > 0) || 
@@ -432,7 +432,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                             </span>
                           </div>
                           <span className="text-[10px] text-slate-400 block font-medium mt-0.5">
-                            Gross: ₹{grossWage} • 20% Fee: -₹{platformFee}
+                            Gross: ₹{grossWage} • {platformFee === 0 ? '0% Fee (Covered by VIP): -₹0' : `20% Fee: -₹${platformFee}`}
                           </span>
                         </div>
                       </div>
@@ -534,7 +534,7 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                           <button
                             type="button"
                             onClick={() => setReceiptJob(job)}
-                            className="px-3.5 py-2 bg-[#0F172A] hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                           >
                             <FileText className="w-3.5 h-3.5 text-amber-400" />
                             <span>Official Receipt</span>
@@ -620,8 +620,8 @@ export const WorkerJobHistory: React.FC<WorkerJobHistoryProps> = ({
                   <span className="font-mono font-bold">₹{receiptJob.dailyWage || 850}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Dihadi Platform Fee (20%)</span>
-                  <span className="font-mono text-rose-600">-₹{receiptJob.platformFee || Math.round((receiptJob.dailyWage || 850) * 0.2)}</span>
+                  <span>Dihadi Platform Fee {receiptJob.platformFee === 0 ? '(Covered by VIP)' : '(20%)'}</span>
+                  <span className="font-mono text-rose-600">-₹{receiptJob.platformFee !== undefined ? receiptJob.platformFee : Math.round((receiptJob.dailyWage || 850) * 0.2)}</span>
                 </div>
                 <div className="flex justify-between font-black text-slate-900 text-sm border-t border-dashed border-slate-300 pt-2">
                   <span>Net Worker Payout</span>

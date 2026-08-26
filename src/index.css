@@ -1,96 +1,254 @@
 @import "tailwindcss";
 
-:root {
-  /* Strict Color Palette */
-  --c-charcoal: #1C1C1C;
-  --c-charcoal-light: #262626;
-  --c-white: #FFFFFF;
-  --c-offwhite: #F7F7F7;
-  --c-yellow: #FCD33F;
-  --c-canary: #FFE57F;
-  --c-ochre: #A87B28;
-}
-
-:root {
-  --app-bg: var(--c-white);
-  --app-surface: var(--c-offwhite);
-  --app-surface-hover: var(--c-canary);
-  --app-text: var(--c-charcoal);
-  --app-text-muted: var(--c-ochre);
-  --app-border: rgba(168, 123, 40, 0.2); 
-  --app-accent: var(--c-yellow);
-  --app-card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-}
-
-.dark {
-  --app-bg: var(--c-charcoal);
-  --app-surface: var(--c-charcoal-light);
-  --app-surface-hover: rgba(255, 229, 127, 0.15);
-  --app-text: var(--c-white);
-  --app-text-muted: var(--c-canary);
-  --app-border: rgba(255, 229, 127, 0.25);
-  --app-accent: var(--c-yellow);
-  --app-card-shadow: none;
-}
-
 @theme {
-  --color-slate-50: var(--app-bg);
-  --color-slate-100: var(--app-surface);
-  --color-slate-200: var(--app-border);
-  --color-slate-300: var(--app-border);
-  --color-slate-400: var(--app-text-muted);
-  --color-slate-500: var(--app-text-muted);
-  --color-slate-600: var(--app-text-muted);
-  --color-slate-700: var(--app-text);
-  --color-slate-800: var(--app-text);
-  --color-slate-900: var(--app-text);
-  --color-slate-950: var(--app-text);
+  --color-charcoal: #1c1c1c;
+  --color-charcoal-dark: #121212;
+  --color-charcoal-card: #242424;
+  --color-charcoal-surface: #2c2c2c;
+  --color-charcoal-border: #383838;
 
-  /* Primary Accents mapped to Yellow/Canary */
-  --color-amber-50: var(--app-surface-hover);
-  --color-amber-100: var(--app-surface-hover);
-  --color-amber-200: var(--app-border);
-  --color-amber-300: var(--app-accent);
-  --color-amber-400: var(--app-accent);
-  --color-amber-500: var(--app-accent);
-  --color-amber-600: var(--app-accent);
-  --color-amber-700: var(--app-text);
-  --color-amber-800: var(--app-text);
-  --color-amber-900: var(--app-text);
+  --color-brand-white: #ffffff;
+  --color-gold: #fcd33f;
+  --color-gold-light: #ffe57f;
+  --color-gold-ochre: #a87b28;
+
+  --color-amber-400: #fcd33f;
+  --color-amber-500: #fcd33f;
+  --color-amber-300: #ffe57f;
+  --color-amber-200: #ffe57f;
+  --color-amber-600: #a87b28;
+  --color-amber-700: #a87b28;
+  --color-amber-800: #8c651e;
 }
 
-body {
-  background-color: var(--app-bg);
-  color: var(--app-text);
+@layer base {
+  :root {
+    --color-primary: #fcd33f;
+    --color-primary-hover: #ffe57f;
+    --color-primary-dark: #a87b28;
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --border-subtle: #e2e8f0;
+    --text-primary: #1c1c1c;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+  }
+
+  html.dark,
+  body.dark,
+  .dark {
+    --color-primary: #fcd33f;
+    --color-primary-hover: #ffe57f;
+    --color-primary-dark: #a87b28;
+    --bg-page: #1c1c1c;
+    --bg-card: #242424;
+    --border-subtle: #383838;
+    --text-primary: #ffffff;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    background-color: #1c1c1c !important;
+    color: #ffffff !important;
+  }
+
+  html,
+  body {
+    min-height: 100vh;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-page);
+  }
+
+  /* Dark mode deep surface styling to ensure #1C1C1C is seamless with zero blank spaces */
+  .dark #root {
+    background-color: #1c1c1c !important;
+  }
+
+  .dark .bg-white {
+    background-color: #242424 !important;
+  }
+  .dark .bg-slate-50 {
+    background-color: #1c1c1c !important;
+  }
+  .dark .bg-slate-100 {
+    background-color: #2a2a2a !important;
+  }
+  .dark .bg-slate-200 {
+    background-color: #333333 !important;
+  }
+  .dark .bg-slate-900,
+  .dark .bg-slate-950 {
+    background-color: #161616 !important;
+  }
+  .dark .bg-slate-800 {
+    background-color: #242424 !important;
+  }
+  .dark .bg-slate-700 {
+    background-color: #2c2c2c !important;
+  }
+
+  /* Borders in dark mode */
+  .dark .border-slate-100,
+  .dark .border-slate-200,
+  .dark .border-slate-300 {
+    border-color: #383838 !important;
+  }
+  .dark .border-slate-700,
+  .dark .border-slate-800,
+  .dark .border-slate-900 {
+    border-color: #2e2e2e !important;
+  }
+
+  /* Typography visibility & contrast enforcement in dark mode */
+  .dark .text-slate-900,
+  .dark .text-slate-800 {
+    color: #ffffff !important;
+  }
+  .dark .text-slate-700,
+  .dark .text-slate-600 {
+    color: #e2e8f0 !important;
+  }
+  .dark .text-slate-500,
+  .dark .text-slate-400 {
+    color: #cbd5e1 !important;
+  }
+  .dark .text-slate-300 {
+    color: #e2e8f0 !important;
+  }
+
+  /* Amber / Gold palette mappings in dark mode */
+  .dark .bg-amber-50,
+  .dark .bg-amber-100 {
+    background-color: rgba(252, 211, 63, 0.14) !important;
+  }
+  .dark .border-amber-200,
+  .dark .border-amber-300 {
+    border-color: rgba(168, 123, 40, 0.6) !important;
+  }
+  .dark .text-amber-900,
+  .dark .text-amber-950 {
+    color: #ffe57f !important;
+  }
+  .dark .text-amber-800,
+  .dark .text-amber-700,
+  .dark .text-amber-600 {
+    color: #fcd33f !important;
+  }
+
+  /* Eliminate any lingering green text for clean golden-charcoal harmony */
+  .text-green-700,
+  .text-emerald-700,
+  .text-teal-700,
+  .text-green-600,
+  .text-emerald-600 {
+    color: #1c1c1c !important;
+  }
+
+  .dark .text-green-700,
+  .dark .text-emerald-700,
+  .dark .text-teal-700,
+  .dark .text-green-600,
+  .dark .text-emerald-600 {
+    color: #ffe57f !important;
+  }
 }
 
-/* Force child elements of amber-500/amber-600 to be charcoal for legibility */
-.bg-amber-500, .bg-amber-600, .bg-amber-400 {
-  color: var(--c-charcoal) !important;
+/* Custom Scrollbar Utilities with brand colors */
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #a87b28;
+    border-radius: 9999px;
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #a87b28;
+  }
+
+  /* Engaging Background Pattern & Atmosphere Utilities */
+  .bg-grid-mesh {
+    background-size: 32px 32px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  }
+  .dark .bg-grid-mesh {
+    background-size: 32px 32px;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  }
+
+  .bg-dots-mesh {
+    background-size: 24px 24px;
+    background-image: radial-gradient(rgba(168, 123, 40, 0.15) 1px, transparent 1px);
+  }
+  .dark .bg-dots-mesh {
+    background-size: 24px 24px;
+    background-image: radial-gradient(rgba(252, 211, 63, 0.12) 1px, transparent 1px);
+  }
+
+  @keyframes float-gentle {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-12px) rotate(2deg);
+    }
+  }
+
+  @keyframes float-reverse {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(10px) rotate(-2deg);
+    }
+  }
+
+  @keyframes pulse-ambient {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.04);
+    }
+  }
+
+  .animate-float-slow {
+    animation: float-gentle 9s ease-in-out infinite;
+  }
+  .animate-float-delayed {
+    animation: float-reverse 11s ease-in-out 2s infinite;
+  }
+  .animate-float-fast {
+    animation: float-gentle 7s ease-in-out 1s infinite;
+  }
+  .animate-pulse-ambient {
+    animation: pulse-ambient 8s ease-in-out infinite;
+  }
 }
-
-.bg-amber-500 *, .bg-amber-600 *, .bg-amber-400 * {
-  color: var(--c-charcoal) !important;
-}
-
-/* Fix any stray text-white that got caught in surfaces */
-
-/* Let's remove the .text-white global override. It's safer to not touch it, except maybe inside amber buttons. */
-
-/* Global Transitions */
-button, a, input, select, textarea, .cursor-pointer {
-  transition: all 0.3s ease-in-out;
-}
-button:hover:not(:disabled), .cursor-pointer:hover {
-  transform: scale(1.02);
-}
-
-/* Strict Spacing Rules (8px grid) */
-.p-4 { padding: 16px !important; }
-.p-6 { padding: 24px !important; }
-.p-8 { padding: 32px !important; }
-.p-12 { padding: 48px !important; }
-.p-16 { padding: 64px !important; }
-.m-4 { margin: 16px !important; }
-.gap-4 { gap: 16px !important; }
-

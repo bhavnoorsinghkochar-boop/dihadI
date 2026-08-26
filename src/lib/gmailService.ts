@@ -1,14 +1,14 @@
 /**
  * Google Workspace Gmail Integration Service
- * 
+ *
  * Provides client-side and backend-assisted Gmail dispatch for:
  * 1. Worker KYC / Account Verification 6-Digit OTPs
  * 2. Employer Registration Passcodes
  * 3. Start-of-Work 4-Digit Job Verification Codes with live metadata
  */
 
-import { recordSecurityOtpInFirestore } from './firestoreSync';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { recordSecurityOtpInFirestore } from "./firestoreSync";
+import firebaseConfig from "../../firebase-applet-config.json";
 
 declare global {
   interface Window {
@@ -17,15 +17,15 @@ declare global {
   }
 }
 
-const GMAIL_TOKEN_STORAGE_KEY = 'dihadi_gmail_oauth_token_v1';
-const GMAIL_TOKEN_EXPIRY_KEY = 'dihadi_gmail_oauth_expiry_v1';
-const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.send';
+const GMAIL_TOKEN_STORAGE_KEY = "dihadi_gmail_oauth_token_v1";
+const GMAIL_TOKEN_EXPIRY_KEY = "dihadi_gmail_oauth_expiry_v1";
+const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.send";
 
 export interface SendEmailOtpOptions {
   recipient: string;
   code: string;
-  role?: 'worker' | 'customer' | 'admin';
-  purpose?: 'account_verification' | 'job_start_otp' | 'general_otp';
+  role?: "worker" | "customer" | "admin";
+  purpose?: "account_verification" | "job_start_otp" | "general_otp";
   jobTitle?: string;
   trade?: string;
   workerName?: string;
@@ -36,7 +36,7 @@ export interface SendEmailOtpOptions {
 
 export interface GmailDispatchResult {
   success: boolean;
-  method: 'gmail_api_oauth' | 'server_smtp' | 'simulated_fallback';
+  method: "gmail_api_oauth" | "server_smtp" | "simulated_fallback";
   message: string;
   messageId?: string;
   recipient: string;
@@ -65,12 +65,18 @@ export function getStoredGmailAccessToken(): string | null {
 /**
  * Save Google OAuth Access Token
  */
-export function storeGmailAccessToken(token: string, expiresInSeconds: number = 3500): void {
+export function storeGmailAccessToken(
+  token: string,
+  expiresInSeconds: number = 3500,
+): void {
   try {
     localStorage.setItem(GMAIL_TOKEN_STORAGE_KEY, token);
-    localStorage.setItem(GMAIL_TOKEN_EXPIRY_KEY, String(Date.now() + expiresInSeconds * 1000));
+    localStorage.setItem(
+      GMAIL_TOKEN_EXPIRY_KEY,
+      String(Date.now() + expiresInSeconds * 1000),
+    );
   } catch (err) {
-    console.debug('Failed to store Gmail token:', err);
+    console.debug("Failed to store Gmail token:", err);
   }
 }
 
@@ -87,10 +93,14 @@ export function clearGmailAccessToken(): void {
 /**
  * Initiate Google OAuth 2.0 Token Flow via Google Identity Services (GIS)
  */
-export async function requestGmailAccessToken(clientId?: string): Promise<string> {
+export async function requestGmailAccessToken(
+  clientId?: string,
+): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.google?.accounts?.oauth2) {
-      return reject(new Error('Google Identity Services script not loaded in window'));
+    if (typeof window === "undefined" || !window.google?.accounts?.oauth2) {
+      return reject(
+        new Error("Google Identity Services script not loaded in window"),
+      );
     }
 
     try {
@@ -99,26 +109,30 @@ export async function requestGmailAccessToken(clientId?: string): Promise<string
         clientId ||
         config.oAuthClientId ||
         (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
-        '148685402270-6p38g37e408evn10j9p4e815ep529o83.apps.googleusercontent.com';
+        "148685402270-6p38g37e408evn10j9p4e815ep529o83.apps.googleusercontent.com";
 
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: resolvedClientId,
         scope: GMAIL_SCOPES,
         callback: (response: any) => {
           if (response.error) {
-            return reject(new Error(response.error_description || response.error));
+            return reject(
+              new Error(response.error_description || response.error),
+            );
           }
           if (response.access_token) {
-            const expiresIn = response.expires_in ? Number(response.expires_in) : 3500;
+            const expiresIn = response.expires_in
+              ? Number(response.expires_in)
+              : 3500;
             storeGmailAccessToken(response.access_token, expiresIn);
             resolve(response.access_token);
           } else {
-            reject(new Error('No access_token returned by Google'));
+            reject(new Error("No access_token returned by Google"));
           }
         },
       });
 
-      tokenClient.requestAccessToken({ prompt: 'consent' });
+      tokenClient.requestAccessToken({ prompt: "consent" });
     } catch (err) {
       reject(err);
     }
@@ -132,49 +146,52 @@ function createRawEmailMessage(
   to: string,
   from: string,
   subject: string,
-  htmlContent: string
+  htmlContent: string,
 ): string {
   const boundary = `====_Dihadi_${Date.now()}_====`;
   const utf8Subject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
 
   const emailLines = [
     `To: ${to}`,
-    `From: ${from || 'Dihadi Connect <me>'}`,
+    `From: ${from || "Dihadi Connect <me>"}`,
     `Subject: ${utf8Subject}`,
-    'MIME-Version: 1.0',
+    "MIME-Version: 1.0",
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    '',
+    "",
     `--${boundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
-    'Content-Transfer-Encoding: 7bit',
-    '',
-    'Please view this verification email in an HTML-compatible client.',
-    '',
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    "Please view this verification email in an HTML-compatible client.",
+    "",
     `--${boundary}`,
     'Content-Type: text/html; charset="UTF-8"',
-    'Content-Transfer-Encoding: 7bit',
-    '',
+    "Content-Transfer-Encoding: 7bit",
+    "",
     htmlContent,
-    '',
+    "",
     `--${boundary}--`,
   ];
 
-  const rawString = emailLines.join('\r\n');
+  const rawString = emailLines.join("\r\n");
   return btoa(unescape(encodeURIComponent(rawString)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 /**
  * Construct HTML Template for Account Verification or Job Start OTP
  */
-export function generateOtpEmailHtml(options: SendEmailOtpOptions): { subject: string; html: string } {
+export function generateOtpEmailHtml(options: SendEmailOtpOptions): {
+  subject: string;
+  html: string;
+} {
   const {
     recipient,
     code,
-    role = 'worker',
-    purpose = 'account_verification',
+    role = "worker",
+    purpose = "account_verification",
     jobTitle,
     trade,
     workerName,
@@ -183,10 +200,10 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): { subject: s
     wage,
   } = options;
 
-  const isJobOtp = purpose === 'job_start_otp' || code.length === 4;
+  const isJobOtp = purpose === "job_start_otp" || code.length === 4;
 
   if (isJobOtp) {
-    const subject = `🔑 Dihadi Worker Verification Start Code: ${code} [${jobTitle || trade || 'Daily Wage Job'}]`;
+    const subject = `🔑 Dihadi Worker Verification Start Code: ${code} [${jobTitle || trade || "Daily Wage Job"}]`;
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; color: #0f172a;">
         <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f97316; padding-bottom: 14px;">
@@ -197,7 +214,7 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): { subject: s
         <div style="background: #fff7ed; border-left: 4px solid #ea580c; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
           <h3 style="margin: 0 0 6px 0; color: #9a3412; font-size: 16px; font-weight: 800;">🔑 Start-of-Work Verification Passcode</h3>
           <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.5;">
-            Dear <strong>${customerName || 'Employer'}</strong>, your booking for <strong>${jobTitle || trade || 'Daily Wage Worker'}</strong> is confirmed.
+            Dear <strong>${customerName || "Employer"}</strong>, your booking for <strong>${jobTitle || trade || "Daily Wage Worker"}</strong> is confirmed.
           </p>
         </div>
 
@@ -206,16 +223,16 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): { subject: s
           <span style="display: inline-block; font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #0f172a; background: #ffffff; padding: 12px 32px; border-radius: 10px; border: 2px solid #fb923c; font-family: monospace;">
             ${code}
           </span>
-          <p style="color: #059669; font-size: 13px; font-weight: bold; margin-top: 12px;">✓ Share this code with the worker upon arrival to unlock the job timer.</p>
+          <p style="color: #A87B28; font-size: 13px; font-weight: bold; margin-top: 12px;">✓ Share this code with the worker upon arrival to unlock the job timer.</p>
         </div>
 
         <div style="background: #f1f5f9; padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; color: #334155;">
           <p style="margin: 0 0 6px 0;"><strong>Job Order Summary:</strong></p>
           <ul style="margin: 0; padding-left: 18px; line-height: 1.6;">
-            <li><strong>Craft Trade:</strong> ${trade || 'Daily Labor'}</li>
-            <li><strong>Assigned Worker:</strong> ${workerName || 'Assigned Candidate'}</li>
-            ${wage ? `<li><strong>Agreed Daily Wage:</strong> ₹${wage}</li>` : ''}
-            ${location ? `<li><strong>Site Address:</strong> ${location}</li>` : ''}
+            <li><strong>Craft Trade:</strong> ${trade || "Daily Labor"}</li>
+            <li><strong>Assigned Worker:</strong> ${workerName || "Assigned Candidate"}</li>
+            ${wage ? `<li><strong>Agreed Daily Wage:</strong> ₹${wage}</li>` : ""}
+            ${location ? `<li><strong>Site Address:</strong> ${location}</li>` : ""}
           </ul>
         </div>
 
@@ -241,7 +258,9 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): { subject: s
         <h3 style="margin: 0 0 8px 0; color: #9a3412; font-size: 16px; font-weight: 800;">Security Verification Code</h3>
         <p style="margin: 0; color: #4b5563; font-size: 14px;">
           Use the verification code below to authorize your <strong>${
-            role === 'worker' ? 'Worker KYC & Portal Access' : 'Employer Account & Payouts'
+            role === "worker"
+              ? "Worker KYC & Portal Access"
+              : "Employer Account & Payouts"
           }</strong>:
         </p>
       </div>
@@ -269,13 +288,15 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): { subject: s
 /**
  * Main function to send real OTP via Google Workspace Gmail API or fallback backend
  */
-export async function sendOtpToGmail(options: SendEmailOtpOptions): Promise<GmailDispatchResult> {
-  const { recipient, code, role = 'worker' } = options;
+export async function sendOtpToGmail(
+  options: SendEmailOtpOptions,
+): Promise<GmailDispatchResult> {
+  const { recipient, code, role = "worker" } = options;
 
   // 1. Record in Firestore
   recordSecurityOtpInFirestore({
     identifier: recipient,
-    type: 'email',
+    type: "email",
     code,
     role,
   });
@@ -285,47 +306,53 @@ export async function sendOtpToGmail(options: SendEmailOtpOptions): Promise<Gmai
   if (token) {
     try {
       const { subject, html } = generateOtpEmailHtml(options);
-      const raw = createRawEmailMessage(recipient, 'me', subject, html);
+      const raw = createRawEmailMessage(recipient, "me", subject, html);
 
-      const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ raw }),
         },
-        body: JSON.stringify({ raw }),
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
         return {
           success: true,
-          method: 'gmail_api_oauth',
+          method: "gmail_api_oauth",
           messageId: data.id,
           recipient,
           message: `Official Gmail verification message sent via Google Workspace to ${recipient}`,
         };
       } else {
         const errJson = await response.json().catch(() => ({}));
-        console.warn('Gmail API request responded with error:', errJson);
+        console.warn("Gmail API request responded with error:", errJson);
         // Token might be expired, clear it
         if (response.status === 401) {
           clearGmailAccessToken();
         }
       }
     } catch (oauthErr) {
-      console.warn('Direct Gmail OAuth dispatch failed, trying server API:', oauthErr);
+      console.warn(
+        "Direct Gmail OAuth dispatch failed, trying server API:",
+        oauthErr,
+      );
     }
   }
 
   // 3. Fallback: Call Express /api/send-otp (Nodemailer / platform gateway)
   try {
-    const res = await fetch('/api/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         recipient,
-        type: 'email',
+        type: "email",
         code,
         role: options.role,
         purpose: options.purpose,
@@ -341,16 +368,20 @@ export async function sendOtpToGmail(options: SendEmailOtpOptions): Promise<Gmai
     const data = await res.json();
     return {
       success: true,
-      method: data.method === 'nodemailer_gmail_smtp' || data.method === 'email' ? 'server_smtp' : 'simulated_fallback',
+      method:
+        data.method === "nodemailer_gmail_smtp" || data.method === "email"
+          ? "server_smtp"
+          : "simulated_fallback",
       messageId: data.messageId,
       recipient,
-      message: data.message || `Verification passcode dispatched to ${recipient}`,
+      message:
+        data.message || `Verification passcode dispatched to ${recipient}`,
     };
   } catch (err: any) {
-    console.warn('Server OTP endpoint error, simulated fallback:', err);
+    console.warn("Server OTP endpoint error, simulated fallback:", err);
     return {
       success: true,
-      method: 'simulated_fallback',
+      method: "simulated_fallback",
       recipient,
       message: `OTP ${code} registered in Firestore and dispatched to ${recipient}`,
     };
@@ -360,7 +391,10 @@ export async function sendOtpToGmail(options: SendEmailOtpOptions): Promise<Gmai
 /**
  * Backend API verification caller for /api/verify-otp
  */
-export async function verifyOtpWithBackend(recipient: string, code: string): Promise<{
+export async function verifyOtpWithBackend(
+  recipient: string,
+  code: string,
+): Promise<{
   success: boolean;
   verified?: boolean;
   message?: string;
@@ -368,9 +402,9 @@ export async function verifyOtpWithBackend(recipient: string, code: string): Pro
   expired?: boolean;
 }> {
   try {
-    const res = await fetch('/api/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         recipient,
         email: recipient,
@@ -383,7 +417,7 @@ export async function verifyOtpWithBackend(recipient: string, code: string): Pro
     if (!res.ok) {
       return {
         success: false,
-        error: data.error || 'Verification failed. Please check the code.',
+        error: data.error || "Verification failed. Please check the code.",
         expired: data.expired || false,
       };
     }
@@ -391,22 +425,22 @@ export async function verifyOtpWithBackend(recipient: string, code: string): Pro
     return {
       success: true,
       verified: true,
-      message: data.message || 'OTP verified successfully!',
+      message: data.message || "OTP verified successfully!",
     };
   } catch (err: any) {
-    console.warn('API verify-otp error:', err);
+    console.warn("API verify-otp error:", err);
     // Fallback: check dev bypass codes if server network is interrupted
-    if (code === '123456' || code === '778899') {
+    if (code === "123456" || code === "778899") {
       return {
         success: true,
         verified: true,
-        message: 'OTP verified successfully (Dev Fallback)',
+        message: "OTP verified successfully (Dev Fallback)",
       };
     }
     return {
       success: false,
-      error: 'Network error connecting to verification server. Please try again.',
+      error:
+        "Network error connecting to verification server. Please try again.",
     };
   }
 }
-

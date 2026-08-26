@@ -3,7 +3,7 @@ export function calculateDistanceKm(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   if (!lat1 || !lon1 || !lat2 || !lon2) return 1.0;
   if (lat1 === lat2 && lon1 === lon2) return 0.05;
@@ -27,7 +27,7 @@ export function calculateBearing(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const y = Math.sin(dLon) * Math.cos((lat2 * Math.PI) / 180);
@@ -50,83 +50,306 @@ export interface CityInfo {
 }
 
 export const SUPPORTED_CITIES: CityInfo[] = [
-  { id: 'ludhiana', name: 'Ludhiana', state: 'Punjab', lat: 30.9010, lng: 75.8573, defaultArea: 'Model Town' },
-  { id: 'delhi', name: 'New Delhi', state: 'Delhi NCR', lat: 28.5355, lng: 77.2690, defaultArea: 'Okhla Phase 2' },
-  { id: 'chandigarh', name: 'Chandigarh', state: 'Punjab / UT', lat: 30.7333, lng: 76.7794, defaultArea: 'Sector 17' },
-  { id: 'jalandhar', name: 'Jalandhar', state: 'Punjab', lat: 31.3260, lng: 75.5762, defaultArea: 'Model Town' },
-  { id: 'amritsar', name: 'Amritsar', state: 'Punjab', lat: 31.6340, lng: 74.8723, defaultArea: 'Ranjit Avenue' }
+  {
+    id: "ludhiana",
+    name: "Ludhiana",
+    state: "Punjab",
+    lat: 30.901,
+    lng: 75.8573,
+    defaultArea: "Model Town",
+  },
+  {
+    id: "delhi",
+    name: "New Delhi",
+    state: "Delhi NCR",
+    lat: 28.5355,
+    lng: 77.269,
+    defaultArea: "Okhla Phase 2",
+  },
+  {
+    id: "chandigarh",
+    name: "Chandigarh",
+    state: "Punjab / UT",
+    lat: 30.7333,
+    lng: 76.7794,
+    defaultArea: "Sector 17",
+  },
+  {
+    id: "jalandhar",
+    name: "Jalandhar",
+    state: "Punjab",
+    lat: 31.326,
+    lng: 75.5762,
+    defaultArea: "Model Town",
+  },
+  {
+    id: "amritsar",
+    name: "Amritsar",
+    state: "Punjab",
+    lat: 31.634,
+    lng: 74.8723,
+    defaultArea: "Ranjit Avenue",
+  },
 ];
 
 // Area Coordinates database across Ludhiana, Punjab & Delhi NCR
-export const KNOWN_AREA_COORDINATES: Record<string, { lat: number; lng: number; area: string; city: string }> = {
+export const KNOWN_AREA_COORDINATES: Record<
+  string,
+  { lat: number; lng: number; area: string; city: string }
+> = {
   // Ludhiana, Punjab Localities
-  'model town': { lat: 30.8926, lng: 75.8415, area: 'Model Town', city: 'Ludhiana' },
-  'sarabha nagar': { lat: 30.8872, lng: 75.8193, area: 'Sarabha Nagar', city: 'Ludhiana' },
-  'civil lines': { lat: 30.9075, lng: 75.8360, area: 'Civil Lines', city: 'Ludhiana' },
-  'focal point': { lat: 30.8845, lng: 75.9120, area: 'Focal Point Phase 5', city: 'Ludhiana' },
-  'focal point phase 5': { lat: 30.8845, lng: 75.9120, area: 'Focal Point Phase 5', city: 'Ludhiana' },
-  'gill road': { lat: 30.8850, lng: 75.8560, area: 'Gill Road', city: 'Ludhiana' },
-  'dashmesh nagar': { lat: 30.8850, lng: 75.8560, area: 'Dashmesh Nagar', city: 'Ludhiana' },
-  'clock tower': { lat: 30.9125, lng: 75.8520, area: 'Clock Tower / Chaura Bazar', city: 'Ludhiana' },
-  'chaura bazar': { lat: 30.9125, lng: 75.8520, area: 'Chaura Bazar', city: 'Ludhiana' },
-  'brs nagar': { lat: 30.8780, lng: 75.7950, area: 'BRS Nagar', city: 'Ludhiana' },
-  'dugri': { lat: 30.8650, lng: 75.8450, area: 'Dugri Phase 1', city: 'Ludhiana' },
-  'dugri phase 1': { lat: 30.8650, lng: 75.8450, area: 'Dugri Phase 1', city: 'Ludhiana' },
-  'ferozepur road': { lat: 30.8980, lng: 75.7820, area: 'Ferozepur Road', city: 'Ludhiana' },
-  'south city': { lat: 30.8980, lng: 75.7820, area: 'South City', city: 'Ludhiana' },
-  'samrala chowk': { lat: 30.9130, lng: 75.8850, area: 'Samrala Chowk', city: 'Ludhiana' },
-  'chandigarh road': { lat: 30.9130, lng: 75.8850, area: 'Chandigarh Road', city: 'Ludhiana' },
-  'miller ganj': { lat: 30.8950, lng: 75.8680, area: 'Miller Ganj', city: 'Ludhiana' },
-  'dholewal': { lat: 30.8950, lng: 75.8680, area: 'Dholewal Chowk', city: 'Ludhiana' },
-  'pakhowal road': { lat: 30.8720, lng: 75.8230, area: 'Pakhowal Road', city: 'Ludhiana' },
-  'rahon road': { lat: 30.9350, lng: 75.8550, area: 'Rahon Road', city: 'Ludhiana' },
-  'jalandhar bypass': { lat: 30.9350, lng: 75.8550, area: 'Jalandhar Bypass', city: 'Ludhiana' },
-  'ludhiana': { lat: 30.9010, lng: 75.8573, area: 'Clock Tower', city: 'Ludhiana' },
+  "model town": {
+    lat: 30.8926,
+    lng: 75.8415,
+    area: "Model Town",
+    city: "Ludhiana",
+  },
+  "sarabha nagar": {
+    lat: 30.8872,
+    lng: 75.8193,
+    area: "Sarabha Nagar",
+    city: "Ludhiana",
+  },
+  "civil lines": {
+    lat: 30.9075,
+    lng: 75.836,
+    area: "Civil Lines",
+    city: "Ludhiana",
+  },
+  "focal point": {
+    lat: 30.8845,
+    lng: 75.912,
+    area: "Focal Point Phase 5",
+    city: "Ludhiana",
+  },
+  "focal point phase 5": {
+    lat: 30.8845,
+    lng: 75.912,
+    area: "Focal Point Phase 5",
+    city: "Ludhiana",
+  },
+  "gill road": {
+    lat: 30.885,
+    lng: 75.856,
+    area: "Gill Road",
+    city: "Ludhiana",
+  },
+  "dashmesh nagar": {
+    lat: 30.885,
+    lng: 75.856,
+    area: "Dashmesh Nagar",
+    city: "Ludhiana",
+  },
+  "clock tower": {
+    lat: 30.9125,
+    lng: 75.852,
+    area: "Clock Tower / Chaura Bazar",
+    city: "Ludhiana",
+  },
+  "chaura bazar": {
+    lat: 30.9125,
+    lng: 75.852,
+    area: "Chaura Bazar",
+    city: "Ludhiana",
+  },
+  "brs nagar": {
+    lat: 30.878,
+    lng: 75.795,
+    area: "BRS Nagar",
+    city: "Ludhiana",
+  },
+  dugri: { lat: 30.865, lng: 75.845, area: "Dugri Phase 1", city: "Ludhiana" },
+  "dugri phase 1": {
+    lat: 30.865,
+    lng: 75.845,
+    area: "Dugri Phase 1",
+    city: "Ludhiana",
+  },
+  "ferozepur road": {
+    lat: 30.898,
+    lng: 75.782,
+    area: "Ferozepur Road",
+    city: "Ludhiana",
+  },
+  "south city": {
+    lat: 30.898,
+    lng: 75.782,
+    area: "South City",
+    city: "Ludhiana",
+  },
+  "samrala chowk": {
+    lat: 30.913,
+    lng: 75.885,
+    area: "Samrala Chowk",
+    city: "Ludhiana",
+  },
+  "chandigarh road": {
+    lat: 30.913,
+    lng: 75.885,
+    area: "Chandigarh Road",
+    city: "Ludhiana",
+  },
+  "miller ganj": {
+    lat: 30.895,
+    lng: 75.868,
+    area: "Miller Ganj",
+    city: "Ludhiana",
+  },
+  dholewal: {
+    lat: 30.895,
+    lng: 75.868,
+    area: "Dholewal Chowk",
+    city: "Ludhiana",
+  },
+  "pakhowal road": {
+    lat: 30.872,
+    lng: 75.823,
+    area: "Pakhowal Road",
+    city: "Ludhiana",
+  },
+  "rahon road": {
+    lat: 30.935,
+    lng: 75.855,
+    area: "Rahon Road",
+    city: "Ludhiana",
+  },
+  "jalandhar bypass": {
+    lat: 30.935,
+    lng: 75.855,
+    area: "Jalandhar Bypass",
+    city: "Ludhiana",
+  },
+  ludhiana: {
+    lat: 30.901,
+    lng: 75.8573,
+    area: "Clock Tower",
+    city: "Ludhiana",
+  },
 
   // Delhi NCR Localities
-  okhla: { lat: 28.5355, lng: 77.2690, area: 'Okhla Phase 2', city: 'New Delhi' },
-  'okhla phase 1': { lat: 28.5310, lng: 77.2720, area: 'Okhla Phase 1', city: 'New Delhi' },
-  'okhla phase 2': { lat: 28.5355, lng: 77.2690, area: 'Okhla Phase 2', city: 'New Delhi' },
-  'lajpat nagar': { lat: 28.5672, lng: 77.2435, area: 'Lajpat Nagar', city: 'New Delhi' },
-  'karol bagh': { lat: 28.6517, lng: 77.1906, area: 'Karol Bagh', city: 'New Delhi' },
-  'mayur vihar': { lat: 28.5910, lng: 77.2980, area: 'Mayur Vihar', city: 'New Delhi' },
-  'nehru place': { lat: 28.5492, lng: 77.2528, area: 'Nehru Place', city: 'New Delhi' },
-  'saket': { lat: 28.5245, lng: 77.2066, area: 'Saket', city: 'New Delhi' },
-  'kalkaji': { lat: 28.5402, lng: 77.2580, area: 'Kalkaji', city: 'New Delhi' },
-  'badarpur': { lat: 28.5033, lng: 77.3032, area: 'Badarpur', city: 'New Delhi' },
-  'jasola': { lat: 28.5385, lng: 77.2905, area: 'Jasola Vihar', city: 'New Delhi' },
-  'greater kailash': { lat: 28.5482, lng: 77.2343, area: 'Greater Kailash', city: 'New Delhi' },
-  'connaught place': { lat: 28.6315, lng: 77.2167, area: 'Connaught Place', city: 'New Delhi' },
-  'noida sector 18': { lat: 28.5708, lng: 77.3271, area: 'Noida Sector 18', city: 'Noida' },
-  'gurugram cyber city': { lat: 28.4952, lng: 77.0895, area: 'Cyber City, Gurugram', city: 'Gurugram' },
-  'delhi': { lat: 28.6139, lng: 77.2090, area: 'Connaught Place', city: 'New Delhi' },
+  okhla: {
+    lat: 28.5355,
+    lng: 77.269,
+    area: "Okhla Phase 2",
+    city: "New Delhi",
+  },
+  "okhla phase 1": {
+    lat: 28.531,
+    lng: 77.272,
+    area: "Okhla Phase 1",
+    city: "New Delhi",
+  },
+  "okhla phase 2": {
+    lat: 28.5355,
+    lng: 77.269,
+    area: "Okhla Phase 2",
+    city: "New Delhi",
+  },
+  "lajpat nagar": {
+    lat: 28.5672,
+    lng: 77.2435,
+    area: "Lajpat Nagar",
+    city: "New Delhi",
+  },
+  "karol bagh": {
+    lat: 28.6517,
+    lng: 77.1906,
+    area: "Karol Bagh",
+    city: "New Delhi",
+  },
+  "mayur vihar": {
+    lat: 28.591,
+    lng: 77.298,
+    area: "Mayur Vihar",
+    city: "New Delhi",
+  },
+  "nehru place": {
+    lat: 28.5492,
+    lng: 77.2528,
+    area: "Nehru Place",
+    city: "New Delhi",
+  },
+  saket: { lat: 28.5245, lng: 77.2066, area: "Saket", city: "New Delhi" },
+  kalkaji: { lat: 28.5402, lng: 77.258, area: "Kalkaji", city: "New Delhi" },
+  badarpur: { lat: 28.5033, lng: 77.3032, area: "Badarpur", city: "New Delhi" },
+  jasola: {
+    lat: 28.5385,
+    lng: 77.2905,
+    area: "Jasola Vihar",
+    city: "New Delhi",
+  },
+  "greater kailash": {
+    lat: 28.5482,
+    lng: 77.2343,
+    area: "Greater Kailash",
+    city: "New Delhi",
+  },
+  "connaught place": {
+    lat: 28.6315,
+    lng: 77.2167,
+    area: "Connaught Place",
+    city: "New Delhi",
+  },
+  "noida sector 18": {
+    lat: 28.5708,
+    lng: 77.3271,
+    area: "Noida Sector 18",
+    city: "Noida",
+  },
+  "gurugram cyber city": {
+    lat: 28.4952,
+    lng: 77.0895,
+    area: "Cyber City, Gurugram",
+    city: "Gurugram",
+  },
+  delhi: {
+    lat: 28.6139,
+    lng: 77.209,
+    area: "Connaught Place",
+    city: "New Delhi",
+  },
 
   // Chandigarh / Tri-city
-  'sector 17': { lat: 30.7410, lng: 76.7850, area: 'Sector 17', city: 'Chandigarh' },
-  'mohali phase 7': { lat: 30.7046, lng: 76.7179, area: 'Phase 7 Mohali', city: 'Chandigarh' },
-  'chandigarh': { lat: 30.7333, lng: 76.7794, area: 'Sector 17', city: 'Chandigarh' },
+  "sector 17": {
+    lat: 30.741,
+    lng: 76.785,
+    area: "Sector 17",
+    city: "Chandigarh",
+  },
+  "mohali phase 7": {
+    lat: 30.7046,
+    lng: 76.7179,
+    area: "Phase 7 Mohali",
+    city: "Chandigarh",
+  },
+  chandigarh: {
+    lat: 30.7333,
+    lng: 76.7794,
+    area: "Sector 17",
+    city: "Chandigarh",
+  },
 };
 
 // Auto detect city from latitude & longitude
 export function detectCityFromCoords(lat: number, lng: number): CityInfo {
   // Ludhiana bounding box (approx 30.70 to 31.10 N, 75.65 to 76.10 E)
-  if (lat >= 30.70 && lat <= 31.10 && lng >= 75.65 && lng <= 76.10) {
+  if (lat >= 30.7 && lat <= 31.1 && lng >= 75.65 && lng <= 76.1) {
     return SUPPORTED_CITIES[0]; // Ludhiana
   }
   // Chandigarh / Mohali / Panchkula bounding box
-  if (lat >= 30.55 && lat <= 30.88 && lng >= 76.60 && lng <= 76.95) {
+  if (lat >= 30.55 && lat <= 30.88 && lng >= 76.6 && lng <= 76.95) {
     return SUPPORTED_CITIES[2]; // Chandigarh
   }
   // Jalandhar bounding box
-  if (lat >= 31.15 && lat <= 31.48 && lng >= 75.40 && lng <= 75.80) {
+  if (lat >= 31.15 && lat <= 31.48 && lng >= 75.4 && lng <= 75.8) {
     return SUPPORTED_CITIES[3]; // Jalandhar
   }
   // Amritsar bounding box
-  if (lat >= 31.50 && lat <= 31.80 && lng >= 74.70 && lng <= 75.10) {
+  if (lat >= 31.5 && lat <= 31.8 && lng >= 74.7 && lng <= 75.1) {
     return SUPPORTED_CITIES[4]; // Amritsar
   }
   // Delhi NCR bounding box
-  if (lat >= 28.25 && lat <= 28.95 && lng >= 76.80 && lng <= 77.50) {
+  if (lat >= 28.25 && lat <= 28.95 && lng >= 76.8 && lng <= 77.5) {
     return SUPPORTED_CITIES[1]; // Delhi
   }
 
@@ -153,7 +376,7 @@ export interface ResolvedAddress {
   lat: number;
   lng: number;
   accuracyMeters?: number;
-  provider: 'google_geocoding' | 'reverse_osm' | 'local_database';
+  provider: "google_geocoding" | "reverse_osm" | "local_database";
 }
 
 /**
@@ -164,7 +387,7 @@ export interface ResolvedAddress {
 export async function reverseGeocodeLocation(
   lat: number,
   lng: number,
-  accuracyMeters: number = 4
+  accuracyMeters: number = 4,
 ): Promise<ResolvedAddress> {
   const roundedLat = +lat.toFixed(6);
   const roundedLng = +lng.toFixed(6);
@@ -174,39 +397,47 @@ export async function reverseGeocodeLocation(
   if (apiKey) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${roundedLat},${roundedLng}&key=${apiKey}&solution_id=gmp_git_agentskills_v1`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${roundedLat},${roundedLng}&key=${apiKey}&solution_id=gmp_git_agentskills_v1`,
       );
       if (response.ok) {
         const data = await response.json();
-        if (data.status === 'OK' && data.results && data.results.length > 0) {
+        if (data.status === "OK" && data.results && data.results.length > 0) {
           const first = data.results[0];
-          let street = '';
-          let sublocality = '';
-          let city = '';
-          let state = '';
-          let pincode = '';
+          let street = "";
+          let sublocality = "";
+          let city = "";
+          let state = "";
+          let pincode = "";
 
           for (const comp of first.address_components || []) {
             const types: string[] = comp.types || [];
-            if (types.includes('route') || types.includes('street_number')) {
+            if (types.includes("route") || types.includes("street_number")) {
               street = street ? `${comp.long_name} ${street}` : comp.long_name;
-            } else if (types.includes('sublocality') || types.includes('sublocality_level_1') || types.includes('neighborhood')) {
+            } else if (
+              types.includes("sublocality") ||
+              types.includes("sublocality_level_1") ||
+              types.includes("neighborhood")
+            ) {
               sublocality = comp.long_name;
-            } else if (types.includes('locality')) {
+            } else if (types.includes("locality")) {
               city = comp.long_name;
-            } else if (types.includes('administrative_area_level_1')) {
+            } else if (types.includes("administrative_area_level_1")) {
               state = comp.long_name;
-            } else if (types.includes('postal_code')) {
+            } else if (types.includes("postal_code")) {
               pincode = comp.long_name;
             }
           }
 
-          const resolvedCity = city || detectCityFromCoords(roundedLat, roundedLng).name;
-          const resolvedSubloc = sublocality || street || 'Main Market';
-          const resolvedState = state || detectCityFromCoords(roundedLat, roundedLng).state;
+          const resolvedCity =
+            city || detectCityFromCoords(roundedLat, roundedLng).name;
+          const resolvedSubloc = sublocality || street || "Main Market";
+          const resolvedState =
+            state || detectCityFromCoords(roundedLat, roundedLng).state;
 
           return {
-            formattedAddress: first.formatted_address || `${resolvedSubloc}, ${resolvedCity}, ${resolvedState}`,
+            formattedAddress:
+              first.formatted_address ||
+              `${resolvedSubloc}, ${resolvedCity}, ${resolvedState}`,
             street: street || resolvedSubloc,
             sublocality: resolvedSubloc,
             city: resolvedCity,
@@ -215,12 +446,12 @@ export async function reverseGeocodeLocation(
             lat: roundedLat,
             lng: roundedLng,
             accuracyMeters,
-            provider: 'google_geocoding',
+            provider: "google_geocoding",
           };
         }
       }
     } catch (err) {
-      console.debug('Google Maps reverse geocoding error, falling back:', err);
+      console.debug("Google Maps reverse geocoding error, falling back:", err);
     }
   }
 
@@ -228,20 +459,36 @@ export async function reverseGeocodeLocation(
   try {
     const osmRes = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${roundedLat}&lon=${roundedLng}&zoom=18&addressdetails=1`,
-      { headers: { 'Accept-Language': 'en' } }
+      { headers: { "Accept-Language": "en" } },
     );
     if (osmRes.ok) {
       const data = await osmRes.json();
       if (data && data.address) {
         const addr = data.address;
-        const street = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || '';
-        const sublocality = addr.suburb || addr.neighbourhood || addr.residential || street || 'Central Area';
-        const city = addr.city || addr.town || addr.municipality || addr.state_district || detectCityFromCoords(roundedLat, roundedLng).name;
-        const state = addr.state || detectCityFromCoords(roundedLat, roundedLng).state;
-        const pincode = addr.postcode || '';
+        const street =
+          addr.road ||
+          addr.pedestrian ||
+          addr.suburb ||
+          addr.neighbourhood ||
+          "";
+        const sublocality =
+          addr.suburb ||
+          addr.neighbourhood ||
+          addr.residential ||
+          street ||
+          "Central Area";
+        const city =
+          addr.city ||
+          addr.town ||
+          addr.municipality ||
+          addr.state_district ||
+          detectCityFromCoords(roundedLat, roundedLng).name;
+        const state =
+          addr.state || detectCityFromCoords(roundedLat, roundedLng).state;
+        const pincode = addr.postcode || "";
         const formattedAddress = data.display_name
-          ? data.display_name.split(',').slice(0, 4).join(', ')
-          : `${street ? street + ', ' : ''}${sublocality}, ${city}, ${state} ${pincode}`.trim();
+          ? data.display_name.split(",").slice(0, 4).join(", ")
+          : `${street ? street + ", " : ""}${sublocality}, ${city}, ${state} ${pincode}`.trim();
 
         return {
           formattedAddress,
@@ -253,12 +500,15 @@ export async function reverseGeocodeLocation(
           lat: roundedLat,
           lng: roundedLng,
           accuracyMeters,
-          provider: 'reverse_osm',
+          provider: "reverse_osm",
         };
       }
     }
   } catch (err) {
-    console.debug('OSM reverse geocode unavailable, using high-resolution local database:', err);
+    console.debug(
+      "OSM reverse geocode unavailable, using high-resolution local database:",
+      err,
+    );
   }
 
   // 3. High-Precision Local GIS Database Fallback
@@ -267,7 +517,12 @@ export async function reverseGeocodeLocation(
   let closestDist = 999999;
 
   for (const [key, coords] of Object.entries(KNOWN_AREA_COORDINATES)) {
-    const dist = calculateDistanceKm(roundedLat, roundedLng, coords.lat, coords.lng);
+    const dist = calculateDistanceKm(
+      roundedLat,
+      roundedLng,
+      coords.lat,
+      coords.lng,
+    );
     if (dist < closestDist) {
       closestDist = dist;
       closestArea = coords.area;
@@ -280,23 +535,23 @@ export async function reverseGeocodeLocation(
     sublocality: closestArea,
     city: detectedCity.name,
     state: detectedCity.state,
-    pincode: detectedCity.id === 'ludhiana' ? '141002' : '110020',
+    pincode: detectedCity.id === "ludhiana" ? "141002" : "110020",
     lat: roundedLat,
     lng: roundedLng,
     accuracyMeters,
-    provider: 'local_database',
+    provider: "local_database",
   };
 }
 
 export function getCoordinatesForArea(
-  areaName: string, 
-  currentCityName: string = 'Ludhiana'
+  areaName: string,
+  currentCityName: string = "Ludhiana",
 ): { lat: number; lng: number; area: string; city: string } {
   if (!areaName) {
-    if (currentCityName.toLowerCase().includes('delhi')) {
+    if (currentCityName.toLowerCase().includes("delhi")) {
       return KNOWN_AREA_COORDINATES.okhla;
     }
-    return KNOWN_AREA_COORDINATES['model town'];
+    return KNOWN_AREA_COORDINATES["model town"];
   }
 
   const clean = areaName.toLowerCase().trim();
@@ -307,10 +562,13 @@ export function getCoordinatesForArea(
   }
 
   // If not matched, fallback based on current city
-  if (clean.includes('delhi') || currentCityName.toLowerCase().includes('delhi')) {
+  if (
+    clean.includes("delhi") ||
+    currentCityName.toLowerCase().includes("delhi")
+  ) {
     return KNOWN_AREA_COORDINATES.okhla;
   }
-  return KNOWN_AREA_COORDINATES['model town'];
+  return KNOWN_AREA_COORDINATES["model town"];
 }
 
 // Generate Google Maps Turn-by-Turn Directions URL
@@ -319,13 +577,17 @@ export function getGoogleMapsDirectionsUrl(
   originLng: number,
   destLat: number,
   destLng: number,
-  travelMode: 'walking' | 'bicycling' | 'driving' = 'walking'
+  travelMode: "walking" | "bicycling" | "driving" = "walking",
 ): string {
   return `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=${travelMode}&utm_campaign=gmp_mcp_codeassist_v1_aistudio`;
 }
 
 // Generate Google Maps Location View URL
-export function getGoogleMapsLocationUrl(lat: number, lng: number, label?: string): string {
+export function getGoogleMapsLocationUrl(
+  lat: number,
+  lng: number,
+  label?: string,
+): string {
   const query = label ? encodeURIComponent(label) : `${lat},${lng}`;
   return `https://www.google.com/maps/search/?api=1&query=${query}&center=${lat},${lng}&utm_campaign=gmp_mcp_codeassist_v1_aistudio`;
 }
@@ -336,7 +598,7 @@ export function getGoogleMapsEmbedUrl(
   lng: number,
   destLat?: number,
   destLng?: number,
-  zoom: number = 14
+  zoom: number = 14,
 ): string {
   const apiKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY;
   if (destLat && destLng) {
@@ -350,4 +612,3 @@ export function getGoogleMapsEmbedUrl(
   }
   return `https://maps.google.com/maps?q=${lat},${lng}&hl=en&z=${zoom}&output=embed`;
 }
-

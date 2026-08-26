@@ -1,28 +1,29 @@
-export type AppRole = 'select_role' | 'worker' | 'customer' | 'admin' | 'pitch_deck';
+export type AppRole =
+  "select_role" | "worker" | "customer" | "admin" | "pitch_deck";
 
-export type Language = 'en' | 'hi' | 'pa';
+export type Language = "en" | "hi" | "pa";
 
-export type TradeType = 
-  | 'Mason' 
-  | 'Painter' 
-  | 'Plumber' 
-  | 'Carpenter' 
-  | 'Electrician' 
-  | 'Construction Helper' 
-  | 'Tile Worker' 
-  | 'Welder' 
-  | 'Loader/Mover';
+export type TradeType =
+  | "Mason"
+  | "Painter"
+  | "Plumber"
+  | "Carpenter"
+  | "Electrician"
+  | "Construction Helper"
+  | "Tile Worker"
+  | "Welder"
+  | "Loader/Mover";
 
-export type JobStatus = 
-  | 'broadcast' 
-  | 'accepted' 
-  | 'approved'
-  | 'pending_payment'
-  | 'in_progress' 
-  | 'completed_pending_payment' 
-  | 'paid_and_closed' 
-  | 'cancelled'
-  | 'disputed';
+export type JobStatus =
+  | "broadcast"
+  | "accepted"
+  | "approved"
+  | "pending_payment"
+  | "in_progress"
+  | "completed_pending_payment"
+  | "paid_and_closed"
+  | "cancelled"
+  | "disputed";
 
 export interface GpsCoordinates {
   lat: number;
@@ -98,7 +99,11 @@ export interface CustomerProfile {
 
 export interface AdminTransaction {
   id: string;
-  type: 'SUBSCRIPTION_CREDIT' | 'WORKER_PAYOUT_DISBURSEMENT' | 'COMMISSION_FEE' | 'REFUND_DISBURSEMENT';
+  type:
+    | "SUBSCRIPTION_CREDIT"
+    | "WORKER_PAYOUT_DISBURSEMENT"
+    | "COMMISSION_FEE"
+    | "REFUND_DISBURSEMENT";
   amount: number;
   description: string;
   timestamp: string;
@@ -147,11 +152,16 @@ export interface Job {
   isPaid: boolean;
   isEscrowPrepaid?: boolean;
   escrowPrepaidAmount?: number;
-  escrowStatus?: 'pending' | 'held_in_escrow' | 'released_to_worker' | 'refunded_to_customer' | 'refund_requested_dispute';
+  escrowStatus?:
+    | "pending"
+    | "held_in_escrow"
+    | "released_to_worker"
+    | "refunded_to_customer"
+    | "refund_requested_dispute";
   escrowPrepaidAt?: string;
   disputeId?: string;
   disputeReason?: string;
-  paidVia?: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH';
+  paidVia?: "UPI_QR" | "UPI_DIRECT" | "ESCROW_WALLET" | "CASH";
   transactionRef?: string;
   rating?: number;
   review?: string;
@@ -168,22 +178,22 @@ export interface Job {
 export interface ChatMessage {
   id: string;
   jobId: string;
-  senderRole: 'worker' | 'customer' | 'admin';
+  senderRole: "worker" | "customer" | "admin";
   senderName: string;
   senderPhone?: string;
   text: string;
   timestamp: string; // e.g. "10:45 AM"
   createdAt: number; // Date.now()
-  status: 'sent' | 'delivered' | 'read';
+  status: "sent" | "delivered" | "read";
   isQuickReply?: boolean;
 }
 
 export interface ChatNotificationItem {
   id: string;
-  senderRole: 'worker' | 'customer' | 'admin';
+  senderRole: "worker" | "customer" | "admin";
   senderName: string;
   senderPhone?: string;
-  recipientRole?: 'worker' | 'customer' | 'admin';
+  recipientRole?: "worker" | "customer" | "admin";
   recipientName?: string;
   text: string;
   timestamp: string;
@@ -197,13 +207,13 @@ export interface ChatNotificationItem {
 export interface CallSession {
   id: string;
   callerName: string;
-  callerRole: 'worker' | 'customer' | 'admin';
+  callerRole: "worker" | "customer" | "admin";
   callerPhone: string;
   receiverName: string;
-  receiverRole: 'worker' | 'customer' | 'admin';
+  receiverRole: "worker" | "customer" | "admin";
   receiverPhone: string;
   jobTitle?: string;
-  status: 'calling' | 'connected' | 'ended';
+  status: "calling" | "connected" | "ended";
   startedAt: number;
   durationSeconds: number;
   isMuted: boolean;
@@ -218,7 +228,7 @@ export interface VerificationRequest {
   aadhaarNumber: string;
   experienceYears: number;
   submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
 }
 
 export interface CityInfo {
@@ -241,7 +251,7 @@ export interface DisputeItem {
   customerPhone?: string;
   reason: string;
   detailedReason?: string;
-  status: 'open' | 'resolved' | 'rejected';
+  status: "open" | "resolved" | "rejected";
   amount: number;
   reportedAt: string;
   resolutionNote?: string;
@@ -252,7 +262,7 @@ export interface HyperlocalMatchResult {
   worker: WorkerProfile;
   distanceKm: number;
   isWithin10Km: boolean;
-  skillMatch: 'exact_primary' | 'secondary' | 'related';
+  skillMatch: "exact_primary" | "secondary" | "related";
   availability: boolean;
   matchScore: number; // 0 - 100
   aiReasoning: string;
@@ -275,32 +285,32 @@ export interface MultiChannelAlertPayload {
   };
   channels: {
     whatsapp: {
-      status: 'sent' | 'delivered' | 'read' | 'accepted';
+      status: "sent" | "delivered" | "read" | "accepted";
       message: string;
       timestamp: string;
     };
     voiceCall: {
-      status: 'dialing' | 'ringing' | 'connected' | 'completed' | 'accepted';
+      status: "dialing" | "ringing" | "connected" | "completed" | "accepted";
       transcript: string;
       durationSeconds: number;
-      keypadResponse?: '1_ACCEPTED' | '2_REJECTED';
+      keypadResponse?: "1_ACCEPTED" | "2_REJECTED";
     };
     sms: {
-      status: 'sent' | 'delivered';
+      status: "sent" | "delivered";
       message: string;
     };
     email?: {
-      status: 'sent' | 'delivered' | 'queued';
+      status: "sent" | "delivered" | "queued";
       recipient: string;
       subject: string;
       body: string;
     };
     appPush: {
-      status: 'sent' | 'delivered' | 'opened';
+      status: "sent" | "delivered" | "opened";
       title: string;
       body: string;
     };
   };
   initiatedAt: string;
-  overallStatus: 'broadcasting' | 'received' | 'accepted' | 'declined';
+  overallStatus: "broadcasting" | "received" | "accepted" | "declined";
 }

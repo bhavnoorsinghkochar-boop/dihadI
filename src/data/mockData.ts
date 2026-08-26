@@ -1,4 +1,4 @@
-import { WorkerProfile, Job, VerificationRequest, DisputeItem } from '../types';
+import { WorkerProfile, Job, VerificationRequest, DisputeItem } from "../types";
 
 // Everything starts from absolute ZERO as requested
 export const INITIAL_WORKERS: WorkerProfile[] = [];

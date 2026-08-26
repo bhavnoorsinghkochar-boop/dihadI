@@ -1,30 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Phone, 
-  PhoneOff, 
-  Mic, 
-  MicOff, 
-  Volume2, 
-  VolumeX, 
-  ShieldCheck, 
-  Sparkles, 
-  User, 
+import React, { useState, useEffect } from "react";
+import {
+  Phone,
+  PhoneOff,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  ShieldCheck,
+  Sparkles,
+  User,
   ExternalLink,
   Radio,
   MessageSquareQuote,
   Smartphone,
   CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { CallSession } from '../../types';
-import { playSound, speakText } from '../../utils/audio';
-
+  AlertCircle,
+} from "lucide-react";
+import { CallSession } from "../../types";
+import { playSound, speakText } from "../../utils/audio";
 interface CallModalProps {
   callSession: CallSession | null;
   onEndCall: () => void;
   onAnswerCall?: () => void;
 }
-
 export const CallModal: React.FC<CallModalProps> = ({
   callSession,
   onEndCall,
@@ -33,7 +31,9 @@ export const CallModal: React.FC<CallModalProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(true);
   const [seconds, setSeconds] = useState(0);
-  const [status, setStatus] = useState<'ringing' | 'connected' | 'ended'>('ringing');
+  const [status, setStatus] = useState<"ringing" | "connected" | "ended">(
+    "ringing",
+  );
   const [subtitledMessage, setSubtitledMessage] = useState<string | null>(null);
   const [showNormalCallPrompt, setShowNormalCallPrompt] = useState(false);
 
@@ -76,7 +76,6 @@ export const CallModal: React.FC<CallModalProps> = ({
   }, [status]);
 
   if (!callSession) return null;
-
   const cleanTargetPhone = (callSession.receiverPhone || '+91 98101 55678').replace(/[^0-9+]/g, '');
 
   const handleAnswer = () => {
@@ -134,7 +133,6 @@ export const CallModal: React.FC<CallModalProps> = ({
             <div className="w-22 h-22 rounded-full bg-slate-800 border-4 border-amber-500 shadow-2xl flex items-center justify-center text-3xl font-black text-white relative z-10">
               {callSession.receiverName.charAt(0)}
             </div>
-
             {/* Ripple Circles when ringing or connected */}
             {status === 'ringing' && (
               <>
@@ -142,7 +140,6 @@ export const CallModal: React.FC<CallModalProps> = ({
                 <div className="absolute -inset-6 rounded-full border border-amber-500 animate-pulse opacity-30"></div>
               </>
             )}
-
             {status === 'connected' && (
               <div className="absolute -inset-2 rounded-full border border-amber-400 animate-pulse opacity-60"></div>
             )}
@@ -156,7 +153,6 @@ export const CallModal: React.FC<CallModalProps> = ({
             <p className="text-xs text-amber-400 font-bold uppercase tracking-wider">
               {callSession.receiverRole === 'worker' ? '🔨 Verified Worker' : '🏢 Employer / Client'}
             </p>
-            
             {/* Interactive Phone Number Link */}
             <a
               href={`tel:${cleanTargetPhone}`}
@@ -166,7 +162,6 @@ export const CallModal: React.FC<CallModalProps> = ({
               <Smartphone className="w-3.5 h-3.5 text-amber-400" />
               <span>{callSession.receiverPhone}</span>
             </a>
-
             {callSession.jobTitle && (
               <p className="text-[11px] text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700 truncate max-w-[260px] mx-auto mt-1">
                 Job: {callSession.jobTitle}
@@ -184,7 +179,6 @@ export const CallModal: React.FC<CallModalProps> = ({
               <p className="text-[11px] text-slate-300 leading-snug">
                 If the recipient is not active inside the app right now, dial their regular phone number:
               </p>
-              
               <a
                 href={`tel:${cleanTargetPhone}`}
                 onClick={() => playSound('click')}
@@ -272,9 +266,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                   playSound('click');
                 }}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
-                  isMuted
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  isMuted ? 'bg-amber-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                 }`}
                 title={isMuted ? 'Unmute' : 'Mute'}
               >
@@ -299,9 +291,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                   playSound('click');
                 }}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
-                  isSpeaker
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  isSpeaker ? 'bg-amber-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                 }`}
                 title={isSpeaker ? 'Speaker On' : 'Speaker Off'}
               >

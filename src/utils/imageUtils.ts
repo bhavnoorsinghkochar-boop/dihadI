@@ -16,23 +16,23 @@ export interface ImageCompressionOptions {
  */
 export async function compressImageFile(
   file: File,
-  options: ImageCompressionOptions = {}
+  options: ImageCompressionOptions = {},
 ): Promise<string> {
   const {
     maxWidth = 1200,
     maxHeight = 1200,
     quality = 0.82,
-    mimeType = 'image/jpeg',
+    mimeType = "image/jpeg",
   } = options;
 
   return new Promise((resolve, reject) => {
     // Basic file type check
-    if (!file.type.startsWith('image/')) {
-      return reject(new Error('Selected file is not an image.'));
+    if (!file.type.startsWith("image/")) {
+      return reject(new Error("Selected file is not an image."));
     }
 
     // Try URL.createObjectURL first (fast & low-memory), fallback to FileReader
-    let objectUrl = '';
+    let objectUrl = "";
     try {
       objectUrl = URL.createObjectURL(file);
     } catch {
@@ -40,7 +40,7 @@ export async function compressImageFile(
     }
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
 
     const cleanUp = () => {
       if (objectUrl) {
@@ -57,7 +57,7 @@ export async function compressImageFile(
 
         if (!width || !height) {
           cleanUp();
-          return reject(new Error('Invalid image dimensions.'));
+          return reject(new Error("Invalid image dimensions."));
         }
 
         // Calculate aspect-ratio preserved dimensions
@@ -68,19 +68,19 @@ export async function compressImageFile(
         }
 
         // Create canvas for compression
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
           cleanUp();
-          return reject(new Error('Could not initialize canvas context.'));
+          return reject(new Error("Could not initialize canvas context."));
         }
 
         // Use high quality image smoothing
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        ctx.imageSmoothingQuality = "high";
 
         // Draw image onto canvas
         ctx.drawImage(img, 0, 0, width, height);
@@ -92,9 +92,7 @@ export async function compressImageFile(
       } catch (err: any) {
         cleanUp();
         // If canvas fails (e.g. security origin), fallback to basic FileReader
-        readRawFileReader(file)
-          .then(resolve)
-          .catch(reject);
+        readRawFileReader(file).then(resolve).catch(reject);
       }
     };
 
@@ -103,7 +101,7 @@ export async function compressImageFile(
       // Fallback to basic file reader
       readRawFileReader(file)
         .then(resolve)
-        .catch(() => reject(new Error('Failed to load and decode image.')));
+        .catch(() => reject(new Error("Failed to load and decode image.")));
     };
 
     if (objectUrl) {
@@ -125,14 +123,14 @@ function readRawFileReader(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === 'string') {
+      if (typeof reader.result === "string") {
         resolve(reader.result);
       } else {
-        reject(new Error('Could not read image file data.'));
+        reject(new Error("Could not read image file data."));
       }
     };
     reader.onerror = () => {
-      reject(new Error('File reader encountered an error reading the file.'));
+      reject(new Error("File reader encountered an error reading the file."));
     };
     reader.readAsDataURL(file);
   });
@@ -143,33 +141,33 @@ function readRawFileReader(file: File): Promise<string> {
  */
 export const WORKER_AVATAR_PRESETS = [
   {
-    id: 'avatar-1',
-    label: 'Mason / Builder',
-    url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=200&auto=format&fit=crop&q=80',
+    id: "avatar-1",
+    label: "Mason / Builder",
+    url: "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=200&auto=format&fit=crop&q=80",
   },
   {
-    id: 'avatar-2',
-    label: 'Senior Plumber',
-    url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
+    id: "avatar-2",
+    label: "Senior Plumber",
+    url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80",
   },
   {
-    id: 'avatar-3',
-    label: 'Master Electrician',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+    id: "avatar-3",
+    label: "Master Electrician",
+    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
   },
   {
-    id: 'avatar-4',
-    label: 'Professional Painter',
-    url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    id: "avatar-4",
+    label: "Professional Painter",
+    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
   },
   {
-    id: 'avatar-5',
-    label: 'Carpenter & Artisan',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    id: "avatar-5",
+    label: "Carpenter & Artisan",
+    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
   },
   {
-    id: 'avatar-6',
-    label: 'Site Supervisor',
-    url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
+    id: "avatar-6",
+    label: "Site Supervisor",
+    url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80",
   },
 ];

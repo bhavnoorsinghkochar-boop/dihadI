@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
-import { MultiChannelAlertPayload, Job, WorkerProfile } from '../../types';
-import { 
-  X, 
-  PhoneCall, 
-  MessageSquare, 
-  Smartphone, 
-  Bell, 
-  CheckCheck, 
-  Volume2, 
-  VolumeX, 
-  Radio, 
-  Send, 
-  CheckCircle2, 
+import React, { useState, useEffect } from "react";
+import { useApp } from "../../context/AppContext";
+import { MultiChannelAlertPayload, Job, WorkerProfile } from "../../types";
+import {
+  X,
+  PhoneCall,
+  MessageSquare,
+  Smartphone,
+  Bell,
+  CheckCheck,
+  Volume2,
+  VolumeX,
+  Radio,
+  Send,
+  CheckCircle2,
   AlertCircle,
   Mail,
   Copy,
@@ -21,10 +21,9 @@ import {
   Sparkles,
   RefreshCw,
   Share2,
-  Check
-} from 'lucide-react';
-import { playSound, speakText, stopSpeech } from '../../utils/audio';
-
+  Check,
+} from "lucide-react";
+import { playSound, speakText, stopSpeech } from "../../utils/audio";
 interface MultiChannelAlertModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -32,7 +31,6 @@ interface MultiChannelAlertModalProps {
   targetWorker: WorkerProfile | null;
   onAcceptJob?: (jobId: string, workerId: string) => void;
 }
-
 export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   isOpen,
   onClose,
@@ -41,8 +39,9 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   onAcceptJob,
 }) => {
   const { currentLanguage, showNotification, acceptJobByWorker } = useApp();
-  const [activeChannelTab, setActiveChannelTab] = useState<'all' | 'whatsapp' | 'mail' | 'voice' | 'sms' | 'push'>('all');
-  
+  const [activeChannelTab, setActiveChannelTab] = useState<
+    "all" | "whatsapp" | "mail" | "voice" | "sms" | "push"
+  >("all");
   // Voice call simulator states
   const [callState, setCallState] = useState<'idle' | 'dialing' | 'ringing' | 'connected' | 'ended'>('idle');
   const [callSeconds, setCallSeconds] = useState(0);
@@ -95,14 +94,12 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
         playSound('ring');
         setSmsDelivered(true);
       }, 1000);
-
       const t2 = setTimeout(() => {
         setCallState('connected');
         playSound('call_connect');
         setWaRead(true);
         playIvrAudioPrompt();
       }, 3000);
-
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
@@ -123,9 +120,7 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   }, [callState]);
 
   if (!isOpen || !job || !targetWorker) return null;
-
   const cleanPhone = targetWorker.phone.replace(/[^0-9]/g, '');
-
   // Content Builders
   const getWaMessage = () => {
     if (currentLanguage === 'pa') {
@@ -160,7 +155,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   // Actions
   const triggerInAppPushNotification = () => {
     showNotification(`⚡ [4-Channel Alert] New ${job.trade} job alert pushed to ${targetWorker.name} in App & Radar!`);
-    
     // Attempt Browser System Notification (desktop/mobile notification tray)
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
@@ -205,7 +199,7 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
           area: job.area || job.locationAddress,
           distanceKm: job.distanceKm,
           durationDays: job.durationDays || 1,
-          channels: ['whatsapp', 'email', 'mail', 'sms', 'push', 'voice']
+          channels: ['whatsapp', 'email', 'mail', 'sms', 'push', 'voice'],
         }),
       });
       const data = await res.json();
@@ -340,7 +334,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
               </h3>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
             <button
               onClick={handleDispatchAllNow}
@@ -356,7 +349,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
               <span className="hidden sm:inline">Dispatch All 4 Channels</span>
               <span className="sm:hidden">Blast All</span>
             </button>
-
             <button
               onClick={() => {
                 stopSpeech();
@@ -397,7 +389,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>All 4 Channels</span>
           </button>
-
           <button
             onClick={() => setActiveChannelTab('whatsapp')}
             className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 ${
@@ -410,7 +401,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
             <span>WhatsApp Alert</span>
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
           </button>
-
           <button
             onClick={() => setActiveChannelTab('mail')}
             className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 ${
@@ -422,7 +412,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
             <Mail className="w-3.5 h-3.5 text-sky-400" />
             <span>Mail / Email</span>
           </button>
-
           <button
             onClick={() => setActiveChannelTab('push')}
             className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 ${
@@ -434,7 +423,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
             <Bell className="w-3.5 h-3.5 text-purple-400" />
             <span>In-App & Push</span>
           </button>
-
           <button
             onClick={() => setActiveChannelTab('voice')}
             className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 ${
@@ -445,9 +433,10 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
           >
             <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
             <span>Voice IVR (TTS)</span>
-            {callState === 'connected' && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+            {callState === 'connected' && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            )}
           </button>
-
           <button
             onClick={() => setActiveChannelTab('sms')}
             className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 ${
@@ -468,15 +457,12 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
             <div className="bg-gradient-to-br from-slate-950 to-slate-900 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  Real Multi-Channel Dispatch Center
+                  <Sparkles className="w-4 h-4 text-amber-400" /> Real Multi-Channel Dispatch Center
                 </span>
                 <span className="text-[11px] text-amber-400 font-mono font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Synchronized
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Synchronized
                 </span>
               </div>
-
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div className="bg-amber-950/40 border border-amber-500/30 p-2.5 rounded-xl text-center space-y-1">
                   <div className="text-amber-400 font-bold flex items-center justify-center gap-1">
@@ -485,7 +471,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                   </div>
                   <div className="text-[10px] text-amber-300 font-medium">Ready & Dispatched</div>
                 </div>
-
                 <div className="bg-sky-950/40 border border-sky-500/30 p-2.5 rounded-xl text-center space-y-1">
                   <div className="text-sky-400 font-bold flex items-center justify-center gap-1">
                     <Mail className="w-3.5 h-3.5" />
@@ -493,7 +478,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                   </div>
                   <div className="text-[10px] text-sky-300 font-medium">Dispatched</div>
                 </div>
-
                 <div className="bg-purple-950/40 border border-purple-500/30 p-2.5 rounded-xl text-center space-y-1">
                   <div className="text-purple-400 font-bold flex items-center justify-center gap-1">
                     <Bell className="w-3.5 h-3.5" />
@@ -501,7 +485,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                   </div>
                   <div className="text-[10px] text-purple-300 font-medium">Delivered to Radar</div>
                 </div>
-
                 <div className="bg-amber-950/40 border border-amber-500/30 p-2.5 rounded-xl text-center space-y-1">
                   <div className="text-amber-400 font-bold flex items-center justify-center gap-1">
                     <Smartphone className="w-3.5 h-3.5" />
@@ -531,7 +514,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     <span className="text-[10px] text-slate-400">Sent to {targetWorker.phone}</span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-1 text-amber-400 text-xs">
                   <CheckCheck className="w-4 h-4 text-amber-400" />
                   <span className="text-[10px] font-mono">Delivered</span>
@@ -563,7 +545,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Open & Send in WhatsApp</span>
                   </button>
-
                   <button
                     onClick={() => copyToClipboard(getWaMessage(), 'wa')}
                     className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-700"
@@ -572,12 +553,11 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     {copiedKey === 'wa' ? <Check className="w-3.5 h-3.5 text-amber-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedKey === 'wa' ? 'Copied' : 'Copy'}</span>
                   </button>
-
                   <button
                     onClick={handleWhatsAppAccept}
                     disabled={waAccepted}
                     className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                      waAccepted 
+                      waAccepted
                         ? 'bg-amber-800 text-amber-200 cursor-default'
                         : 'bg-slate-800 hover:bg-amber-950 text-amber-300 border border-amber-700/50'
                     }`}
@@ -608,7 +588,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     <span className="text-[10px] text-slate-400">Direct employer briefing delivered to inbox</span>
                   </div>
                 </div>
-
                 <button
                   onClick={() => dispatchRealAlertBackend(targetEmail)}
                   disabled={isSendingEmail}
@@ -632,7 +611,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-sky-500"
                   />
                 </div>
-
                 <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px] space-y-1">
                   <div className="text-sky-300 font-bold">{getEmailSubject()}</div>
                   <p className="text-slate-300 whitespace-pre-line leading-relaxed">
@@ -650,7 +628,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Open in Gmail / Mail App</span>
                   </button>
-
                   <button
                     onClick={() => copyToClipboard(`${getEmailSubject()}\n\n${getEmailBody()}`, 'mail')}
                     className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-700"
@@ -682,7 +659,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     <span className="text-[10px] text-slate-400">Device notification shade + Worker radar beacon</span>
                   </div>
                 </div>
-
                 <button
                   onClick={triggerInAppPushNotification}
                   className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition"
@@ -725,20 +701,21 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span>Automated Voice Call (IVR with Audio TTS)</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded border ${
-                        callState === 'connected'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                          : callState === 'ringing'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
-                          : 'bg-slate-800 text-slate-300 border-slate-700'
-                      }`}>
+                      <span
+                        className={`px-1.5 py-0.2 text-[10px] rounded border ${
+                          callState === 'connected'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : callState === 'ringing'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
+                            : 'bg-slate-800 text-slate-300 border-slate-700'
+                        }`}
+                      >
                         {callState === 'connected' ? `Connected (${callSeconds}s)` : callState}
                       </span>
                     </h4>
                     <span className="text-[10px] text-slate-400">Accommodates workers without smartphones</span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCallDirect}
@@ -783,7 +760,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                       <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-black">1</span>
                       <span>Press [1] Accept Work</span>
                     </button>
-
                     <button
                       onClick={() => handleKeypadPress('2')}
                       className="py-2 px-3 bg-slate-800 hover:bg-amber-900/50 text-slate-300 hover:text-amber-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition border border-slate-700 active:scale-95"
@@ -815,7 +791,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
                     <span className="text-[10px] text-slate-400">Carrier GSM Network • 160 Chars</span>
                   </div>
                 </div>
-
                 <span className="text-[10px] font-mono text-amber-400">SIM Slot 1</span>
               </div>
 
@@ -866,7 +841,6 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
           <div className="text-slate-400 text-[11px] hidden sm:block">
             <span>Dispatched across WhatsApp, Gmail/Mail, GSM SMS, App Push & IVR</span>
           </div>
-
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => {

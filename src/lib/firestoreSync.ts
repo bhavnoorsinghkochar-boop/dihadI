@@ -1,25 +1,25 @@
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDocs, 
+import {
+  collection,
+  doc,
+  setDoc,
+  getDocs,
   getDoc,
-  getDocFromServer, 
-  onSnapshot, 
-  updateDoc, 
+  getDocFromServer,
+  onSnapshot,
+  updateDoc,
   deleteDoc,
-  serverTimestamp 
-} from 'firebase/firestore';
-import { db, auth } from './firebase';
-import { Job, WorkerProfile, VerificationRequest, DisputeItem } from '../types';
+  serverTimestamp,
+} from "firebase/firestore";
+import { db, auth } from "./firebase";
+import { Job, WorkerProfile, VerificationRequest, DisputeItem } from "../types";
 
 export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
+  CREATE = "create",
+  UPDATE = "update",
+  DELETE = "delete",
+  LIST = "list",
+  GET = "get",
+  WRITE = "write",
 }
 
 export interface FirestoreErrorInfo {
@@ -39,9 +39,17 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null,
+) {
   const errMsg = error instanceof Error ? error.message : String(error);
-  if (errMsg.includes('unavailable') || errMsg.includes('offline') || errMsg.includes('Failed to get document')) {
+  if (
+    errMsg.includes("unavailable") ||
+    errMsg.includes("offline") ||
+    errMsg.includes("Failed to get document")
+  ) {
     // Firestore operates automatically in offline mode with indexedDB local cache
     return;
   }
@@ -53,25 +61,26 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
       emailVerified: auth.currentUser?.emailVerified,
       isAnonymous: auth.currentUser?.isAnonymous,
       tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
-        providerId: provider.providerId,
-        email: provider.email,
-      })) || []
+      providerInfo:
+        auth.currentUser?.providerData?.map((provider) => ({
+          providerId: provider.providerId,
+          email: provider.email,
+        })) || [],
     },
     operationType,
-    path
+    path,
   };
-  console.debug('Firestore background notice: ', JSON.stringify(errInfo));
+  console.debug("Firestore background notice: ", JSON.stringify(errInfo));
 }
 
 export const COLLECTIONS = {
-  WORKERS: 'workers',
-  JOBS: 'jobs',
-  VERIFICATIONS: 'verifications',
-  DISPUTES: 'disputes',
-  ACCOUNTS: 'accounts',
-  SOS_ALERTS: 'sosAlerts',
-  SECURITY_VERIFICATIONS: 'securityVerifications',
+  WORKERS: "workers",
+  JOBS: "jobs",
+  VERIFICATIONS: "verifications",
+  DISPUTES: "disputes",
+  ACCOUNTS: "accounts",
+  SOS_ALERTS: "sosAlerts",
+  SECURITY_VERIFICATIONS: "securityVerifications",
 };
 
 /**
@@ -81,10 +90,14 @@ export async function syncWorkerToFirestore(worker: WorkerProfile) {
   const path = `${COLLECTIONS.WORKERS}/${worker.id}`;
   try {
     const workerRef = doc(db, COLLECTIONS.WORKERS, worker.id);
-    await setDoc(workerRef, {
-      ...worker,
-      syncedAt: new Date().toISOString(),
-    }, { merge: true });
+    await setDoc(
+      workerRef,
+      {
+        ...worker,
+        syncedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -97,10 +110,14 @@ export async function syncJobToFirestore(job: Job) {
   const path = `${COLLECTIONS.JOBS}/${job.id}`;
   try {
     const jobRef = doc(db, COLLECTIONS.JOBS, job.id);
-    await setDoc(jobRef, {
-      ...job,
-      syncedAt: new Date().toISOString(),
-    }, { merge: true });
+    await setDoc(
+      jobRef,
+      {
+        ...job,
+        syncedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -114,17 +131,23 @@ export async function syncAccountToFirestore(account: {
   phone: string;
   password: string;
   name: string;
-  role: 'worker' | 'customer' | 'admin';
+  role: "worker" | "customer" | "admin";
   extraData?: any;
 }) {
-  const safeId = (account.id || account.phone || 'acc_' + Date.now()).replace(/[^a-zA-Z0-9_.-]/g, '_').toLowerCase();
+  const safeId = (account.id || account.phone || "acc_" + Date.now())
+    .replace(/[^a-zA-Z0-9_.-]/g, "_")
+    .toLowerCase();
   const path = `${COLLECTIONS.ACCOUNTS}/${safeId}`;
   try {
     const accRef = doc(db, COLLECTIONS.ACCOUNTS, safeId);
-    await setDoc(accRef, {
-      ...account,
-      syncedAt: new Date().toISOString(),
-    }, { merge: true });
+    await setDoc(
+      accRef,
+      {
+        ...account,
+        syncedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -133,14 +156,20 @@ export async function syncAccountToFirestore(account: {
 /**
  * Save / Update Verification in Firestore
  */
-export async function syncVerificationToFirestore(verification: VerificationRequest) {
+export async function syncVerificationToFirestore(
+  verification: VerificationRequest,
+) {
   const path = `${COLLECTIONS.VERIFICATIONS}/${verification.id}`;
   try {
     const verifRef = doc(db, COLLECTIONS.VERIFICATIONS, verification.id);
-    await setDoc(verifRef, {
-      ...verification,
-      syncedAt: new Date().toISOString(),
-    }, { merge: true });
+    await setDoc(
+      verifRef,
+      {
+        ...verification,
+        syncedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -153,10 +182,14 @@ export async function syncDisputeToFirestore(dispute: DisputeItem) {
   const path = `${COLLECTIONS.DISPUTES}/${dispute.id}`;
   try {
     const disputeRef = doc(db, COLLECTIONS.DISPUTES, dispute.id);
-    await setDoc(disputeRef, {
-      ...dispute,
-      syncedAt: new Date().toISOString(),
-    }, { merge: true });
+    await setDoc(
+      disputeRef,
+      {
+        ...dispute,
+        syncedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -167,19 +200,23 @@ export async function syncDisputeToFirestore(dispute: DisputeItem) {
  */
 export async function recordSecurityOtpInFirestore(data: {
   identifier: string;
-  type: 'email' | 'phone';
+  type: "email" | "phone";
   code: string;
   role: string;
 }) {
-  const safeId = data.identifier.replace(/[^a-zA-Z0-9_.-]/g, '_');
+  const safeId = data.identifier.replace(/[^a-zA-Z0-9_.-]/g, "_");
   const path = `${COLLECTIONS.SECURITY_VERIFICATIONS}/${safeId}`;
   try {
     const otpRef = doc(db, COLLECTIONS.SECURITY_VERIFICATIONS, safeId);
-    await setDoc(otpRef, {
-      ...data,
-      dispatchedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-    }, { merge: true });
+    await setDoc(
+      otpRef,
+      {
+        ...data,
+        dispatchedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -188,8 +225,11 @@ export async function recordSecurityOtpInFirestore(data: {
 /**
  * Verify Security OTP Record from Firestore
  */
-export async function verifySecurityOtpInFirestore(identifier: string, code: string): Promise<boolean> {
-  const safeId = identifier.replace(/[^a-zA-Z0-9_.-]/g, '_');
+export async function verifySecurityOtpInFirestore(
+  identifier: string,
+  code: string,
+): Promise<boolean> {
+  const safeId = identifier.replace(/[^a-zA-Z0-9_.-]/g, "_");
   const path = `${COLLECTIONS.SECURITY_VERIFICATIONS}/${safeId}`;
   try {
     const otpRef = doc(db, COLLECTIONS.SECURITY_VERIFICATIONS, safeId);
@@ -201,8 +241,7 @@ export async function verifySecurityOtpInFirestore(identifier: string, code: str
       }
     }
   } catch (error) {
-    console.debug('Firestore OTP lookup note:', error);
+    console.debug("Firestore OTP lookup note:", error);
   }
   return false;
 }
-

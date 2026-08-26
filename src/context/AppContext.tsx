@@ -1,55 +1,51 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  AppRole, 
-  Language, 
-  Job, 
-  WorkerProfile, 
-  CustomerProfile, 
-  AdminProfile, 
+import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  AppRole,
+  Language,
+  Job,
+  WorkerProfile,
+  CustomerProfile,
+  AdminProfile,
   AdminTransaction,
-  VerificationRequest, 
-  DisputeItem, 
-  TradeType, 
-  CallSession, 
+  VerificationRequest,
+  DisputeItem,
+  TradeType,
+  CallSession,
   GpsCoordinates,
   CityInfo,
   ChatNotificationItem,
-  HyperlocalMatchResult
-} from '../types';
-import { playSound, speakText } from '../utils/audio';
-import { 
-  matchHyperlocalWorkers, 
-  getTop5Shortlist 
-} from '../utils/aiMatching';
-import { 
-  calculateDistanceKm, 
-  calculateBearing, 
+  HyperlocalMatchResult,
+} from "../types";
+import { playSound, speakText } from "../utils/audio";
+import { matchHyperlocalWorkers, getTop5Shortlist } from "../utils/aiMatching";
+import {
+  calculateDistanceKm,
+  calculateBearing,
   getCoordinatesForArea,
   SUPPORTED_CITIES,
   detectCityFromCoords,
   reverseGeocodeLocation,
-  ResolvedAddress
-} from '../utils/geo';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { 
-  COLLECTIONS, 
-  syncWorkerToFirestore, 
-  syncJobToFirestore, 
-  syncVerificationToFirestore, 
+  ResolvedAddress,
+} from "../utils/geo";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../lib/firebase";
+import {
+  COLLECTIONS,
+  syncWorkerToFirestore,
+  syncJobToFirestore,
+  syncVerificationToFirestore,
   syncDisputeToFirestore,
   syncAccountToFirestore,
   handleFirestoreError,
-  OperationType 
-} from '../lib/firestoreSync';
-import { sendOtpToGmail } from '../lib/gmailService';
-
+  OperationType,
+} from "../lib/firestoreSync";
+import { sendOtpToGmail } from "../lib/gmailService";
 export interface UserAccount {
-  id: string; // login identifier e.g. 'ramesh' or '9810155678'
+  id: string;
   phone: string;
   password: string;
   name: string;
-  role: 'worker' | 'customer' | 'admin';
+  role: "worker" | "customer" | "admin";
   extraData?: any;
 }
 
@@ -69,8 +65,8 @@ interface AppContextType {
   snapToRealWorldAddress: () => Promise<ResolvedAddress | null>;
   currentResolvedAddress: ResolvedAddress | null;
   isLocating: boolean;
-  
-  // Platform collections - start at zero
+
+  // Platform collections
   workers: WorkerProfile[];
   jobs: Job[];
   verifications: VerificationRequest[];
@@ -84,9 +80,17 @@ interface AppContextType {
   // Real-time Calling State
   activeCall: CallSession | null;
   startCall: (
-    caller: { name: string; role: 'worker' | 'customer' | 'admin'; phone: string },
-    receiver: { name: string; role: 'worker' | 'customer' | 'admin'; phone: string },
-    jobTitle?: string
+    caller: {
+      name: string;
+      role: "worker" | "customer" | "admin";
+      phone: string;
+    },
+    receiver: {
+      name: string;
+      role: "worker" | "customer" | "admin";
+      phone: string;
+    },
+    jobTitle?: string,
   ) => void;
   endCall: () => void;
 
@@ -112,21 +116,49 @@ interface AppContextType {
   closeTop5Shortlist: () => void;
   latestMatchedJob: Job | null;
   latestTop5Matches: HyperlocalMatchResult[];
-  getTop5WorkersForJob: (jobOrCriteria: Job | { trade: TradeType; jobGps?: GpsCoordinates; lat?: number; lng?: number; area?: string; dailyWage?: number; maxRadiusKm?: number }) => HyperlocalMatchResult[];
-  matchJobWithWorkers: (job: Job) => { matches: HyperlocalMatchResult[]; totalEligible: number; topMatch: HyperlocalMatchResult | null };
+  getTop5WorkersForJob: (
+    jobOrCriteria:
+      | Job
+      | {
+          trade: TradeType;
+          jobGps?: GpsCoordinates;
+          lat?: number;
+          lng?: number;
+          area?: string;
+          dailyWage?: number;
+          maxRadiusKm?: number;
+        },
+  ) => HyperlocalMatchResult[];
+  matchJobWithWorkers: (job: Job) => {
+    matches: HyperlocalMatchResult[];
+    totalEligible: number;
+    topMatch: HyperlocalMatchResult | null;
+  };
   clearMatchedSuggestions: () => void;
 
   // Real-time Chat Notifications & Global Chat Modal
   chatNotifications: ChatNotificationItem[];
   triggerChatNotification: (item: ChatNotificationItem) => void;
   dismissChatNotification: (id: string) => void;
-  activeGlobalChat: { isOpen: boolean; job?: Job | null; targetPerson?: any; role?: 'worker' | 'customer' | 'admin' } | null;
-  openGlobalChat: (job?: Job | null, targetPerson?: any, role?: 'worker' | 'customer' | 'admin') => void;
+  activeGlobalChat: {
+    isOpen: boolean;
+    job?: Job | null;
+    targetPerson?: any;
+    role?: "worker" | "customer" | "admin";
+  } | null;
+  openGlobalChat: (
+    job?: Job | null,
+    targetPerson?: any,
+    role?: "worker" | "customer" | "admin",
+  ) => void;
   closeGlobalChat: () => void;
 
   // Worker Auth & Accounts
   workerAccounts: UserAccount[];
-  loginWorkerWithAuth: (userIdOrPhone: string, password: string) => { success: boolean; error?: string };
+  loginWorkerWithAuth: (
+    userIdOrPhone: string,
+    password: string,
+  ) => { success: boolean; error?: string };
   registerWorkerWithAuth: (data: {
     userId: string;
     password: string;
@@ -157,7 +189,11 @@ interface AppContextType {
   }) => void;
   logoutWorker: () => void;
   toggleWorkerStatus: () => void;
-  updateWorkerUpi: (upiId: string, bankName?: string, ifscCode?: string) => void;
+  updateWorkerUpi: (
+    upiId: string,
+    bankName?: string,
+    ifscCode?: string,
+  ) => void;
   updateWorkerGps: (coords: Partial<GpsCoordinates>) => void;
   updateWorkerAvatar: (avatarUrl: string) => void;
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void;
@@ -171,7 +207,10 @@ interface AppContextType {
 
   // Customer Auth & Accounts
   customerAccounts: UserAccount[];
-  loginCustomerWithAuth: (userIdOrPhone: string, password: string) => { success: boolean; error?: string };
+  loginCustomerWithAuth: (
+    userIdOrPhone: string,
+    password: string,
+  ) => { success: boolean; error?: string };
   registerCustomerWithAuth: (data: {
     userId: string;
     password: string;
@@ -208,40 +247,60 @@ interface AppContextType {
     dailyWage: number;
     durationDays: number;
   }) => Job;
-  dispatchJobStartOtp: (job: Job, targetEmail?: string, targetPhone?: string) => Promise<boolean>;
+  dispatchJobStartOtp: (
+    job: Job,
+    targetEmail?: string,
+    targetPhone?: string,
+  ) => Promise<boolean>;
   releasePaymentByCustomer: (
-    jobId: string, 
-    rating: number, 
-    review: string, 
-    paidVia?: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH',
+    jobId: string,
+    rating: number,
+    review: string,
+    paidVia?: "UPI_QR" | "UPI_DIRECT" | "ESCROW_WALLET" | "CASH",
     txnRef?: string,
-    tags?: string[]
+    tags?: string[],
   ) => void;
-  rateWorkerJob: (jobId: string, rating: number, review: string, tags?: string[]) => void;
+  rateWorkerJob: (
+    jobId: string,
+    rating: number,
+    review: string,
+    tags?: string[],
+  ) => void;
 
-  // Premium Subscriptions & Zero-Commission VIP Pass
-  subscribeWorkerPremium: (workerId: string, paymentMethod?: 'WALLET' | 'UPI') => { success: boolean; message: string };
-  subscribeCustomerPremium: (customerId: string, paymentMethod?: 'UPI' | 'CARD' | 'NET_BANKING') => { success: boolean; message: string };
+  // Premium Subscriptions
+  subscribeWorkerPremium: (
+    workerId: string,
+    paymentMethod?: "WALLET" | "UPI",
+  ) => { success: boolean; message: string };
+  subscribeCustomerPremium: (
+    customerId: string,
+    paymentMethod?: "UPI" | "CARD" | "NET_BANKING",
+  ) => { success: boolean; message: string };
   topUpWorkerWallet: (amount: number) => void;
-  disburseWorkerWageFromAdmin: (workerId: string, wage: number, jobId?: string, customerName?: string) => boolean;
+  disburseWorkerWageFromAdmin: (
+    workerId: string,
+    wage: number,
+    jobId?: string,
+    customerName?: string,
+  ) => boolean;
 
-  // Subscription Promo Ad Modal (YouTube-style)
+  // Subscription Promo Modal
   isSubscriptionPromoOpen: boolean;
-  promoInitialRole: 'customer' | 'worker';
-  openSubscriptionPromo: (initialRole?: 'customer' | 'worker') => void;
+  promoInitialRole: "customer" | "worker";
+  openSubscriptionPromo: (initialRole?: "customer" | "worker") => void;
   closeSubscriptionPromo: () => void;
 
-  // Platform Safety, Direct Hiring Warning & Trust Guarantee Modal
+  // Platform Safety
   isProtectionModalOpen: boolean;
   protectionModalData: {
-    variant: 'post_rating' | 'post_login';
+    variant: "post_rating" | "post_login";
     workerName?: string;
     workerTrade?: string;
     workerAadhaarMasked?: string;
     refundAmount?: number;
   } | null;
   openProtectionModal: (data: {
-    variant: 'post_rating' | 'post_login';
+    variant: "post_rating" | "post_login";
     workerName?: string;
     workerTrade?: string;
     workerAadhaarMasked?: string;
@@ -249,23 +308,36 @@ interface AppContextType {
   }) => void;
   closeProtectionModal: () => void;
 
-  // Escrow Complaints & Admin Review (Replaces 1-Click Refund)
-  raiseJobComplaint: (jobId: string, reason: string, detailedExplanation?: string) => { success: boolean; disputeId?: string };
+  // Escrow Complaints
+  raiseJobComplaint: (
+    jobId: string,
+    reason: string,
+    detailedExplanation?: string,
+  ) => { success: boolean; disputeId?: string };
   adminApproveRefund: (disputeId: string, resolutionNote?: string) => void;
-  adminRejectDisputeAndReleaseToWorker: (disputeId: string, resolutionNote?: string) => void;
+  adminRejectDisputeAndReleaseToWorker: (
+    disputeId: string,
+    resolutionNote?: string,
+  ) => void;
   refundEscrowToCustomer: (jobId: string) => boolean;
 
-  // Admin Auth, Treasury & Actions
+  // Admin Auth & Treasury
   adminTreasuryBalance: number;
   adminSubscriptionRevenue: number;
   adminWorkerPayoutsDisbursed: number;
   adminTransactions: AdminTransaction[];
-  loginAdminWithAuth: (adminIdOrEmail: string, password: string) => { success: boolean; error?: string };
+  loginAdminWithAuth: (
+    adminIdOrEmail: string,
+    password: string,
+  ) => { success: boolean; error?: string };
   loginAdmin: (data: { name: string; email: string }) => void;
   logoutAdmin: () => void;
-  verifyWorkerByAdmin: (id: string, status: 'approved' | 'rejected') => void;
-  verifyWorkerDirectly: (workerId: string, status?: 'approved' | 'rejected') => void;
-  verifyCurrentWorker: (status?: 'approved' | 'rejected') => void;
+  verifyWorkerByAdmin: (id: string, status: "approved" | "rejected") => void;
+  verifyWorkerDirectly: (
+    workerId: string,
+    status?: "approved" | "rejected",
+  ) => void;
+  verifyCurrentWorker: (status?: "approved" | "rejected") => void;
   submitWorkerKyc: (data: {
     workerName: string;
     trade: TradeType;
@@ -277,13 +349,9 @@ interface AppContextType {
   refreshWorkerGpsLocation: () => void;
   resolveDispute: (id: string) => void;
 
-  // Global Controls & Firebase State
+  // Global Controls
   isFirebaseConnected: boolean;
-  connectedCluster: {
-    connectUrl: string;
-    controlUrl: string;
-    workUrl: string;
-  };
+  connectedCluster: { connectUrl: string; controlUrl: string; workUrl: string };
   resetToZero: () => void;
   seedSampleData: () => void;
   speak: (text: string) => void;
@@ -291,389 +359,243 @@ interface AppContextType {
   setNotification: (msg: string | null) => void;
   showNotification: (msgOrTitle: string, maybeMessage?: string) => void;
 }
-
-const AppContext = createContext<AppContextType | undefined>(undefined);
-
-// Default initial workers in Ludhiana, Punjab
+const AppContext = createContext<AppContextType | undefined>(
+  undefined,
+); /* Default initial workers in Ludhiana, Punjab */
 const DEFAULT_INITIAL_WORKERS: WorkerProfile[] = [
   {
-    id: 'w-ramesh',
-    name: 'Ramesh Kumar',
-    phone: '+91 98101 55678',
-    avatar: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80',
-    primaryTrade: 'Mason',
-    secondaryTrades: ['Tile Worker'],
+    id: "w-ramesh",
+    name: "Ramesh Kumar",
+    phone: "+91 98101 55678",
+    avatar:
+      "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80",
+    primaryTrade: "Mason",
+    secondaryTrades: ["Tile Worker"],
     dailyRate: 850,
     experienceYears: 6,
     rating: 5.0,
     reviewCount: 3,
     completedJobsCount: 14,
     isOnline: true,
-    location: { area: 'Model Town', city: 'Ludhiana', distanceKm: 0.6 },
+    location: { area: "Model Town", city: "Ludhiana", distanceKm: 0.6 },
     gpsLocation: {
       lat: 30.8926,
       lng: 75.8415,
-      area: 'Model Town',
-      city: 'Ludhiana',
+      area: "Model Town",
+      city: "Ludhiana",
       accuracyMeters: 4,
       heading: 45,
       speedKmh: 0,
-      lastUpdated: 'Just now',
+      lastUpdated: "Just now",
     },
     isSharingLiveGps: true,
-    aadhaarNumberMasked: 'XXXX-XXXX-9901',
-    isVerified: false, // Pending in verification queue
-    todayEarnings: 0,
+    aadhaarNumberMasked: "XXXX-XXXX-9901",
+    isVerified: true,
+    todayEarnings: 850,
     totalEarnings: 3400,
-    walletBalance: 2500, // Pre-seeded with balance so worker can test paying ₹2,000 subscription from wallet
-    badge: 'Aadhaar Pending',
-    isPremiumWorker: false,
-    zeroCommissionJobsRemaining: 0,
-    commissionSavedTotal: 0,
-    upiId: 'ramesh.mason@okaxis',
-    bankName: 'State Bank of India',
-    accountNumberMasked: '•••• •••• 5678',
-    ifscCode: 'SBIN0004921',
+    walletBalance: 2500,
+    badge: "Top Rated",
+    upiId: "ramesh.k@upi",
+    bankName: "State Bank of India",
+    accountNumberMasked: "•••• •••• 9912",
+    ifscCode: "SBIN0001234",
   },
-  {
-    id: 'w-sunil',
-    name: 'Sunil Sharma',
-    phone: '+91 98101 22334',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-    primaryTrade: 'Painter',
-    secondaryTrades: ['Construction Helper'],
-    dailyRate: 900,
-    experienceYears: 4,
-    rating: 4.9,
-    reviewCount: 2,
-    completedJobsCount: 9,
-    isOnline: true,
-    location: { area: 'Sarabha Nagar', city: 'Ludhiana', distanceKm: 1.4 },
-    gpsLocation: {
-      lat: 30.8872,
-      lng: 75.8193,
-      area: 'Sarabha Nagar',
-      city: 'Ludhiana',
-      accuracyMeters: 5,
-      heading: 90,
-      speedKmh: 0,
-      lastUpdated: 'Just now',
-    },
-    isSharingLiveGps: true,
-    aadhaarNumberMasked: 'XXXX-XXXX-4412',
-    isVerified: false,
-    todayEarnings: 0,
-    totalEarnings: 0,
-    walletBalance: 0,
-    badge: 'Aadhaar Pending',
-    upiId: 'sunil.painter@paytm',
-    bankName: 'Punjab National Bank',
-    accountNumberMasked: '•••• •••• 2334',
-    ifscCode: 'PUNB0123400',
-  },
-  {
-    id: 'w-deepak',
-    name: 'Deepak Kumar',
-    phone: '+91 98101 99887',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    primaryTrade: 'Plumber',
-    secondaryTrades: ['Welder'],
-    dailyRate: 850,
-    experienceYears: 5,
-    rating: 4.8,
-    reviewCount: 4,
-    completedJobsCount: 12,
-    isOnline: true,
-    location: { area: 'Civil Lines', city: 'Ludhiana', distanceKm: 2.1 },
-    gpsLocation: {
-      lat: 30.9075,
-      lng: 75.8360,
-      area: 'Civil Lines',
-      city: 'Ludhiana',
-      accuracyMeters: 6,
-      heading: 180,
-      speedKmh: 0,
-      lastUpdated: 'Just now',
-    },
-    isSharingLiveGps: true,
-    aadhaarNumberMasked: 'XXXX-XXXX-5567',
-    isVerified: false,
-    todayEarnings: 0,
-    totalEarnings: 0,
-    walletBalance: 0,
-    badge: 'Aadhaar Pending',
-    upiId: 'deepak.plumber@okaxis',
-    bankName: 'HDFC Bank',
-    accountNumberMasked: '•••• •••• 9887',
-    ifscCode: 'HDFC0001024',
-  },
-  {
-    id: 'w-manpreet',
-    name: 'Manpreet Singh',
-    phone: '+91 98101 33445',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    primaryTrade: 'Carpenter',
-    secondaryTrades: ['Construction Helper'],
-    dailyRate: 950,
-    experienceYears: 7,
-    rating: 5.0,
-    reviewCount: 5,
-    completedJobsCount: 18,
-    isOnline: true,
-    location: { area: 'Gill Road', city: 'Ludhiana', distanceKm: 1.8 },
-    gpsLocation: {
-      lat: 30.8850,
-      lng: 75.8560,
-      area: 'Gill Road',
-      city: 'Ludhiana',
-      accuracyMeters: 4,
-      heading: 30,
-      speedKmh: 0,
-      lastUpdated: 'Just now',
-    },
-    isSharingLiveGps: true,
-    aadhaarNumberMasked: 'XXXX-XXXX-1123',
-    isVerified: false,
-    todayEarnings: 0,
-    totalEarnings: 0,
-    walletBalance: 0,
-    badge: 'Aadhaar Pending',
-    upiId: 'manpreet.carpenter@okaxis',
-    bankName: 'Axis Bank',
-    accountNumberMasked: '•••• •••• 3445',
-    ifscCode: 'UTIB0000214',
-  },
-  {
-    id: 'w-asif',
-    name: 'Jaspreet Singh',
-    phone: '+91 98101 77665',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    primaryTrade: 'Electrician',
-    secondaryTrades: ['Welder'],
-    dailyRate: 900,
-    experienceYears: 5,
-    rating: 4.9,
-    reviewCount: 3,
-    completedJobsCount: 11,
-    isOnline: true,
-    location: { area: 'Focal Point Phase 5', city: 'Ludhiana', distanceKm: 0.9 },
-    gpsLocation: {
-      lat: 30.8845,
-      lng: 75.9120,
-      area: 'Focal Point Phase 5',
-      city: 'Ludhiana',
-      accuracyMeters: 3,
-      heading: 120,
-      speedKmh: 0,
-      lastUpdated: 'Just now',
-    },
-    isSharingLiveGps: true,
-    aadhaarNumberMasked: 'XXXX-XXXX-7766',
-    isVerified: false,
-    todayEarnings: 0,
-    totalEarnings: 0,
-    walletBalance: 0,
-    badge: 'Aadhaar Pending',
-    upiId: 'jaspreet.electrician@paytm',
-    bankName: 'ICICI Bank',
-    accountNumberMasked: '•••• •••• 7665',
-    ifscCode: 'ICIC0000007',
-  }
 ];
-
 const DEFAULT_INITIAL_VERIFICATIONS: VerificationRequest[] = [
   {
-    id: 'v-101',
-    workerName: 'Ramesh Kumar',
-    trade: 'Mason',
-    phone: '+91 98101 55678',
-    aadhaarNumber: '7829-4412-9901',
+    id: "v-101",
+    workerName: "Ramesh Kumar",
+    trade: "Mason",
+    phone: "+91 98101 55678",
+    aadhaarNumber: "7829-4412-9901",
     experienceYears: 6,
-    submittedAt: 'Just now',
-    status: 'pending',
+    submittedAt: "Just now",
+    status: "pending",
   },
   {
-    id: 'v-102',
-    workerName: 'Sunil Sharma',
-    trade: 'Painter',
-    phone: '+91 98101 22334',
-    aadhaarNumber: '6612-9901-4412',
+    id: "v-102",
+    workerName: "Sunil Sharma",
+    trade: "Painter",
+    phone: "+91 98101 22334",
+    aadhaarNumber: "6612-9901-4412",
     experienceYears: 4,
-    submittedAt: '5 mins ago',
-    status: 'pending',
+    submittedAt: "5 mins ago",
+    status: "pending",
   },
   {
-    id: 'v-103',
-    workerName: 'Deepak Kumar',
-    trade: 'Plumber',
-    phone: '+91 98101 99887',
-    aadhaarNumber: '8821-3312-5567',
+    id: "v-103",
+    workerName: "Deepak Kumar",
+    trade: "Plumber",
+    phone: "+91 98101 99887",
+    aadhaarNumber: "8821-3312-5567",
     experienceYears: 5,
-    submittedAt: '12 mins ago',
-    status: 'pending',
+    submittedAt: "12 mins ago",
+    status: "pending",
   },
   {
-    id: 'v-104',
-    workerName: 'Manpreet Singh',
-    trade: 'Carpenter',
-    phone: '+91 98101 33445',
-    aadhaarNumber: '5521-8890-1123',
+    id: "v-104",
+    workerName: "Manpreet Singh",
+    trade: "Carpenter",
+    phone: "+91 98101 33445",
+    aadhaarNumber: "5521-8890-1123",
     experienceYears: 7,
-    submittedAt: '30 mins ago',
-    status: 'pending',
+    submittedAt: "30 mins ago",
+    status: "pending",
   },
   {
-    id: 'v-105',
-    workerName: 'Asif Ali',
-    trade: 'Electrician',
-    phone: '+91 98101 77665',
-    aadhaarNumber: '4412-5567-7766',
+    id: "v-105",
+    workerName: "Asif Ali",
+    trade: "Electrician",
+    phone: "+91 98101 77665",
+    aadhaarNumber: "4412-5567-7766",
     experienceYears: 5,
-    submittedAt: '45 mins ago',
-    status: 'pending',
-  }
+    submittedAt: "45 mins ago",
+    status: "pending",
+  },
 ];
-
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentRole, setCurrentRole] = useState<AppRole>('select_role');
-  const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [currentRole, setCurrentRole] = useState<AppRole>("select_role");
+  const [currentLanguage, setCurrentLanguage] = useState<Language>("en");
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('kaamzo_theme') === 'dark';
+    return localStorage.getItem("kaamzo_theme") === "dark";
   });
-
   useEffect(() => {
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('kaamzo_theme', 'dark');
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("kaamzo_theme", "dark");
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('kaamzo_theme', 'light');
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("kaamzo_theme", "light");
     }
   }, [isDarkMode]);
-
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  // Platform collections
-  const [workers, setWorkers] = useState<WorkerProfile[]>(() => {
-    const saved = localStorage.getItem('dihadi_workers_zero_v6');
+  /*  Platform collections  */ const [workers, setWorkers] = useState<
+    WorkerProfile[]
+  >(() => {
+    const saved = localStorage.getItem("dihadi_workers_zero_v6");
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
     return DEFAULT_INITIAL_WORKERS;
   });
-
   const [jobs, setJobs] = useState<Job[]>(() => {
-    const saved = localStorage.getItem('dihadi_jobs_zero_v6');
+    const saved = localStorage.getItem("dihadi_jobs_zero_v6");
     return saved ? JSON.parse(saved) : [];
   });
-
-  const [verifications, setVerifications] = useState<VerificationRequest[]>(() => {
-    const saved = localStorage.getItem('dihadi_verifications_zero_v6');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-    return DEFAULT_INITIAL_VERIFICATIONS;
-  });
-
+  const [verifications, setVerifications] = useState<VerificationRequest[]>(
+    () => {
+      const saved = localStorage.getItem("dihadi_verifications_zero_v6");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_INITIAL_VERIFICATIONS;
+    },
+  );
   const [disputes, setDisputes] = useState<DisputeItem[]>(() => {
-    const saved = localStorage.getItem('dihadi_disputes_zero_v6');
+    const saved = localStorage.getItem("dihadi_disputes_zero_v6");
     return saved ? JSON.parse(saved) : [];
   });
-
-  // Current Logged-in Entities
-  const [currentWorker, setCurrentWorker] = useState<WorkerProfile | null>(() => {
-    const saved = localStorage.getItem('dihadi_current_worker_v6');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [currentCustomer, setCurrentCustomer] = useState<CustomerProfile | null>(() => {
-    const saved = localStorage.getItem('dihadi_current_customer_v6');
-    return saved ? JSON.parse(saved) : null;
-  });
-
+  /*  Current Logged-in Entities  */ const [currentWorker, setCurrentWorker] =
+    useState<WorkerProfile | null>(() => {
+      const saved = localStorage.getItem("dihadi_current_worker_v6");
+      return saved ? JSON.parse(saved) : null;
+    });
+  const [currentCustomer, setCurrentCustomer] =
+    useState<CustomerProfile | null>(() => {
+      const saved = localStorage.getItem("dihadi_current_customer_v6");
+      return saved ? JSON.parse(saved) : null;
+    });
   const [currentAdmin, setCurrentAdmin] = useState<AdminProfile | null>(() => {
-    const saved = localStorage.getItem('dihadi_current_admin_v6');
+    const saved = localStorage.getItem("dihadi_current_admin_v6");
     return saved ? JSON.parse(saved) : null;
   });
-
-  // Admin Treasury & Automated Payouts State
-  const [adminTreasuryBalance, setAdminTreasuryBalance] = useState<number>(() => {
-    const saved = localStorage.getItem('dihadi_admin_treasury_v6');
+  /*  Admin Treasury & Automated Payouts State  */ const [
+    adminTreasuryBalance,
+    setAdminTreasuryBalance,
+  ] = useState<number>(() => {
+    const saved = localStorage.getItem("dihadi_admin_treasury_v6");
     return saved ? Number(saved) : 65000;
   });
-
-  const [adminSubscriptionRevenue, setAdminSubscriptionRevenue] = useState<number>(() => {
-    const saved = localStorage.getItem('dihadi_admin_sub_rev_v6');
-    return saved ? Number(saved) : 45000;
-  });
-
-  const [adminWorkerPayoutsDisbursed, setAdminWorkerPayoutsDisbursed] = useState<number>(() => {
-    const saved = localStorage.getItem('dihadi_admin_disbursed_v6');
-    return saved ? Number(saved) : 18500;
-  });
-
-  const [adminTransactions, setAdminTransactions] = useState<AdminTransaction[]>(() => {
-    const saved = localStorage.getItem('dihadi_admin_txs_v6');
+  const [adminSubscriptionRevenue, setAdminSubscriptionRevenue] =
+    useState<number>(() => {
+      const saved = localStorage.getItem("dihadi_admin_sub_rev_v6");
+      return saved ? Number(saved) : 45000;
+    });
+  const [adminWorkerPayoutsDisbursed, setAdminWorkerPayoutsDisbursed] =
+    useState<number>(() => {
+      const saved = localStorage.getItem("dihadi_admin_disbursed_v6");
+      return saved ? Number(saved) : 18500;
+    });
+  const [adminTransactions, setAdminTransactions] = useState<
+    AdminTransaction[]
+  >(() => {
+    const saved = localStorage.getItem("dihadi_admin_txs_v6");
     if (saved) return JSON.parse(saved);
     return [
       {
-        id: 'tx-sub-1',
-        type: 'SUBSCRIPTION_CREDIT',
+        id: "tx-sub-1",
+        type: "SUBSCRIPTION_CREDIT",
         amount: 15000,
-        description: 'Customer Gold Membership (1 Month Free Service)',
-        timestamp: 'Today, 09:30 AM',
-        customerName: 'Pooja Verma'
+        description: "Customer Gold Membership (1 Month Free Service)",
+        timestamp: "Today, 09:30 AM",
+        customerName: "Pooja Verma",
       },
       {
-        id: 'tx-sub-2',
-        type: 'SUBSCRIPTION_CREDIT',
+        id: "tx-sub-2",
+        type: "SUBSCRIPTION_CREDIT",
         amount: 2000,
-        description: 'Worker VIP Pass & Instant Aadhaar Verification',
-        timestamp: 'Today, 10:15 AM',
-        workerName: 'Ramesh Kumar'
+        description: "Worker VIP Pass & Instant Aadhaar Verification",
+        timestamp: "Today, 10:15 AM",
+        workerName: "Ramesh Kumar",
       },
       {
-        id: 'tx-payout-1',
-        type: 'WORKER_PAYOUT_DISBURSEMENT',
+        id: "tx-payout-1",
+        type: "WORKER_PAYOUT_DISBURSEMENT",
         amount: 850,
-        description: 'Admin Treasury Auto-Disbursed wage to Ramesh Kumar on behalf of Gold Member Pooja Verma',
-        timestamp: 'Today, 11:00 AM',
-        customerName: 'Pooja Verma',
-        workerName: 'Ramesh Kumar'
-      }
+        description:
+          "Admin Treasury Auto-Disbursed wage to Ramesh Kumar on behalf of Gold Member Pooja Verma",
+        timestamp: "Today, 11:00 AM",
+        customerName: "Pooja Verma",
+        workerName: "Ramesh Kumar",
+      },
     ];
   });
-
-  // YouTube-Style Subscription Promo Ad State
-  const [isSubscriptionPromoOpen, setIsSubscriptionPromoOpen] = useState<boolean>(false);
-  const [promoInitialRole, setPromoInitialRole] = useState<'customer' | 'worker'>('customer');
-
-  const openSubscriptionPromo = (initialRole: 'customer' | 'worker' = 'customer') => {
+  /*  YouTube-Style Subscription Promo Ad State  */ const [
+    isSubscriptionPromoOpen,
+    setIsSubscriptionPromoOpen,
+  ] = useState<boolean>(false);
+  const [promoInitialRole, setPromoInitialRole] = useState<
+    "customer" | "worker"
+  >("customer");
+  const openSubscriptionPromo = (
+    initialRole: "customer" | "worker" = "customer",
+  ) => {
     setPromoInitialRole(initialRole);
     setIsSubscriptionPromoOpen(true);
-    playSound('incoming_job');
+    playSound("incoming_job");
   };
-
   const closeSubscriptionPromo = () => {
     setIsSubscriptionPromoOpen(false);
-    sessionStorage.setItem('dihadi_promo_shown_session_v6', 'true');
-    sessionStorage.setItem(`dihadi_promo_shown_${promoInitialRole}_v6`, 'true');
+    sessionStorage.setItem("dihadi_promo_shown_session_v6", "true");
+    sessionStorage.setItem(`dihadi_promo_shown_${promoInitialRole}_v6`, "true");
   };
-
-  // Platform Safety, Direct Hiring Warning & Trust Guarantee Modal State
-  const [isProtectionModalOpen, setIsProtectionModalOpen] = useState<boolean>(false);
+  /*  Platform Safety, Direct Hiring Warning & Trust Guarantee Modal State  */ const [
+    isProtectionModalOpen,
+    setIsProtectionModalOpen,
+  ] = useState<boolean>(false);
   const [protectionModalData, setProtectionModalData] = useState<{
-    variant: 'post_rating' | 'post_login';
+    variant: "post_rating" | "post_login";
     workerName?: string;
     workerTrade?: string;
     workerAadhaarMasked?: string;
     refundAmount?: number;
   } | null>(null);
-
   const openProtectionModal = (data: {
-    variant: 'post_rating' | 'post_login';
+    variant: "post_rating" | "post_login";
     workerName?: string;
     workerTrade?: string;
     workerAadhaarMasked?: string;
@@ -681,67 +603,120 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }) => {
     setProtectionModalData(data);
     setIsProtectionModalOpen(true);
-    playSound('alert');
+    playSound("alert");
   };
-
   const closeProtectionModal = () => {
     setIsProtectionModalOpen(false);
     setProtectionModalData(null);
-  };
-
-  // Subscription promo ad on app start/reopen is disabled as requested by the user
-  /*
-  useEffect(() => {
-    // Promo logic removed
-  }, [currentRole]);
-  */
-
-  // Registered credentials database
+  }; // Subscription promo ad on app start/reopen is disabled as requested by the user /* useEffect(() => { Promo logic removed }, [currentRole]); */
+  /*  Registered credentials database  */
   const [workerAccounts, setWorkerAccounts] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('dihadi_worker_accounts_v6');
+    const saved = localStorage.getItem("dihadi_worker_accounts_v6");
     if (saved) return JSON.parse(saved);
     return [
-      { id: 'ramesh', phone: '9810155678', password: '123', name: 'Ramesh Kumar', role: 'worker', extraData: { trade: 'Mason', rate: 850, area: 'Model Town, Ludhiana', aadhaar: '7829-4412-9901', upi: 'ramesh.mason@okaxis' } },
-      { id: 'sunil', phone: '9810122334', password: '123', name: 'Sunil Sharma', role: 'worker', extraData: { trade: 'Painter', rate: 900, area: 'Sarabha Nagar, Ludhiana', aadhaar: '6612-9901-4412', upi: 'sunil.painter@paytm' } },
-      { id: 'deepak', phone: '9810199887', password: '123', name: 'Deepak Kumar', role: 'worker', extraData: { trade: 'Plumber', rate: 850, area: 'Civil Lines, Ludhiana', aadhaar: '8821-3312-5567', upi: 'deepak.plumber@okaxis' } }
+      {
+        id: "ramesh",
+        phone: "9810155678",
+        password: "123",
+        name: "Ramesh Kumar",
+        role: "worker",
+        extraData: {
+          trade: "Mason",
+          rate: 850,
+          area: "Model Town, Ludhiana",
+          aadhaar: "7829-4412-9901",
+          upi: "ramesh.mason@okaxis",
+        },
+      },
+      {
+        id: "sunil",
+        phone: "9810122334",
+        password: "123",
+        name: "Sunil Sharma",
+        role: "worker",
+        extraData: {
+          trade: "Painter",
+          rate: 900,
+          area: "Sarabha Nagar, Ludhiana",
+          aadhaar: "6612-9901-4412",
+          upi: "sunil.painter@paytm",
+        },
+      },
+      {
+        id: "deepak",
+        phone: "9810199887",
+        password: "123",
+        name: "Deepak Kumar",
+        role: "worker",
+        extraData: {
+          trade: "Plumber",
+          rate: 850,
+          area: "Civil Lines, Ludhiana",
+          aadhaar: "8821-3312-5567",
+          upi: "deepak.plumber@okaxis",
+        },
+      },
     ];
   });
-
-  const [customerAccounts, setCustomerAccounts] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('dihadi_customer_accounts_v6');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: 'pooja', phone: '9910088221', password: '123', name: 'Pooja Verma', role: 'customer', extraData: { area: 'Model Town', address: 'House 142, Model Town, Ludhiana, Punjab', upi: 'pooja.verma@okhdfcbank' } },
-      { id: 'vikram', phone: '9910077665', password: '123', name: 'Vikram Sethi', role: 'customer', extraData: { area: 'Sarabha Nagar', address: 'House 18, Block B, Sarabha Nagar, Ludhiana, Punjab', upi: 'vikram.sethi@okicici' } }
-    ];
-  });
-
-  // City & Live Geolocation State
-  const [currentCity, setCurrentCityState] = useState<CityInfo>(() => {
-    const saved = localStorage.getItem('dihadi_current_city_v6');
+  const [customerAccounts, setCustomerAccounts] = useState<UserAccount[]>(
+    () => {
+      const saved = localStorage.getItem("dihadi_customer_accounts_v6");
+      if (saved) return JSON.parse(saved);
+      return [
+        {
+          id: "pooja",
+          phone: "9910088221",
+          password: "123",
+          name: "Pooja Verma",
+          role: "customer",
+          extraData: {
+            area: "Model Town",
+            address: "House 142, Model Town, Ludhiana, Punjab",
+            upi: "pooja.verma@okhdfcbank",
+          },
+        },
+        {
+          id: "vikram",
+          phone: "9910077665",
+          password: "123",
+          name: "Vikram Sethi",
+          role: "customer",
+          extraData: {
+            area: "Sarabha Nagar",
+            address: "House 18, Block B, Sarabha Nagar, Ludhiana, Punjab",
+            upi: "vikram.sethi@okicici",
+          },
+        },
+      ];
+    },
+  );
+  /*  City & Live Geolocation State  */ const [
+    currentCity,
+    setCurrentCityState,
+  ] = useState<CityInfo>(() => {
+    const saved = localStorage.getItem("dihadi_current_city_v6");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.name) return parsed;
       } catch (e) {}
     }
-    return SUPPORTED_CITIES[0]; // Ludhiana, Punjab
+    return SUPPORTED_CITIES[0]; /*  Ludhiana, Punjab  */
   });
-
-  const [currentResolvedAddress, setCurrentResolvedAddress] = useState<ResolvedAddress | null>(() => {
-    const saved = localStorage.getItem('dihadi_resolved_address_v6');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentResolvedAddress, setCurrentResolvedAddress] =
+    useState<ResolvedAddress | null>(() => {
+      const saved = localStorage.getItem("dihadi_resolved_address_v6");
+      return saved ? JSON.parse(saved) : null;
+    });
   const [isLocating, setIsLocating] = useState(false);
-
   const setCurrentCity = (city: CityInfo) => {
     setCurrentCityState(city);
-    localStorage.setItem('dihadi_current_city_v6', JSON.stringify(city));
-    playSound('gps_ping');
+    localStorage.setItem("dihadi_current_city_v6", JSON.stringify(city));
+    playSound("gps_ping");
     showNotification(`City set to ${city.name}, ${city.state}`);
-
-    // Synchronize current worker location & GPS to new city
-    if (currentWorker) {
+    /*  Synchronize current worker location & GPS to new city  */ if (
+      currentWorker
+    ) {
       const areaCoords = getCoordinatesForArea(city.defaultArea, city.name);
       const updatedGps: GpsCoordinates = {
         ...currentWorker.gpsLocation,
@@ -749,7 +724,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         lng: areaCoords.lng,
         city: city.name,
         area: city.defaultArea,
-        lastUpdated: 'Just now',
+        lastUpdated: "Just now",
       };
       const updated: WorkerProfile = {
         ...currentWorker,
@@ -761,11 +736,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         gpsLocation: updatedGps,
       };
       setCurrentWorker(updated);
-      setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+      setWorkers((prev) =>
+        prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+      );
     }
-
-    // Synchronize current customer location & GPS to new city
-    if (currentCustomer) {
+    /*  Synchronize current customer location & GPS to new city  */ if (
+      currentCustomer
+    ) {
       const areaCoords = getCoordinatesForArea(city.defaultArea, city.name);
       const updatedCustomer: CustomerProfile = {
         ...currentCustomer,
@@ -779,120 +756,129 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           city: city.name,
           area: city.defaultArea,
           address: `${city.defaultArea}, ${city.name}, ${city.state}`,
-          lastUpdated: 'Just now',
+          lastUpdated: "Just now",
         },
       };
       setCurrentCustomer(updatedCustomer);
     }
   };
-
-  /**
-   * Snap to Real-World Address:
-   * Combines HTML5 Geolocation with Reverse Geocoding API to pinpoint
-   * exact street-level coordinates and update active city & profiles.
-   */
-  const snapToRealWorldAddress = async (): Promise<ResolvedAddress | null> => {
-    if (!('geolocation' in navigator)) {
-      showNotification('Geolocation is not supported by your browser.');
-      return null;
-    }
-
-    setIsLocating(true);
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = +pos.coords.latitude.toFixed(6);
-          const lng = +pos.coords.longitude.toFixed(6);
-          const accuracy = Math.round(pos.coords.accuracy) || 4;
-
-          try {
-            const resolved = await reverseGeocodeLocation(lat, lng, accuracy);
-            setCurrentResolvedAddress(resolved);
-            localStorage.setItem('dihadi_resolved_address_v6', JSON.stringify(resolved));
-
-            const detectedCity = detectCityFromCoords(lat, lng);
-            const activeCityInfo: CityInfo = {
-              id: detectedCity.id,
-              name: resolved.city || detectedCity.name,
-              state: resolved.state || detectedCity.state,
-              lat,
-              lng,
-              defaultArea: resolved.sublocality || detectedCity.defaultArea,
-            };
-
-            setCurrentCityState(activeCityInfo);
-            localStorage.setItem('dihadi_current_city_v6', JSON.stringify(activeCityInfo));
-
-            if (currentWorker) {
-              updateWorkerGps({
+  /** * Snap to Real-World Address: * Combines HTML5 Geolocation with Reverse Geocoding API to pinpoint * exact street-level coordinates and update active city & profiles. */ const snapToRealWorldAddress =
+    async (): Promise<ResolvedAddress | null> => {
+      if (!("geolocation" in navigator)) {
+        showNotification("Geolocation is not supported by your browser.");
+        return null;
+      }
+      setIsLocating(true);
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const lat = +pos.coords.latitude.toFixed(6);
+            const lng = +pos.coords.longitude.toFixed(6);
+            const accuracy = Math.round(pos.coords.accuracy) || 4;
+            try {
+              const resolved = await reverseGeocodeLocation(lat, lng, accuracy);
+              setCurrentResolvedAddress(resolved);
+              localStorage.setItem(
+                "dihadi_resolved_address_v6",
+                JSON.stringify(resolved),
+              );
+              const detectedCity = detectCityFromCoords(lat, lng);
+              const activeCityInfo: CityInfo = {
+                id: detectedCity.id,
+                name: resolved.city || detectedCity.name,
+                state: resolved.state || detectedCity.state,
                 lat,
                 lng,
-                city: activeCityInfo.name,
-                area: resolved.sublocality || activeCityInfo.defaultArea,
-                accuracyMeters: accuracy,
-                heading: pos.coords.heading ? Math.round(pos.coords.heading) : 45,
-                lastUpdated: 'Just now',
-              });
+                defaultArea: resolved.sublocality || detectedCity.defaultArea,
+              };
+              setCurrentCityState(activeCityInfo);
+              localStorage.setItem(
+                "dihadi_current_city_v6",
+                JSON.stringify(activeCityInfo),
+              );
+              if (currentWorker) {
+                updateWorkerGps({
+                  lat,
+                  lng,
+                  city: activeCityInfo.name,
+                  area: resolved.sublocality || activeCityInfo.defaultArea,
+                  accuracyMeters: accuracy,
+                  heading: pos.coords.heading
+                    ? Math.round(pos.coords.heading)
+                    : 45,
+                  lastUpdated: "Just now",
+                });
+              }
+              if (currentCustomer) {
+                updateCustomerGps({
+                  lat,
+                  lng,
+                  city: activeCityInfo.name,
+                  area: resolved.sublocality || activeCityInfo.defaultArea,
+                  address: resolved.formattedAddress,
+                  accuracyMeters: accuracy,
+                  lastUpdated: "Just now",
+                });
+              }
+              setIsLocating(false);
+              playSound("gps_ping");
+              showNotification(`📍 Snapped to: ${resolved.formattedAddress}`);
+              resolve(resolved);
+            } catch (err) {
+              console.error("Reverse geocode resolution failed:", err);
+              setIsLocating(false);
+              resolve(null);
             }
-
-            if (currentCustomer) {
-              updateCustomerGps({
-                lat,
-                lng,
-                city: activeCityInfo.name,
-                area: resolved.sublocality || activeCityInfo.defaultArea,
-                address: resolved.formattedAddress,
-                accuracyMeters: accuracy,
-                lastUpdated: 'Just now',
-              });
-            }
-
-            setIsLocating(false);
-            playSound('gps_ping');
-            showNotification(`📍 Snapped to: ${resolved.formattedAddress}`);
-            resolve(resolved);
-          } catch (err) {
-            console.error('Reverse geocode resolution failed:', err);
-            setIsLocating(false);
+          },
+          (err) => {
+            console.debug(
+              "Geolocation request error or permission denied:",
+              err,
+            );
+            setIsLocating(
+              false,
+            ); /* Fallback to active city coordinates without throwing error */
             resolve(null);
-          }
-        },
-        (err) => {
-          console.debug('Geolocation request error or permission denied:', err);
-          setIsLocating(false);
-          // Fallback to active city coordinates without throwing error
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 8000 }
-      );
-    });
-  };
-
+          },
+          { enableHighAccuracy: true, timeout: 8000 },
+        );
+      });
+    };
   const detectAndSetLiveLocation = async (): Promise<boolean> => {
     const res = await snapToRealWorldAddress();
     return !!res;
   };
-
   useEffect(() => {
     detectAndSetLiveLocation();
   }, []);
-
-  // Calling & Modal states
-  const [activeCall, setActiveCall] = useState<CallSession | null>(null);
+  /*  Calling & Modal states  */ const [activeCall, setActiveCall] =
+    useState<CallSession | null>(null);
   const [activeGpsJob, setActiveGpsJob] = useState<Job | null>(null);
-  const [activeUpiPaymentJob, setActiveUpiPaymentJob] = useState<Job | null>(null);
-  const [activeMultiChannelJob, setActiveMultiChannelJob] = useState<Job | null>(null);
-  const [activeMultiChannelWorker, setActiveMultiChannelWorker] = useState<WorkerProfile | null>(null);
-  const [activeShortlistJob, setActiveShortlistJob] = useState<Job | null>(null);
-  
-  // Automated Job Matching Engine state
-  const [latestMatchedJob, setLatestMatchedJob] = useState<Job | null>(null);
-  const [latestTop5Matches, setLatestTop5Matches] = useState<HyperlocalMatchResult[]>([]);
-
-  const [chatNotifications, setChatNotifications] = useState<ChatNotificationItem[]>([]);
-  const [pendingRoleNotifications, setPendingRoleNotifications] = useState<ChatNotificationItem[]>(() => {
+  const [activeUpiPaymentJob, setActiveUpiPaymentJob] = useState<Job | null>(
+    null,
+  );
+  const [activeMultiChannelJob, setActiveMultiChannelJob] =
+    useState<Job | null>(null);
+  const [activeMultiChannelWorker, setActiveMultiChannelWorker] =
+    useState<WorkerProfile | null>(null);
+  const [activeShortlistJob, setActiveShortlistJob] = useState<Job | null>(
+    null,
+  );
+  /*  Automated Job Matching Engine state  */ const [
+    latestMatchedJob,
+    setLatestMatchedJob,
+  ] = useState<Job | null>(null);
+  const [latestTop5Matches, setLatestTop5Matches] = useState<
+    HyperlocalMatchResult[]
+  >([]);
+  const [chatNotifications, setChatNotifications] = useState<
+    ChatNotificationItem[]
+  >([]);
+  const [pendingRoleNotifications, setPendingRoleNotifications] = useState<
+    ChatNotificationItem[]
+  >(() => {
     try {
-      const saved = localStorage.getItem('dihadi_pending_chat_notifs_v1');
+      const saved = localStorage.getItem("dihadi_pending_chat_notifs_v1");
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -902,301 +888,347 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isOpen: boolean;
     job?: Job | null;
     targetPerson?: any;
-    role?: 'worker' | 'customer' | 'admin';
+    role?: "worker" | "customer" | "admin";
   } | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
-
   const connectedCluster = {
-    connectUrl: 'https://dihadi-connect.vercel.app/',
-    controlUrl: 'https://dihadi-control.vercel.app/',
-    workUrl: 'https://dihadi-work.vercel.app/',
+    connectUrl: "https://dihadi-connect.vercel.app/",
+    controlUrl: "https://dihadi-control.vercel.app/",
+    workUrl: "https://dihadi-work.vercel.app/",
   };
-
-  // 1. Real-time Firestore synchronization for Workers
-  useEffect(() => {
+  /*  1. Real-time Firestore synchronization for Workers  */ useEffect(() => {
     try {
-      const unsub = onSnapshot(collection(db, COLLECTIONS.WORKERS), (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteWorkers: WorkerProfile[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as WorkerProfile;
-            if (data && data.id) {
-              remoteWorkers.push(data);
+      const unsub = onSnapshot(
+        collection(db, COLLECTIONS.WORKERS),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteWorkers: WorkerProfile[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as WorkerProfile;
+              if (data && data.id) {
+                remoteWorkers.push(data);
+              }
+            });
+            if (remoteWorkers.length > 0) {
+              setWorkers(remoteWorkers);
+              setIsFirebaseConnected(true);
             }
-          });
-          if (remoteWorkers.length > 0) {
-            setWorkers(remoteWorkers);
-            setIsFirebaseConnected(true);
           }
-        }
-      }, (err) => {
-        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.WORKERS);
-      });
+        },
+        (err) => {
+          handleFirestoreError(err, OperationType.LIST, COLLECTIONS.WORKERS);
+        },
+      );
       return () => unsub();
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, COLLECTIONS.WORKERS);
     }
   }, []);
-
-  // 2. Real-time Firestore synchronization for Jobs
-  useEffect(() => {
+  /* Real-time Firestore synchronization for Jobs */ useEffect(() => {
     try {
-      const unsub = onSnapshot(collection(db, COLLECTIONS.JOBS), (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteJobs: Job[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as Job;
-            if (data && data.id) {
-              remoteJobs.push(data);
-            }
-          });
-          setJobs(remoteJobs);
-          setIsFirebaseConnected(true);
-        }
-      }, (err) => {
-        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.JOBS);
-      });
+      const unsub = onSnapshot(
+        collection(db, COLLECTIONS.JOBS),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteJobs: Job[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as Job;
+              if (data && data.id) {
+                remoteJobs.push(data);
+              }
+            });
+            setJobs(remoteJobs);
+            setIsFirebaseConnected(true);
+          }
+        },
+        (err) => {
+          handleFirestoreError(err, OperationType.LIST, COLLECTIONS.JOBS);
+        },
+      );
       return () => unsub();
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, COLLECTIONS.JOBS);
     }
   }, []);
-
-  // 3. Real-time Firestore synchronization for KYC Verifications
-  useEffect(() => {
+  /* Real-time Firestore synchronization for KYC Verifications */ useEffect(() => {
     try {
-      const unsub = onSnapshot(collection(db, COLLECTIONS.VERIFICATIONS), (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteVerifs: VerificationRequest[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as VerificationRequest;
-            if (data && data.id) {
-              remoteVerifs.push(data);
-            }
-          });
-          setVerifications(remoteVerifs);
-        }
-      }, (err) => {
-        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.VERIFICATIONS);
-      });
+      const unsub = onSnapshot(
+        collection(db, COLLECTIONS.VERIFICATIONS),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteVerifs: VerificationRequest[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as VerificationRequest;
+              if (data && data.id) {
+                remoteVerifs.push(data);
+              }
+            });
+            setVerifications(remoteVerifs);
+          }
+        },
+        (err) => {
+          handleFirestoreError(
+            err,
+            OperationType.LIST,
+            COLLECTIONS.VERIFICATIONS,
+          );
+        },
+      );
       return () => unsub();
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, COLLECTIONS.VERIFICATIONS);
     }
   }, []);
-
-  // 4. Real-time Firestore synchronization for Disputes
-  useEffect(() => {
+  /* Real-time Firestore synchronization for Disputes */ useEffect(() => {
     try {
-      const unsub = onSnapshot(collection(db, COLLECTIONS.DISPUTES), (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteDisputes: DisputeItem[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as DisputeItem;
-            if (data && data.id) {
-              remoteDisputes.push(data);
-            }
-          });
-          setDisputes(remoteDisputes);
-        }
-      }, (err) => {
-        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.DISPUTES);
-      });
+      const unsub = onSnapshot(
+        collection(db, COLLECTIONS.DISPUTES),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteDisputes: DisputeItem[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as DisputeItem;
+              if (data && data.id) {
+                remoteDisputes.push(data);
+              }
+            });
+            setDisputes(remoteDisputes);
+          }
+        },
+        (err) => {
+          handleFirestoreError(err, OperationType.LIST, COLLECTIONS.DISPUTES);
+        },
+      );
       return () => unsub();
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, COLLECTIONS.DISPUTES);
     }
   }, []);
-
-  // 5. Real-time Firestore synchronization for Registered Accounts (Credentials & Passwords)
-  useEffect(() => {
+  /* Real-time Firestore synchronization for Registered Accounts (Credentials & Passwords) */ useEffect(() => {
     try {
-      const unsub = onSnapshot(collection(db, COLLECTIONS.ACCOUNTS), (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteAccounts: UserAccount[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as UserAccount;
-            if (data && (data.id || data.phone)) {
-              remoteAccounts.push(data);
+      const unsub = onSnapshot(
+        collection(db, COLLECTIONS.ACCOUNTS),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteAccounts: UserAccount[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as UserAccount;
+              if (data && (data.id || data.phone)) {
+                remoteAccounts.push(data);
+              }
+            });
+            if (remoteAccounts.length > 0) {
+              /*  Merge worker accounts  */ setWorkerAccounts((prev) => {
+                const updated = [...prev];
+                remoteAccounts
+                  .filter((a) => a.role === "worker")
+                  .forEach((rem) => {
+                    const idx = updated.findIndex(
+                      (u) =>
+                        u.id?.toLowerCase() === rem.id?.toLowerCase() ||
+                        (u.phone &&
+                          rem.phone &&
+                          u.phone.replace(/[^0-9]/g, "").slice(-10) ===
+                            rem.phone.replace(/[^0-9]/g, "").slice(-10)),
+                    );
+                    if (idx >= 0) {
+                      updated[idx] = { ...updated[idx], ...rem };
+                    } else {
+                      updated.push(rem);
+                    }
+                  });
+                return updated;
+              });
+              /*  Merge customer accounts  */ setCustomerAccounts((prev) => {
+                const updated = [...prev];
+                remoteAccounts
+                  .filter((a) => a.role === "customer")
+                  .forEach((rem) => {
+                    const idx = updated.findIndex(
+                      (u) =>
+                        u.id?.toLowerCase() === rem.id?.toLowerCase() ||
+                        (u.phone &&
+                          rem.phone &&
+                          u.phone.replace(/[^0-9]/g, "").slice(-10) ===
+                            rem.phone.replace(/[^0-9]/g, "").slice(-10)),
+                    );
+                    if (idx >= 0) {
+                      updated[idx] = { ...updated[idx], ...rem };
+                    } else {
+                      updated.push(rem);
+                    }
+                  });
+                return updated;
+              });
             }
-          });
-
-          if (remoteAccounts.length > 0) {
-            // Merge worker accounts
-            setWorkerAccounts((prev) => {
-              const updated = [...prev];
-              remoteAccounts.filter(a => a.role === 'worker').forEach((rem) => {
-                const idx = updated.findIndex(u => u.id?.toLowerCase() === rem.id?.toLowerCase() || (u.phone && rem.phone && u.phone.replace(/[^0-9]/g, '').slice(-10) === rem.phone.replace(/[^0-9]/g, '').slice(-10)));
-                if (idx >= 0) {
-                  updated[idx] = { ...updated[idx], ...rem };
-                } else {
-                  updated.push(rem);
-                }
-              });
-              return updated;
-            });
-
-            // Merge customer accounts
-            setCustomerAccounts((prev) => {
-              const updated = [...prev];
-              remoteAccounts.filter(a => a.role === 'customer').forEach((rem) => {
-                const idx = updated.findIndex(u => u.id?.toLowerCase() === rem.id?.toLowerCase() || (u.phone && rem.phone && u.phone.replace(/[^0-9]/g, '').slice(-10) === rem.phone.replace(/[^0-9]/g, '').slice(-10)));
-                if (idx >= 0) {
-                  updated[idx] = { ...updated[idx], ...rem };
-                } else {
-                  updated.push(rem);
-                }
-              });
-              return updated;
-            });
           }
-        }
-      }, (err) => {
-        handleFirestoreError(err, OperationType.LIST, COLLECTIONS.ACCOUNTS);
-      });
+        },
+        (err) => {
+          handleFirestoreError(err, OperationType.LIST, COLLECTIONS.ACCOUNTS);
+        },
+      );
       return () => unsub();
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, COLLECTIONS.ACCOUNTS);
     }
   }, []);
-
   // Persistence hooks
   useEffect(() => {
-    localStorage.setItem('dihadi_workers_zero_v6', JSON.stringify(workers));
+    localStorage.setItem("dihadi_workers_zero_v6", JSON.stringify(workers));
   }, [workers]);
-
   useEffect(() => {
-    localStorage.setItem('dihadi_jobs_zero_v6', JSON.stringify(jobs));
+    localStorage.setItem("dihadi_jobs_zero_v6", JSON.stringify(jobs));
   }, [jobs]);
-
   useEffect(() => {
-    localStorage.setItem('dihadi_verifications_zero_v6', JSON.stringify(verifications));
+    localStorage.setItem(
+      "dihadi_verifications_zero_v6",
+      JSON.stringify(verifications),
+    );
   }, [verifications]);
-
   useEffect(() => {
-    localStorage.setItem('dihadi_disputes_zero_v6', JSON.stringify(disputes));
+    localStorage.setItem("dihadi_disputes_zero_v6", JSON.stringify(disputes));
   }, [disputes]);
-
   useEffect(() => {
-    localStorage.setItem('dihadi_worker_accounts_v6', JSON.stringify(workerAccounts));
+    localStorage.setItem(
+      "dihadi_worker_accounts_v6",
+      JSON.stringify(workerAccounts),
+    );
   }, [workerAccounts]);
-
   useEffect(() => {
-    localStorage.setItem('dihadi_customer_accounts_v6', JSON.stringify(customerAccounts));
+    localStorage.setItem(
+      "dihadi_customer_accounts_v6",
+      JSON.stringify(customerAccounts),
+    );
   }, [customerAccounts]);
-
   useEffect(() => {
     if (currentWorker) {
-      localStorage.setItem('dihadi_current_worker_v6', JSON.stringify(currentWorker));
+      localStorage.setItem(
+        "dihadi_current_worker_v6",
+        JSON.stringify(currentWorker),
+      );
     } else {
-      localStorage.removeItem('dihadi_current_worker_v6');
+      localStorage.removeItem("dihadi_current_worker_v6");
     }
   }, [currentWorker]);
-
-  // Keep currentWorker synchronized whenever workers list or verifications list updates
-  useEffect(() => {
+  /* Keep currentWorker synchronized whenever workers list or verifications list updates */ useEffect(() => {
     if (!currentWorker) return;
-    const cleanPhone = currentWorker.phone.replace(/[^0-9]/g, '').slice(-10);
+    const cleanPhone = currentWorker.phone.replace(/[^0-9]/g, "").slice(-10);
     const cleanName = currentWorker.name.trim().toLowerCase();
-
     const matchedWorker = workers.find((w) => {
       if (w.id === currentWorker.id) return true;
-      const wCleanPhone = w.phone.replace(/[^0-9]/g, '').slice(-10);
-      return (wCleanPhone && cleanPhone && wCleanPhone === cleanPhone) ||
-             w.name.trim().toLowerCase() === cleanName;
+      const wCleanPhone = w.phone.replace(/[^0-9]/g, "").slice(-10);
+      return (
+        (wCleanPhone && cleanPhone && wCleanPhone === cleanPhone) ||
+        w.name.trim().toLowerCase() === cleanName
+      );
     });
-
     const matchedVerification = verifications.find((v) => {
-      const vCleanPhone = v.phone.replace(/[^0-9]/g, '').slice(-10);
-      return (vCleanPhone && cleanPhone && vCleanPhone === cleanPhone) ||
-             v.workerName.trim().toLowerCase() === cleanName;
+      const vCleanPhone = v.phone.replace(/[^0-9]/g, "").slice(-10);
+      return (
+        (vCleanPhone && cleanPhone && vCleanPhone === cleanPhone) ||
+        v.workerName.trim().toLowerCase() === cleanName
+      );
     });
-
-    const isVerifiedNow = matchedWorker ? matchedWorker.isVerified : (matchedVerification?.status === 'approved');
-    const targetBadge = isVerifiedNow ? 'Aadhaar Verified' : (matchedWorker?.badge || (matchedVerification?.status === 'pending' ? 'KYC Under Review' : 'Registered Worker'));
-
-    if (currentWorker.isVerified !== isVerifiedNow || currentWorker.badge !== targetBadge) {
-      setCurrentWorker((curr) => curr ? {
-        ...curr,
-        isVerified: isVerifiedNow,
-        badge: targetBadge
-      } : null);
+    const isVerifiedNow = matchedWorker
+      ? matchedWorker.isVerified
+      : matchedVerification?.status === "approved";
+    const targetBadge = isVerifiedNow
+      ? "Aadhaar Verified"
+      : matchedWorker?.badge ||
+        (matchedVerification?.status === "pending"
+          ? "KYC Under Review"
+          : "Registered Worker");
+    if (
+      currentWorker.isVerified !== isVerifiedNow ||
+      currentWorker.badge !== targetBadge
+    ) {
+      setCurrentWorker((curr) =>
+        curr
+          ? { ...curr, isVerified: isVerifiedNow, badge: targetBadge }
+          : null,
+      );
     }
   }, [workers, verifications]);
-
   // Ensure worker & customer location stay strictly aligned with city & GPS
   useEffect(() => {
     if (currentWorker) {
       const lat = currentWorker.gpsLocation?.lat;
       const lng = currentWorker.gpsLocation?.lng;
-      const currentCityName = currentCity?.name || 'Ludhiana';
-      const isLudhiana = currentCityName.toLowerCase().includes('ludhiana');
-      
-      const isStaleDelhi = currentWorker.location?.city?.toLowerCase().includes('delhi') ||
-                           currentWorker.location?.area?.toLowerCase().includes('okhla') ||
-                           currentWorker.gpsLocation?.city?.toLowerCase().includes('delhi') ||
-                           currentWorker.gpsLocation?.area?.toLowerCase().includes('okhla');
-
+      const currentCityName = currentCity?.name || "Ludhiana";
+      const isLudhiana = currentCityName.toLowerCase().includes("ludhiana");
+      const isStaleDelhi =
+        currentWorker.location?.city?.toLowerCase().includes("delhi") ||
+        currentWorker.location?.area?.toLowerCase().includes("okhla") ||
+        currentWorker.gpsLocation?.city?.toLowerCase().includes("delhi") ||
+        currentWorker.gpsLocation?.area?.toLowerCase().includes("okhla");
       if (isLudhiana && isStaleDelhi) {
-        const area = currentCity.defaultArea || 'Model Town';
-        const coords = getCoordinatesForArea(area, 'Ludhiana');
+        const area = currentCity.defaultArea || "Model Town";
+        const coords = getCoordinatesForArea(area, "Ludhiana");
         const updatedGps: GpsCoordinates = {
           ...currentWorker.gpsLocation,
           lat: lat && lat > 30 && lat < 32 ? lat : coords.lat,
           lng: lng && lng > 74 && lng < 77 ? lng : coords.lng,
-          city: 'Ludhiana',
+          city: "Ludhiana",
           area: area,
-          lastUpdated: 'Just now',
+          lastUpdated: "Just now",
         };
         const updated: WorkerProfile = {
           ...currentWorker,
-          location: {
-            ...currentWorker.location,
-            city: 'Ludhiana',
-            area: area,
-          },
+          location: { ...currentWorker.location, city: "Ludhiana", area: area },
           gpsLocation: updatedGps,
         };
         setCurrentWorker(updated);
-        setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+        setWorkers((prev) =>
+          prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+        );
       }
     }
   }, [currentCity]);
-
   useEffect(() => {
     if (currentCustomer) {
-      localStorage.setItem('dihadi_current_customer_v6', JSON.stringify(currentCustomer));
+      localStorage.setItem(
+        "dihadi_current_customer_v6",
+        JSON.stringify(currentCustomer),
+      );
     } else {
-      localStorage.removeItem('dihadi_current_customer_v6');
+      localStorage.removeItem("dihadi_current_customer_v6");
     }
   }, [currentCustomer]);
-
   useEffect(() => {
     if (currentAdmin) {
-      localStorage.setItem('dihadi_current_admin_v6', JSON.stringify(currentAdmin));
+      localStorage.setItem(
+        "dihadi_current_admin_v6",
+        JSON.stringify(currentAdmin),
+      );
     } else {
-      localStorage.removeItem('dihadi_current_admin_v6');
+      localStorage.removeItem("dihadi_current_admin_v6");
     }
   }, [currentAdmin]);
-
   const showNotification = (msgOrTitle: string, maybeMessage?: string) => {
-    const formatted = maybeMessage ? `${msgOrTitle}: ${maybeMessage}` : msgOrTitle;
+    const formatted = maybeMessage
+      ? `${msgOrTitle}: ${maybeMessage}`
+      : msgOrTitle;
     setNotification(formatted);
     setTimeout(() => {
       setNotification((curr) => (curr === formatted ? null : curr));
     }, 4500);
   };
-
   const speak = (text: string) => {
     speakText(text, currentLanguage);
   };
-
-  // Calling handlers
-  const startCall = (
-    caller: { name: string; role: 'worker' | 'customer' | 'admin'; phone: string },
-    receiver: { name: string; role: 'worker' | 'customer' | 'admin'; phone: string },
-    jobTitle?: string
+  /*  Calling handlers  */ const startCall = (
+    caller: {
+      name: string;
+      role: "worker" | "customer" | "admin";
+      phone: string;
+    },
+    receiver: {
+      name: string;
+      role: "worker" | "customer" | "admin";
+      phone: string;
+    },
+    jobTitle?: string,
   ) => {
     const session: CallSession = {
       id: `call-${Date.now().toString().slice(-4)}`,
@@ -1207,7 +1239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       receiverRole: receiver.role,
       receiverPhone: receiver.phone,
       jobTitle,
-      status: 'calling',
+      status: "calling",
       startedAt: Date.now(),
       durationSeconds: 0,
       isMuted: false,
@@ -1216,56 +1248,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveCall(session);
     showNotification(`📞 Calling ${receiver.name}...`);
   };
-
   const endCall = () => {
     setActiveCall(null);
   };
-
   const openGpsRadar = (job: Job) => {
     setActiveGpsJob(job);
-    playSound('gps_ping');
+    playSound("gps_ping");
   };
-
   const closeGpsRadar = () => {
     setActiveGpsJob(null);
   };
-
   const openUpiPayment = (job: Job) => {
     setActiveUpiPaymentJob(job);
-    playSound('click');
+    playSound("click");
   };
-
   const closeUpiPayment = () => {
     setActiveUpiPaymentJob(null);
   };
-
   const openMultiChannelModal = (job: Job, worker?: WorkerProfile) => {
     setActiveMultiChannelJob(job);
-    const target = worker || (job.assignedWorkerId ? workers.find(w => w.id === job.assignedWorkerId) : null) || workers[0] || currentWorker;
+    const target =
+      worker ||
+      (job.assignedWorkerId
+        ? workers.find((w) => w.id === job.assignedWorkerId)
+        : null) ||
+      workers[0] ||
+      currentWorker;
     setActiveMultiChannelWorker(target || null);
-    playSound('incoming_job');
+    playSound("incoming_job");
   };
-
   const closeMultiChannelModal = () => {
     setActiveMultiChannelJob(null);
     setActiveMultiChannelWorker(null);
   };
-
   const openTop5Shortlist = (job: Job) => {
     setActiveShortlistJob(job);
-    playSound('click');
+    playSound("click");
   };
-
   const closeTop5Shortlist = () => {
     setActiveShortlistJob(null);
   };
-
-  // Automated Job Matching Engine Helpers
-  const getTop5WorkersForJob = (jobOrCriteria: Job | { trade: TradeType; jobGps?: GpsCoordinates; lat?: number; lng?: number; area?: string; dailyWage?: number; maxRadiusKm?: number }): HyperlocalMatchResult[] => {
-    const jobLat = (jobOrCriteria as Job).jobGps?.lat ?? (jobOrCriteria as any).lat ?? currentCustomer?.gpsLocation.lat ?? currentCity.lat;
-    const jobLng = (jobOrCriteria as Job).jobGps?.lng ?? (jobOrCriteria as any).lng ?? currentCustomer?.gpsLocation.lng ?? currentCity.lng;
+  /*  Automated Job Matching Engine Helpers  */ const getTop5WorkersForJob = (
+    jobOrCriteria:
+      | Job
+      | {
+          trade: TradeType;
+          jobGps?: GpsCoordinates;
+          lat?: number;
+          lng?: number;
+          area?: string;
+          dailyWage?: number;
+          maxRadiusKm?: number;
+        },
+  ): HyperlocalMatchResult[] => {
+    const jobLat =
+      (jobOrCriteria as Job).jobGps?.lat ??
+      (jobOrCriteria as any).lat ??
+      currentCustomer?.gpsLocation.lat ??
+      currentCity.lat;
+    const jobLng =
+      (jobOrCriteria as Job).jobGps?.lng ??
+      (jobOrCriteria as any).lng ??
+      currentCustomer?.gpsLocation.lng ??
+      currentCity.lng;
     const maxRadius = (jobOrCriteria as any).maxRadiusKm || 10.0;
-
     return getTop5Shortlist(workers, {
       trade: jobOrCriteria.trade,
       lat: jobLat,
@@ -1275,11 +1321,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       language: currentLanguage,
     });
   };
-
   const matchJobWithWorkers = (job: Job) => {
-    const jobLat = job.jobGps?.lat || currentCustomer?.gpsLocation.lat || currentCity.lat;
-    const jobLng = job.jobGps?.lng || currentCustomer?.gpsLocation.lng || currentCity.lng;
-
+    const jobLat =
+      job.jobGps?.lat || currentCustomer?.gpsLocation.lat || currentCity.lat;
+    const jobLng =
+      job.jobGps?.lng || currentCustomer?.gpsLocation.lng || currentCity.lng;
     const allMatches = matchHyperlocalWorkers(workers, {
       trade: job.trade,
       lat: jobLat,
@@ -1288,7 +1334,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       budget: job.dailyWage,
       language: currentLanguage,
     });
-
     const top5 = allMatches.slice(0, 5);
     return {
       matches: top5,
@@ -1296,81 +1341,91 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       topMatch: top5.length > 0 ? top5[0] : null,
     };
   };
-
   const clearMatchedSuggestions = () => {
     setLatestMatchedJob(null);
     setLatestTop5Matches([]);
   };
-
-  // Real-time Chat Notifications System
-  const triggerChatNotification = (item: ChatNotificationItem) => {
-    const targetRecipientRole = (item.recipientRole || 'customer').toLowerCase();
-    const activeRole = (currentRole || '').toLowerCase();
-
-    // Only display popup if the user is currently viewing the recipient's screen
-    if (activeRole === targetRecipientRole) {
+  /*  Real-time Chat Notifications System  */ const triggerChatNotification = (
+    item: ChatNotificationItem,
+  ) => {
+    const targetRecipientRole = (
+      item.recipientRole || "customer"
+    ).toLowerCase();
+    const activeRole = (currentRole || "").toLowerCase();
+    /* Only display popup if the user is currently viewing the recipient's screen */ if (
+      activeRole === targetRecipientRole
+    ) {
       setChatNotifications((prev) => {
         const filtered = prev.filter((p) => p.id !== item.id);
         return [item, ...filtered].slice(0, 3);
       });
-      playSound('message');
+      playSound("message");
     } else {
-      // Otherwise store in pending queue so it pops up when the user switches to the recipient side!
-      setPendingRoleNotifications((prev) => {
-        const updated = [item, ...prev.filter((p) => p.id !== item.id)].slice(0, 10);
-        try {
-          localStorage.setItem('dihadi_pending_chat_notifs_v1', JSON.stringify(updated));
-        } catch (err) {}
-        return updated;
-      });
+      /* Otherwise store in pending queue so it pops up when the user switches to the recipient side! */ setPendingRoleNotifications(
+        (prev) => {
+          const updated = [item, ...prev.filter((p) => p.id !== item.id)].slice(
+            0,
+            10,
+          );
+          try {
+            localStorage.setItem(
+              "dihadi_pending_chat_notifs_v1",
+              JSON.stringify(updated),
+            );
+          } catch (err) {}
+          return updated;
+        },
+      );
     }
   };
-
   const dismissChatNotification = (id: string) => {
     setChatNotifications((prev) => prev.filter((item) => item.id !== id));
     setPendingRoleNotifications((prev) => {
       const remaining = prev.filter((item) => item.id !== id);
       try {
-        localStorage.setItem('dihadi_pending_chat_notifs_v1', JSON.stringify(remaining));
+        localStorage.setItem(
+          "dihadi_pending_chat_notifs_v1",
+          JSON.stringify(remaining),
+        );
       } catch (err) {}
       return remaining;
     });
   };
-
   // Check and display pending notifications when the user switches role
   useEffect(() => {
-    if (!currentRole || currentRole === 'select_role') return;
+    if (!currentRole || currentRole === "select_role") return;
     const activeRole = currentRole.toLowerCase();
-
     setPendingRoleNotifications((prev) => {
       const matching = prev.filter(
-        (item) => (item.recipientRole || '').toLowerCase() === activeRole
+        (item) => (item.recipientRole || "").toLowerCase() === activeRole,
       );
-
       if (matching.length > 0) {
         setChatNotifications((curr) => {
           const combined = [...matching, ...curr];
-          const unique = Array.from(new Map(combined.map((m) => [m.id, m])).values()).slice(0, 3);
+          const unique = Array.from(
+            new Map(combined.map((m) => [m.id, m])).values(),
+          ).slice(0, 3);
           return unique;
         });
-        playSound('message');
-
+        playSound("message");
         const remaining = prev.filter(
-          (item) => (item.recipientRole || '').toLowerCase() !== activeRole
+          (item) => (item.recipientRole || "").toLowerCase() !== activeRole,
         );
         try {
-          localStorage.setItem('dihadi_pending_chat_notifs_v1', JSON.stringify(remaining));
+          localStorage.setItem(
+            "dihadi_pending_chat_notifs_v1",
+            JSON.stringify(remaining),
+          );
         } catch (err) {}
         return remaining;
       }
       return prev;
     });
   }, [currentRole]);
-
   const openGlobalChat = (
     job?: Job | null,
     targetPerson?: any,
-    role?: 'worker' | 'customer' | 'admin'
+    role?: "worker" | "customer" | "admin",
   ) => {
     setActiveGlobalChat({
       isOpen: true,
@@ -1378,52 +1433,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       targetPerson: targetPerson || null,
       role:
         role ||
-        (currentRole === 'customer'
-          ? 'customer'
-          : currentRole === 'worker'
-          ? 'worker'
-          : 'customer'),
+        (currentRole === "customer"
+          ? "customer"
+          : currentRole === "worker"
+            ? "worker"
+            : "customer"),
     });
-    playSound('click');
+    playSound("click");
   };
-
   const closeGlobalChat = () => {
     setActiveGlobalChat(null);
   };
-
-  // Listen globally to all chat message dispatch events (worker, customer, or admin)
+  /* Listen globally to all chat message dispatch events */
   useEffect(() => {
     const handleGlobalChatMsgEvent = (e: any) => {
       const detail = e.detail;
       if (!detail) return;
-
       const notifItem: ChatNotificationItem = {
-        id: detail.id || `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        senderRole: detail.senderRole || 'worker',
-        senderName: detail.senderName || 'Contact',
-        senderPhone: detail.senderPhone || '+91 98100 00000',
-        recipientRole: detail.recipientRole || 'customer',
-        recipientName: detail.recipientName || 'You',
-        text: detail.text || 'New message received',
-        timestamp: detail.timestamp || 'Just now',
+        id:
+          detail.id ||
+          `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        senderRole: detail.senderRole || "worker",
+        senderName: detail.senderName || "Contact",
+        senderPhone: detail.senderPhone || "+91 98100 00000",
+        recipientRole: detail.recipientRole || "customer",
+        recipientName: detail.recipientName || "You",
+        text: detail.text || "New message received",
+        timestamp: detail.timestamp || "Just now",
         jobTitle: detail.jobTitle,
         jobId: detail.jobId,
         job: detail.job,
         targetPerson: detail.targetPerson,
         isSender: false,
       };
-
       triggerChatNotification(notifItem);
     };
-
-    window.addEventListener('dihadi_chat_message_event', handleGlobalChatMsgEvent);
+    window.addEventListener(
+      "dihadi_chat_message_event",
+      handleGlobalChatMsgEvent,
+    );
     return () => {
-      window.removeEventListener('dihadi_chat_message_event', handleGlobalChatMsgEvent);
+      window.removeEventListener(
+        "dihadi_chat_message_event",
+        handleGlobalChatMsgEvent,
+      );
     };
   }, [currentRole]);
-
-  // Completely Reset All Data to ZERO
-  const resetToZero = () => {
+  /* Completely Reset All Data to ZERO */ const resetToZero = () => {
     localStorage.clear();
     setWorkers([]);
     setJobs([]);
@@ -1435,224 +1491,215 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveCall(null);
     setActiveGpsJob(null);
     setActiveUpiPaymentJob(null);
-    setCurrentRole('select_role');
-    playSound('click');
-    showNotification('Platform reset: 0 workers, 0 customers, 0 jobs, 0 admins.');
+    setCurrentRole("select_role");
+    playSound("click");
+    showNotification(
+      "Platform reset: 0 workers, 0 customers, 0 jobs, 0 admins.",
+    );
   };
-
-  // Seed sample demo data if explicitly requested
-  const seedSampleData = () => {
-    const demoWorker: WorkerProfile = {
-      id: 'w-demo-1',
-      name: 'Ramesh Kumar',
-      phone: '+91 98101 55678',
-      avatar: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80',
-      primaryTrade: 'Mason',
-      secondaryTrades: ['Tile Worker'],
-      dailyRate: 850,
-      experienceYears: 6,
-      rating: 5.0,
-      reviewCount: 1,
-      completedJobsCount: 0,
-      isOnline: true,
-      location: {
-        area: 'Model Town',
-        city: 'Ludhiana',
-        distanceKm: 1.2,
-      },
-      gpsLocation: {
-        lat: 30.8926,
-        lng: 75.8415,
-        area: 'Model Town',
-        city: 'Ludhiana',
-        accuracyMeters: 4,
-        heading: 45,
-        speedKmh: 0,
-        lastUpdated: 'Just now',
-      },
-      isSharingLiveGps: true,
-      aadhaarNumberMasked: 'XXXX-XXXX-9901',
-      isVerified: true,
-      todayEarnings: 0,
-      totalEarnings: 0,
-      walletBalance: 0,
-      badge: 'Verified Mason',
-      upiId: 'ramesh.mason@okaxis',
-      bankName: 'State Bank of India',
-      accountNumberMasked: '•••• •••• 4819',
-      ifscCode: 'SBIN0004921',
-    };
-
-    const demoCustomer: CustomerProfile = {
-      id: 'c-demo-1',
-      name: 'Pooja Verma',
-      phone: '+91 99100 88221',
-      area: 'Model Town',
-      city: 'Ludhiana',
-      address: 'House 142, Model Town, Ludhiana, Punjab',
-      gpsLocation: {
-        lat: 30.8950,
-        lng: 75.8430,
-        area: 'Model Town',
-        city: 'Ludhiana',
-        address: 'House 142, Model Town, Ludhiana, Punjab',
-      },
-      upiId: 'pooja.verma@okhdfcbank',
-    };
-
-    const demoAdmin: AdminProfile = {
-      id: 'adm-demo-1',
-      name: 'Dihadi Operations',
-      email: 'ops@dihadi.co',
-      role: 'Super Admin',
-    };
-
-    setWorkers([demoWorker]);
-    setCurrentWorker(demoWorker);
-    setCurrentCustomer(demoCustomer);
-    setCurrentAdmin(demoAdmin);
-
-    const demoJob: Job = {
-      id: 'job-demo-101',
-      title: 'Wall Plastering & Brick Repair',
-      trade: 'Mason',
-      description: 'Daily boundary wall brickwork and plastering.',
-      customerName: 'Pooja Verma',
-      customerPhone: '+91 99100 88221',
-      locationAddress: 'House 142, Model Town, Ludhiana, Punjab',
-      area: 'Model Town',
-      distanceKm: 1.2,
-      jobGps: {
-        lat: 30.8950,
-        lng: 75.8430,
-        area: 'Model Town',
-        city: 'Ludhiana',
-        address: 'House 142, Model Town, Ludhiana, Punjab',
-      },
-      dailyWage: 850,
-      durationDays: 1,
-      status: 'broadcast',
-      otpCode: '4829',
-      postedAt: 'Just now',
-      platformFee: 170,
-      workerPayout: 680,
-      isPaid: false,
-      assignedWorkerUpi: 'ramesh.mason@okaxis',
-    };
-
-    setJobs([demoJob]);
-    setVerifications([
-      {
-        id: 'v-demo-1',
-        workerName: 'Ramesh Kumar',
-        trade: 'Mason',
-        phone: '+91 98101 55678',
-        aadhaarNumber: '7829-4412-9901',
+  /* Seed sample demo data if explicitly requested */ const seedSampleData =
+    () => {
+      const demoWorker: WorkerProfile = {
+        id: "w-demo-1",
+        name: "Ramesh Kumar",
+        phone: "+91 98101 55678",
+        avatar:
+          "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80",
+        primaryTrade: "Mason",
+        secondaryTrades: ["Tile Worker"],
+        dailyRate: 850,
         experienceYears: 6,
-        submittedAt: 'Just now',
-        status: 'approved',
-      },
-    ]);
-
-    playSound('success');
-    showNotification('Demo test environment created with UPI & GPS active.');
-  };
-
-  // Helper to match user credentials by User ID, Email, Phone number (last 10 digits), or Name
-  const findAccountMatch = (accounts: UserAccount[], input: string): UserAccount | undefined => {
-    const clean = input.trim().toLowerCase();
-    if (!clean) return undefined;
-    
-    const digits = input.replace(/[^0-9]/g, '');
-    const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
-
-    // 1. Direct ID match (case-insensitive)
-    let match = accounts.find(a => a.id && a.id.trim().toLowerCase() === clean);
-    if (match) return match;
-
-    // 2. Email match
-    match = accounts.find(a => {
-      const email = (a.extraData?.email || (a as any).email || '').trim().toLowerCase();
-      return email && (email === clean || clean === email.split('@')[0]);
-    });
-    if (match) return match;
-
-    // 3. Normalized Phone match
-    if (digits.length >= 7) {
-      match = accounts.find(a => {
-        const aDigits = (a.phone || '').replace(/[^0-9]/g, '');
-        const aLast10 = aDigits.length >= 10 ? aDigits.slice(-10) : aDigits;
-        return aDigits === digits || (last10.length >= 10 && aLast10 === last10);
+        rating: 5.0,
+        reviewCount: 1,
+        completedJobsCount: 0,
+        isOnline: true,
+        location: { area: "Model Town", city: "Ludhiana", distanceKm: 1.2 },
+        gpsLocation: {
+          lat: 30.8926,
+          lng: 75.8415,
+          area: "Model Town",
+          city: "Ludhiana",
+          accuracyMeters: 4,
+          heading: 45,
+          speedKmh: 0,
+          lastUpdated: "Just now",
+        },
+        isSharingLiveGps: true,
+        aadhaarNumberMasked: "XXXX-XXXX-9901",
+        isVerified: true,
+        todayEarnings: 0,
+        totalEarnings: 0,
+        walletBalance: 0,
+        badge: "Verified Mason",
+        upiId: "ramesh.mason@okaxis",
+        bankName: "State Bank of India",
+        accountNumberMasked: "•••• •••• 4819",
+        ifscCode: "SBIN0004921",
+      };
+      const demoCustomer: CustomerProfile = {
+        id: "c-demo-1",
+        name: "Pooja Verma",
+        phone: "+91 99100 88221",
+        area: "Model Town",
+        city: "Ludhiana",
+        address: "House 142, Model Town, Ludhiana, Punjab",
+        gpsLocation: {
+          lat: 30.895,
+          lng: 75.843,
+          area: "Model Town",
+          city: "Ludhiana",
+          address: "House 142, Model Town, Ludhiana, Punjab",
+        },
+        upiId: "pooja.verma@okhdfcbank",
+      };
+      const demoAdmin: AdminProfile = {
+        id: "adm-demo-1",
+        name: "Dihadi Operations",
+        email: "ops@dihadi.co",
+        role: "Super Admin",
+      };
+      setWorkers([demoWorker]);
+      setCurrentWorker(demoWorker);
+      setCurrentCustomer(demoCustomer);
+      setCurrentAdmin(demoAdmin);
+      const demoJob: Job = {
+        id: "job-demo-101",
+        title: "Wall Plastering & Brick Repair",
+        trade: "Mason",
+        description: "Daily boundary wall brickwork and plastering.",
+        customerName: "Pooja Verma",
+        customerPhone: "+91 99100 88221",
+        locationAddress: "House 142, Model Town, Ludhiana, Punjab",
+        area: "Model Town",
+        distanceKm: 1.2,
+        jobGps: {
+          lat: 30.895,
+          lng: 75.843,
+          area: "Model Town",
+          city: "Ludhiana",
+          address: "House 142, Model Town, Ludhiana, Punjab",
+        },
+        dailyWage: 850,
+        durationDays: 1,
+        status: "broadcast",
+        otpCode: "4829",
+        postedAt: "Just now",
+        platformFee: 170,
+        workerPayout: 680,
+        isPaid: false,
+        assignedWorkerUpi: "ramesh.mason@okaxis",
+      };
+      setJobs([demoJob]);
+      setVerifications([
+        {
+          id: "v-demo-1",
+          workerName: "Ramesh Kumar",
+          trade: "Mason",
+          phone: "+91 98101 55678",
+          aadhaarNumber: "7829-4412-9901",
+          experienceYears: 6,
+          submittedAt: "Just now",
+          status: "approved",
+        },
+      ]);
+      playSound("success");
+      showNotification("Demo test environment created with UPI & GPS active.");
+    };
+  /*  Helper to match user credentials by User ID, Email, Phone number (last 10 digits), or Name  */ const findAccountMatch =
+    (accounts: UserAccount[], input: string): UserAccount | undefined => {
+      const clean = input.trim().toLowerCase();
+      if (!clean) return undefined;
+      const digits = input.replace(/[^0-9]/g, "");
+      const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
+      /*  1. Direct ID match (case-insensitive)  */ let match = accounts.find(
+        (a) => a.id && a.id.trim().toLowerCase() === clean,
+      );
+      if (match) return match;
+      // 2. Email match
+      match = accounts.find((a) => {
+        const email = (a.extraData?.email || (a as any).email || "")
+          .trim()
+          .toLowerCase();
+        return email && (email === clean || clean === email.split("@")[0]);
       });
       if (match) return match;
-    }
-
-    // 4. Name match (case-insensitive)
-    match = accounts.find(a => a.name && a.name.trim().toLowerCase() === clean);
-    if (match) return match;
-
-    return undefined;
-  };
-
-  // Worker Login with Auth (ID & Password)
-  const loginWorkerWithAuth = (userIdOrPhone: string, password: string): { success: boolean; error?: string } => {
+      /*  3. Normalized Phone match  */ if (digits.length >= 7) {
+        match = accounts.find((a) => {
+          const aDigits = (a.phone || "").replace(/[^0-9]/g, "");
+          const aLast10 = aDigits.length >= 10 ? aDigits.slice(-10) : aDigits;
+          return (
+            aDigits === digits || (last10.length >= 10 && aLast10 === last10)
+          );
+        });
+        if (match) return match;
+      }
+      // 4. Name match (case-insensitive)
+      match = accounts.find(
+        (a) => a.name && a.name.trim().toLowerCase() === clean,
+      );
+      if (match) return match;
+      return undefined;
+    };
+  /*  Worker Login with Auth (ID & Password)  */ const loginWorkerWithAuth = (
+    userIdOrPhone: string,
+    password: string,
+  ): { success: boolean; error?: string } => {
     const cleanInput = userIdOrPhone.trim();
     if (!cleanInput) {
-      return { success: false, error: 'Please enter your User ID, Mobile number, or Email.' };
+      return {
+        success: false,
+        error: "Please enter your User ID, Mobile number, or Email.",
+      };
     }
-
     const found = findAccountMatch(workerAccounts, cleanInput);
-
     if (!found) {
-      // Auto-fallback demo match
-      if (cleanInput.toLowerCase() === 'ramesh' || cleanInput.replace(/[^0-9]/g, '').endsWith('55678')) {
+      /*  Auto-fallback demo match  */ if (
+        cleanInput.toLowerCase() === "ramesh" ||
+        cleanInput.replace(/[^0-9]/g, "").endsWith("55678")
+      ) {
         loginWorker({
-          name: 'Ramesh Kumar',
-          phone: '+91 98101 55678',
-          primaryTrade: 'Mason',
+          name: "Ramesh Kumar",
+          phone: "+91 98101 55678",
+          primaryTrade: "Mason",
           dailyRate: 850,
           experienceYears: 6,
-          area: `${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
-          aadhaarNumber: '7829-4412-9901',
-          upiId: 'ramesh.mason@okaxis',
+          area: `${currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}`,
+          aadhaarNumber: "7829-4412-9901",
+          upiId: "ramesh.mason@okaxis",
         });
         return { success: true };
       }
-      return { 
-        success: false, 
-        error: `Worker account "${cleanInput}" not found. Please click Register to create your account or check your User ID / Phone.` 
+      return {
+        success: false,
+        error: `Worker account"${cleanInput}" not found. Please click Register to create your account or check your User ID / Phone.`,
       };
     }
-
-    const savedPassword = (found.password || '123').trim();
+    const savedPassword = (found.password || "123").trim();
     if (savedPassword !== password.trim()) {
-      return { 
-        success: false, 
-        error: `Incorrect password for ${found.name} (${found.id}). Please check the password you entered.` 
+      return {
+        success: false,
+        error: `Incorrect password for ${found.name} (${found.id}). Please check the password you entered.`,
       };
     }
-
-    // Login worker profile
-    const extra = found.extraData || {};
+    /*  Login worker profile  */ const extra = found.extraData || {};
     loginWorker({
       name: found.name,
       phone: found.phone,
       email: extra.email || (found as any).email,
       isPhoneVerified: extra.isPhoneVerified ?? true,
       isEmailVerified: extra.isEmailVerified ?? true,
-      primaryTrade: extra.trade || 'Mason',
+      primaryTrade: extra.trade || "Mason",
       dailyRate: extra.rate || 850,
       experienceYears: extra.exp || 4,
-      area: extra.area || `${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
-      aadhaarNumber: extra.aadhaar || '7829-4412-9901',
+      area:
+        extra.area ||
+        `${currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}`,
+      aadhaarNumber: extra.aadhaar || "7829-4412-9901",
       upiId: extra.upi || `${found.id}@upi`,
     });
-
     return { success: true };
   };
-
-  // Register Worker with Auth
-  const registerWorkerWithAuth = (data: {
+  /*  Register Worker with Auth  */ const registerWorkerWithAuth = (data: {
     userId: string;
     password: string;
     name: string;
@@ -1667,17 +1714,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     aadhaarNumber: string;
     upiId?: string;
   }) => {
-    const rawId = data.userId?.trim().toLowerCase() || 
-                  (data.email ? data.email.split('@')[0].toLowerCase() : '') ||
-                  data.phone.replace(/[^0-9]/g, '').slice(-10) ||
-                  data.name.trim().toLowerCase().replace(/\s+/g, '_');
-
+    const rawId =
+      data.userId?.trim().toLowerCase() ||
+      (data.email ? data.email.split("@")[0].toLowerCase() : "") ||
+      data.phone.replace(/[^0-9]/g, "").slice(-10) ||
+      data.name.trim().toLowerCase().replace(/\s+/g, "_");
     const newAcc: UserAccount = {
       id: rawId,
-      password: (data.password || '123').trim(),
+      password: (data.password || "123").trim(),
       name: data.name.trim(),
       phone: data.phone.trim(),
-      role: 'worker',
+      role: "worker",
       extraData: {
         trade: data.primaryTrade,
         rate: data.dailyRate,
@@ -1688,16 +1735,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         email: data.email?.trim(),
         isPhoneVerified: data.isPhoneVerified ?? true,
         isEmailVerified: data.isEmailVerified ?? true,
-      }
+      },
     };
-
     setWorkerAccounts((prev) => {
-      const updated = [...prev.filter(a => a.id?.toLowerCase() !== newAcc.id && (!a.phone || a.phone.replace(/[^0-9]/g, '').slice(-10) !== newAcc.phone.replace(/[^0-9]/g, '').slice(-10))), newAcc];
-      localStorage.setItem('dihadi_worker_accounts_v6', JSON.stringify(updated));
+      const updated = [
+        ...prev.filter(
+          (a) =>
+            a.id?.toLowerCase() !== newAcc.id &&
+            (!a.phone ||
+              a.phone.replace(/[^0-9]/g, "").slice(-10) !==
+                newAcc.phone.replace(/[^0-9]/g, "").slice(-10)),
+        ),
+        newAcc,
+      ];
+      localStorage.setItem(
+        "dihadi_worker_accounts_v6",
+        JSON.stringify(updated),
+      );
       return updated;
     });
     syncAccountToFirestore(newAcc);
-
     loginWorker({
       name: data.name,
       phone: data.phone,
@@ -1711,11 +1768,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       aadhaarNumber: data.aadhaarNumber,
       upiId: data.upiId,
     });
-    showNotification(`Account created! User ID: "${newAcc.id}". You are now logged in.`);
+    showNotification(
+      `Account created! User ID:"${newAcc.id}". You are now logged in.`,
+    );
   };
-
-  // Worker Login / Register helper
-  const loginWorker = (data: {
+  /*  Worker Login / Register helper  */ const loginWorker = (data: {
     name: string;
     phone: string;
     email?: string;
@@ -1728,55 +1785,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     aadhaarNumber: string;
     upiId?: string;
   }) => {
-    const maskedAadhaar = `XXXX-XXXX-${data.aadhaarNumber.slice(-4) || '1234'}`;
-    const cleanPhone = data.phone.replace(/[^0-9]/g, '').slice(-10) || '9810155678';
-    const fallbackUpi = data.upiId || `${data.name.toLowerCase().replace(/\s+/g, '.') || 'worker'}@upi`;
-
-    // Check if worker already exists in workers list
-    const existingWorker = workers.find((w) => {
-      const wClean = w.phone.replace(/[^0-9]/g, '').slice(-10);
-      return (wClean && wClean === cleanPhone) || w.name.trim().toLowerCase() === data.name.trim().toLowerCase();
-    });
-
-    // Check if verification record already exists
-    const existingVerification = verifications.find((v) => {
-      const vClean = v.phone.replace(/[^0-9]/g, '').slice(-10);
-      return (vClean && vClean === cleanPhone) || v.workerName.trim().toLowerCase() === data.name.trim().toLowerCase();
-    });
-
-    const isAlreadyVerified = existingWorker?.isVerified || existingVerification?.status === 'approved';
-    const areaCoords = getCoordinatesForArea(data.area || currentCity?.defaultArea || 'Model Town', currentCity?.name);
-
+    const maskedAadhaar = `XXXX-XXXX-${data.aadhaarNumber.slice(-4) || "1234"}`;
+    const cleanPhone =
+      data.phone.replace(/[^0-9]/g, "").slice(-10) || "9810155678";
+    const fallbackUpi =
+      data.upiId ||
+      `${data.name.toLowerCase().replace(/\s+/g, ".") || "worker"}@upi`;
+    /* Check if worker already exists in workers list */ const existingWorker =
+      workers.find((w) => {
+        const wClean = w.phone.replace(/[^0-9]/g, "").slice(-10);
+        return (
+          (wClean && wClean === cleanPhone) ||
+          w.name.trim().toLowerCase() === data.name.trim().toLowerCase()
+        );
+      });
+    /* Check if verification record already exists */ const existingVerification =
+      verifications.find((v) => {
+        const vClean = v.phone.replace(/[^0-9]/g, "").slice(-10);
+        return (
+          (vClean && vClean === cleanPhone) ||
+          v.workerName.trim().toLowerCase() === data.name.trim().toLowerCase()
+        );
+      });
+    const isAlreadyVerified =
+      existingWorker?.isVerified || existingVerification?.status === "approved";
+    const areaCoords = getCoordinatesForArea(
+      data.area || currentCity?.defaultArea || "Model Town",
+      currentCity?.name,
+    );
     const activeWorker: WorkerProfile = {
       id: existingWorker?.id || `w-${Date.now().toString().slice(-4)}`,
       name: data.name,
       phone: data.phone,
-      email: data.email || existingWorker?.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      isPhoneVerified: data.isPhoneVerified ?? (existingWorker?.isPhoneVerified ?? true),
-      isEmailVerified: data.isEmailVerified ?? (existingWorker?.isEmailVerified ?? true),
-      avatar: existingWorker?.avatar || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80',
+      email:
+        data.email ||
+        existingWorker?.email ||
+        `${data.name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
+      isPhoneVerified:
+        data.isPhoneVerified ?? existingWorker?.isPhoneVerified ?? true,
+      isEmailVerified:
+        data.isEmailVerified ?? existingWorker?.isEmailVerified ?? true,
+      avatar:
+        existingWorker?.avatar ||
+        "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80",
       primaryTrade: data.primaryTrade,
-      secondaryTrades: existingWorker?.secondaryTrades || ['Construction Helper'],
+      secondaryTrades: existingWorker?.secondaryTrades || [
+        "Construction Helper",
+      ],
       dailyRate: data.dailyRate || existingWorker?.dailyRate || 850,
-      experienceYears: data.experienceYears || existingWorker?.experienceYears || 3,
+      experienceYears:
+        data.experienceYears || existingWorker?.experienceYears || 3,
       rating: existingWorker ? existingWorker.rating : 0,
       reviewCount: existingWorker ? existingWorker.reviewCount : 0,
-      completedJobsCount: existingWorker ? existingWorker.completedJobsCount : 0,
+      completedJobsCount: existingWorker
+        ? existingWorker.completedJobsCount
+        : 0,
       isOnline: true,
       location: {
-        area: data.area || existingWorker?.location.area || currentCity?.defaultArea || 'Model Town',
-        city: currentCity?.name || 'Ludhiana',
+        area:
+          data.area ||
+          existingWorker?.location.area ||
+          currentCity?.defaultArea ||
+          "Model Town",
+        city: currentCity?.name || "Ludhiana",
         distanceKm: existingWorker?.location.distanceKm || 1.0,
       },
       gpsLocation: existingWorker?.gpsLocation || {
         lat: areaCoords.lat + (Math.random() - 0.5) * 0.01,
         lng: areaCoords.lng + (Math.random() - 0.5) * 0.01,
         area: data.area || areaCoords.area,
-        city: currentCity?.name || 'Ludhiana',
+        city: currentCity?.name || "Ludhiana",
         accuracyMeters: 4,
         heading: 60,
         speedKmh: 0,
-        lastUpdated: 'Just now',
+        lastUpdated: "Just now",
       },
       isSharingLiveGps: true,
       aadhaarNumberMasked: maskedAadhaar,
@@ -1784,51 +1866,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       todayEarnings: existingWorker?.todayEarnings || 0,
       totalEarnings: existingWorker?.totalEarnings || 0,
       walletBalance: existingWorker?.walletBalance || 0,
-      badge: isAlreadyVerified ? 'Aadhaar Verified' : 'Registered Worker',
+      badge: isAlreadyVerified ? "Aadhaar Verified" : "Registered Worker",
       upiId: fallbackUpi,
-      bankName: existingWorker?.bankName || 'State Bank of India',
-      accountNumberMasked: existingWorker?.accountNumberMasked || `•••• •••• ${cleanPhone.slice(-4)}`,
-      ifscCode: existingWorker?.ifscCode || 'SBIN0004921',
+      bankName: existingWorker?.bankName || "State Bank of India",
+      accountNumberMasked:
+        existingWorker?.accountNumberMasked ||
+        `•••• •••• ${cleanPhone.slice(-4)}`,
+      ifscCode: existingWorker?.ifscCode || "SBIN0004921",
     };
-
     setCurrentWorker(activeWorker);
     setWorkers((prev) => [
       activeWorker,
       ...prev.filter((w) => {
-        const wClean = w.phone.replace(/[^0-9]/g, '').slice(-10);
-        return !(wClean && wClean === cleanPhone) && w.name.trim().toLowerCase() !== data.name.trim().toLowerCase();
-      })
+        const wClean = w.phone.replace(/[^0-9]/g, "").slice(-10);
+        return (
+          !(wClean && wClean === cleanPhone) &&
+          w.name.trim().toLowerCase() !== data.name.trim().toLowerCase()
+        );
+      }),
     ]);
-
-    // Handle Admin Verification queue
-    if (!existingVerification) {
+    /*  Handle Admin Verification queue  */ if (!existingVerification) {
       const newVerification: VerificationRequest = {
         id: `v-${Date.now().toString().slice(-4)}`,
         workerName: data.name,
         trade: data.primaryTrade,
         phone: data.phone,
-        aadhaarNumber: data.aadhaarNumber || '7829-4412-9901',
+        aadhaarNumber: data.aadhaarNumber || "7829-4412-9901",
         experienceYears: data.experienceYears || 3,
-        submittedAt: 'Just now',
-        status: isAlreadyVerified ? 'approved' : 'pending',
+        submittedAt: "Just now",
+        status: isAlreadyVerified ? "approved" : "pending",
       };
       setVerifications((prev) => [newVerification, ...prev]);
       syncVerificationToFirestore(newVerification);
     }
-
     syncWorkerToFirestore(activeWorker);
-    playSound('success');
+    playSound("success");
     showNotification(`Welcome ${data.name}! Worker Portal Active.`);
   };
-
   const logoutWorker = () => {
     setCurrentWorker(null);
-    playSound('click');
-    showNotification('Worker logged out.');
+    playSound("click");
+    showNotification("Worker logged out.");
   };
-
-  // Update Worker UPI handle
-  const updateWorkerUpi = (upiId: string, bankName?: string, ifscCode?: string) => {
+  /*  Update Worker UPI handle  */ const updateWorkerUpi = (
+    upiId: string,
+    bankName?: string,
+    ifscCode?: string,
+  ) => {
     if (!currentWorker) return;
     const updated: WorkerProfile = {
       ...currentWorker,
@@ -1837,144 +1921,158 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ifscCode: ifscCode || currentWorker.ifscCode,
     };
     setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    setWorkers((prev) =>
+      prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+    );
     syncWorkerToFirestore(updated);
-    playSound('success');
+    playSound("success");
     showNotification(`Worker UPI updated to: ${upiId}`);
   };
-
-  // Update Worker GPS location
-  const updateWorkerGps = (coords: Partial<GpsCoordinates>) => {
+  /*  Update Worker GPS location  */ const updateWorkerGps = (
+    coords: Partial<GpsCoordinates>,
+  ) => {
     if (!currentWorker) return;
-
-    let resolvedCity = coords.city || currentWorker.gpsLocation?.city || currentWorker.location?.city || currentCity.name;
-    let resolvedArea = coords.area || currentWorker.gpsLocation?.area || currentWorker.location?.area || currentCity.defaultArea;
-
+    let resolvedCity =
+      coords.city ||
+      currentWorker.gpsLocation?.city ||
+      currentWorker.location?.city ||
+      currentCity.name;
+    let resolvedArea =
+      coords.area ||
+      currentWorker.gpsLocation?.area ||
+      currentWorker.location?.area ||
+      currentCity.defaultArea;
     if (coords.lat && coords.lng) {
       const detectedCity = detectCityFromCoords(coords.lat, coords.lng);
-      if (!coords.city || (resolvedCity.toLowerCase().includes('delhi') && detectedCity.id === 'ludhiana')) {
+      if (
+        !coords.city ||
+        (resolvedCity.toLowerCase().includes("delhi") &&
+          detectedCity.id === "ludhiana")
+      ) {
         resolvedCity = detectedCity.name;
-        if (!coords.area || resolvedArea.toLowerCase().includes('okhla')) {
+        if (!coords.area || resolvedArea.toLowerCase().includes("okhla")) {
           resolvedArea = detectedCity.defaultArea;
         }
       }
     }
-
     const updatedGps: GpsCoordinates = {
       ...currentWorker.gpsLocation,
       ...coords,
       city: resolvedCity,
       area: resolvedArea,
-      lastUpdated: 'Just now',
+      lastUpdated: "Just now",
     };
-    const updated: WorkerProfile = { 
-      ...currentWorker, 
+    const updated: WorkerProfile = {
+      ...currentWorker,
       location: {
         ...currentWorker.location,
         area: resolvedArea,
         city: resolvedCity,
       },
-      gpsLocation: updatedGps 
+      gpsLocation: updatedGps,
     };
     setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    setWorkers((prev) =>
+      prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+    );
     syncWorkerToFirestore(updated);
   };
-
-  // Toggle online/offline for current worker
-  const toggleWorkerStatus = () => {
-    if (!currentWorker) return;
-    const nextState = !currentWorker.isOnline;
-    const updated = { ...currentWorker, isOnline: nextState };
-    setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
-    syncWorkerToFirestore(updated);
-    playSound('click');
-    if (nextState) {
-      showNotification(`${currentWorker.name} is ONLINE.`);
-    } else {
-      showNotification(`${currentWorker.name} is OFFLINE.`);
-    }
-  };
-
-  // Update Worker Profile Photo / Avatar
-  const updateWorkerAvatar = (avatarUrl: string) => {
-    if (!currentWorker) return;
-    const updated: WorkerProfile = {
-      ...currentWorker,
-      avatar: avatarUrl,
-    };
-    setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
-    syncWorkerToFirestore(updated);
-    playSound('success');
-    showNotification('Worker profile photo updated successfully.');
-  };
-
-  // Update arbitrary Worker Profile properties
-  const updateWorkerProfile = (updates: Partial<WorkerProfile>) => {
-    if (!currentWorker) return;
-    const updated: WorkerProfile = {
-      ...currentWorker,
-      ...updates,
-    };
-    setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
-    syncWorkerToFirestore(updated);
-    playSound('success');
-  };
-
-  // Customer Login with Auth (ID & Password)
-  const loginCustomerWithAuth = (userIdOrPhone: string, password: string): { success: boolean; error?: string } => {
-    const cleanInput = userIdOrPhone.trim();
-    if (!cleanInput) {
-      return { success: false, error: 'Please enter your User ID, Mobile number, or Email.' };
-    }
-
-    const found = findAccountMatch(customerAccounts, cleanInput);
-
-    if (!found) {
-      if (cleanInput.toLowerCase() === 'pooja' || cleanInput.replace(/[^0-9]/g, '').endsWith('88221')) {
-        loginCustomer({
-          name: 'Pooja Verma',
-          phone: '+91 99100 88221',
-          area: currentCity?.defaultArea || 'Model Town',
-          address: `House 142, ${currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}, ${currentCity?.state || 'Punjab'}`,
-          upiId: 'pooja.verma@okhdfcbank',
-        });
-        return { success: true };
+  /*  Toggle online/offline for current worker  */ const toggleWorkerStatus =
+    () => {
+      if (!currentWorker) return;
+      const nextState = !currentWorker.isOnline;
+      const updated = { ...currentWorker, isOnline: nextState };
+      setCurrentWorker(updated);
+      setWorkers((prev) =>
+        prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+      );
+      syncWorkerToFirestore(updated);
+      playSound("click");
+      if (nextState) {
+        showNotification(`${currentWorker.name} is ONLINE.`);
+      } else {
+        showNotification(`${currentWorker.name} is OFFLINE.`);
       }
-      return { 
-        success: false, 
-        error: `Customer account "${cleanInput}" not found. Please click Register to create your account or check your User ID / Phone.` 
-      };
-    }
-
-    const savedPassword = (found.password || '123').trim();
-    if (savedPassword !== password.trim()) {
-      return { 
-        success: false, 
-        error: `Incorrect password for ${found.name} (${found.id}). Please check the password you entered.` 
-      };
-    }
-
-    const extra = found.extraData || {};
-    loginCustomer({
-      name: found.name,
-      phone: found.phone,
-      email: extra.email || (found as any).email,
-      isPhoneVerified: extra.isPhoneVerified ?? true,
-      isEmailVerified: extra.isEmailVerified ?? true,
-      area: extra.area || currentCity?.defaultArea || 'Model Town',
-      address: extra.address || `${extra.area || currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
-      upiId: extra.upi || `${found.id}@upi`,
-    });
-
-    return { success: true };
+    };
+  /*  Update Worker Profile Photo / Avatar  */ const updateWorkerAvatar = (
+    avatarUrl: string,
+  ) => {
+    if (!currentWorker) return;
+    const updated: WorkerProfile = { ...currentWorker, avatar: avatarUrl };
+    setCurrentWorker(updated);
+    setWorkers((prev) =>
+      prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+    );
+    syncWorkerToFirestore(updated);
+    playSound("success");
+    showNotification("Worker profile photo updated successfully.");
   };
-
-  // Register Customer with Auth
-  const registerCustomerWithAuth = (data: {
+  /*  Update arbitrary Worker Profile properties  */ const updateWorkerProfile =
+    (updates: Partial<WorkerProfile>) => {
+      if (!currentWorker) return;
+      const updated: WorkerProfile = { ...currentWorker, ...updates };
+      setCurrentWorker(updated);
+      setWorkers((prev) =>
+        prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+      );
+      syncWorkerToFirestore(updated);
+      playSound("success");
+    };
+  /*  Customer Login with Auth (ID & Password)  */ const loginCustomerWithAuth =
+    (
+      userIdOrPhone: string,
+      password: string,
+    ): { success: boolean; error?: string } => {
+      const cleanInput = userIdOrPhone.trim();
+      if (!cleanInput) {
+        return {
+          success: false,
+          error: "Please enter your User ID, Mobile number, or Email.",
+        };
+      }
+      const found = findAccountMatch(customerAccounts, cleanInput);
+      if (!found) {
+        if (
+          cleanInput.toLowerCase() === "pooja" ||
+          cleanInput.replace(/[^0-9]/g, "").endsWith("88221")
+        ) {
+          loginCustomer({
+            name: "Pooja Verma",
+            phone: "+91 99100 88221",
+            area: currentCity?.defaultArea || "Model Town",
+            address: `House 142, ${currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}, ${currentCity?.state || "Punjab"}`,
+            upiId: "pooja.verma@okhdfcbank",
+          });
+          return { success: true };
+        }
+        return {
+          success: false,
+          error: `Customer account"${cleanInput}" not found. Please click Register to create your account or check your User ID / Phone.`,
+        };
+      }
+      const savedPassword = (found.password || "123").trim();
+      if (savedPassword !== password.trim()) {
+        return {
+          success: false,
+          error: `Incorrect password for ${found.name} (${found.id}). Please check the password you entered.`,
+        };
+      }
+      const extra = found.extraData || {};
+      loginCustomer({
+        name: found.name,
+        phone: found.phone,
+        email: extra.email || (found as any).email,
+        isPhoneVerified: extra.isPhoneVerified ?? true,
+        isEmailVerified: extra.isEmailVerified ?? true,
+        area: extra.area || currentCity?.defaultArea || "Model Town",
+        address:
+          extra.address ||
+          `${extra.area || currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}`,
+        upiId: extra.upi || `${found.id}@upi`,
+      });
+      return { success: true };
+    };
+  /*  Register Customer with Auth  */ const registerCustomerWithAuth = (data: {
     userId: string;
     password: string;
     name: string;
@@ -1986,17 +2084,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     address: string;
     upiId?: string;
   }) => {
-    const rawId = data.userId?.trim().toLowerCase() || 
-                  (data.email ? data.email.split('@')[0].toLowerCase() : '') ||
-                  data.phone.replace(/[^0-9]/g, '').slice(-10) ||
-                  data.name.trim().toLowerCase().replace(/\s+/g, '_');
-
+    const rawId =
+      data.userId?.trim().toLowerCase() ||
+      (data.email ? data.email.split("@")[0].toLowerCase() : "") ||
+      data.phone.replace(/[^0-9]/g, "").slice(-10) ||
+      data.name.trim().toLowerCase().replace(/\s+/g, "_");
     const newAcc: UserAccount = {
       id: rawId,
-      password: (data.password || '123').trim(),
+      password: (data.password || "123").trim(),
       name: data.name.trim(),
       phone: data.phone.trim(),
-      role: 'customer',
+      role: "customer",
       extraData: {
         area: data.area,
         address: data.address,
@@ -2004,16 +2102,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         email: data.email?.trim(),
         isPhoneVerified: data.isPhoneVerified ?? true,
         isEmailVerified: data.isEmailVerified ?? true,
-      }
+      },
     };
-
     setCustomerAccounts((prev) => {
-      const updated = [...prev.filter(a => a.id?.toLowerCase() !== newAcc.id && (!a.phone || a.phone.replace(/[^0-9]/g, '').slice(-10) !== newAcc.phone.replace(/[^0-9]/g, '').slice(-10))), newAcc];
-      localStorage.setItem('dihadi_customer_accounts_v6', JSON.stringify(updated));
+      const updated = [
+        ...prev.filter(
+          (a) =>
+            a.id?.toLowerCase() !== newAcc.id &&
+            (!a.phone ||
+              a.phone.replace(/[^0-9]/g, "").slice(-10) !==
+                newAcc.phone.replace(/[^0-9]/g, "").slice(-10)),
+        ),
+        newAcc,
+      ];
+      localStorage.setItem(
+        "dihadi_customer_accounts_v6",
+        JSON.stringify(updated),
+      );
       return updated;
     });
     syncAccountToFirestore(newAcc);
-
     loginCustomer({
       name: data.name,
       phone: data.phone,
@@ -2024,11 +2132,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       address: data.address,
       upiId: data.upiId,
     });
-    showNotification(`Account created! User ID: "${newAcc.id}". Employer Portal active.`);
+    showNotification(
+      `Account created! User ID:"${newAcc.id}". Employer Portal active.`,
+    );
   };
-
-  // Customer Login / Register helper
-  const loginCustomer = (data: {
+  /*  Customer Login / Register helper  */ const loginCustomer = (data: {
     name: string;
     phone: string;
     email?: string;
@@ -2038,48 +2146,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     address: string;
     upiId?: string;
   }) => {
-    const areaCoords = getCoordinatesForArea(data.area || data.address || currentCity?.defaultArea || 'Model Town', currentCity?.name);
+    const areaCoords = getCoordinatesForArea(
+      data.area || data.address || currentCity?.defaultArea || "Model Town",
+      currentCity?.name,
+    );
     const customer: CustomerProfile = {
       id: `c-${Date.now().toString().slice(-4)}`,
       name: data.name,
       phone: data.phone,
-      email: data.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+      email:
+        data.email ||
+        `${data.name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
       isPhoneVerified: data.isPhoneVerified ?? true,
       isEmailVerified: data.isEmailVerified ?? true,
-      area: data.area || currentCity?.defaultArea || 'Model Town',
-      city: currentCity?.name || 'Ludhiana',
-      address: data.address || `${data.area || currentCity?.defaultArea || 'Model Town'}, ${currentCity?.name || 'Ludhiana'}`,
+      area: data.area || currentCity?.defaultArea || "Model Town",
+      city: currentCity?.name || "Ludhiana",
+      address:
+        data.address ||
+        `${data.area || currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}`,
       gpsLocation: {
         lat: areaCoords.lat,
         lng: areaCoords.lng,
         area: data.area || areaCoords.area,
-        city: currentCity?.name || 'Ludhiana',
+        city: currentCity?.name || "Ludhiana",
         address: data.address,
         accuracyMeters: 4,
-        lastUpdated: 'Just now',
+        lastUpdated: "Just now",
       },
-      upiId: data.upiId || `${data.name.toLowerCase().replace(/\s+/g, '.')}@okhdfcbank`,
+      upiId:
+        data.upiId ||
+        `${data.name.toLowerCase().replace(/\s+/g, ".")}@okhdfcbank`,
     };
     setCurrentCustomer(customer);
-    playSound('success');
+    playSound("success");
     showNotification(`Welcome ${data.name}! Employer Portal Active.`);
-    
-    // Automatically display Safety & Accountability Guarantee Modal on customer login
-    setTimeout(() => {
-      openProtectionModal({
-        variant: 'post_login',
-        workerName: 'Verified Dihadi Worker',
-        workerAadhaarMasked: 'Govt. Aadhaar Verified'
-      });
-    }, 600);
+    /*  Automatically display Safety & Accountability Guarantee Modal on customer login  */ setTimeout(
+      () => {
+        openProtectionModal({
+          variant: "post_login",
+          workerName: "Verified Dihadi Worker",
+          workerAadhaarMasked: "Govt. Aadhaar Verified",
+        });
+      },
+      600,
+    );
   };
-
   const logoutCustomer = () => {
     setCurrentCustomer(null);
-    playSound('click');
-    showNotification('Employer logged out.');
+    playSound("click");
+    showNotification("Employer logged out.");
   };
-
   const updateCustomerGps = (coords: Partial<GpsCoordinates>) => {
     if (!currentCustomer) return;
     const updated: CustomerProfile = {
@@ -2087,24 +2203,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       gpsLocation: {
         ...currentCustomer.gpsLocation,
         ...coords,
-        lastUpdated: 'Just now',
+        lastUpdated: "Just now",
       },
     };
     setCurrentCustomer(updated);
   };
-
   const refreshCustomerGpsLocation = () => {
-    if ('geolocation' in navigator) {
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           updateCustomerGps({
             lat: +pos.coords.latitude.toFixed(4),
             lng: +pos.coords.longitude.toFixed(4),
             accuracyMeters: Math.round(pos.coords.accuracy) || 4,
-            lastUpdated: 'Just now',
+            lastUpdated: "Just now",
           });
-          playSound('gps_ping');
-          showNotification('Employer GPS calibrated with live device coordinates!');
+          playSound("gps_ping");
+          showNotification(
+            "Employer GPS calibrated with live device coordinates!",
+          );
         },
         () => {
           if (currentCustomer) {
@@ -2113,59 +2230,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               lat: coords.lat,
               lng: coords.lng,
               accuracyMeters: 4,
-              lastUpdated: 'Just now',
+              lastUpdated: "Just now",
             });
           }
-          playSound('gps_ping');
-          showNotification('GPS calibrated to local area coordinates.');
+          playSound("gps_ping");
+          showNotification("GPS calibrated to local area coordinates.");
         },
-        { enableHighAccuracy: true, timeout: 4000 }
+        { enableHighAccuracy: true, timeout: 4000 },
       );
     }
   };
-
-  // Admin Login with Auth
-  const loginAdminWithAuth = (adminIdOrEmail: string, password: string): { success: boolean; error?: string } => {
+  /*  Admin Login with Auth  */ const loginAdminWithAuth = (
+    adminIdOrEmail: string,
+    password: string,
+  ): { success: boolean; error?: string } => {
     const clean = adminIdOrEmail.trim().toLowerCase();
-    if (clean === 'admin' || clean === 'ops@dihadi.co' || clean === 'admin@dihadi.co' || clean.includes('ops')) {
-      if (password && password !== 'admin' && password !== 'admin123' && password !== '123') {
-        return { success: false, error: 'Incorrect Admin password.' };
+    if (
+      clean === "admin" ||
+      clean === "ops@dihadi.co" ||
+      clean === "admin@dihadi.co" ||
+      clean.includes("ops")
+    ) {
+      if (
+        password &&
+        password !== "admin" &&
+        password !== "admin123" &&
+        password !== "123"
+      ) {
+        return { success: false, error: "Incorrect Admin password." };
       }
-      loginAdmin({
-        name: 'Dihadi Operations Admin',
-        email: 'ops@dihadi.co',
-      });
+      loginAdmin({ name: "Dihadi Operations Admin", email: "ops@dihadi.co" });
       return { success: true };
     }
-    // Allow custom admin username with password
+    /* Allow custom admin username with password */
     loginAdmin({
       name: adminIdOrEmail,
-      email: `${clean.replace(/\s+/g, '')}@dihadi.co`,
+      email: `${clean.replace(/\s+/g, "")}@dihadi.co`,
     });
     return { success: true };
   };
-
-  // Admin Login helper
-  const loginAdmin = (data: { name: string; email: string }) => {
+  /*  Admin Login helper  */ const loginAdmin = (data: {
+    name: string;
+    email: string;
+  }) => {
     const admin: AdminProfile = {
       id: `adm-${Date.now().toString().slice(-4)}`,
-      name: data.name || 'Dihadi Operations Admin',
-      email: data.email || 'ops@dihadi.co',
-      role: 'Operations Lead',
+      name: data.name || "Dihadi Operations Admin",
+      email: data.email || "ops@dihadi.co",
+      role: "Operations Lead",
     };
     setCurrentAdmin(admin);
-    playSound('success');
-    showNotification('Admin logged in to Operations Dashboard.');
+    playSound("success");
+    showNotification("Admin logged in to Operations Dashboard.");
   };
-
   const logoutAdmin = () => {
     setCurrentAdmin(null);
-    playSound('click');
-    showNotification('Admin logged out.');
+    playSound("click");
+    showNotification("Admin logged out.");
   };
-
-  // Employer posts a job
-  const postJob = (jobData: {
+  /* Employer posts a job */ const postJob = (jobData: {
     title: string;
     trade: TradeType;
     description: string;
@@ -2179,24 +2302,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const daily = Number(jobData.dailyWage) || 850;
     const days = Number(jobData.durationDays) || 1;
     const totalGross = daily * days;
-    const platformFee = Math.round(totalGross * 0.20);
+    const platformFee = Math.round(totalGross * 0.2);
     const workerPayout = totalGross - platformFee;
-
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const areaCoords = getCoordinatesForArea(jobData.area || jobData.locationAddress || currentCity?.defaultArea || 'Model Town', currentCity?.name);
-    const resolvedCity = currentCustomer?.city || currentCity?.name || 'Ludhiana';
+    const areaCoords = getCoordinatesForArea(
+      jobData.area ||
+        jobData.locationAddress ||
+        currentCity?.defaultArea ||
+        "Model Town",
+      currentCity?.name,
+    );
+    const resolvedCity =
+      currentCustomer?.city || currentCity?.name || "Ludhiana";
     const custGps = currentCustomer?.gpsLocation;
-    const jobLat = (custGps && custGps.lat && (!custGps.city || custGps.city === resolvedCity)) ? custGps.lat : areaCoords.lat;
-    const jobLng = (custGps && custGps.lng && (!custGps.city || custGps.city === resolvedCity)) ? custGps.lng : areaCoords.lng;
-    
-    // Calculate realistic distance to current worker if present
-    const workerGps = currentWorker?.gpsLocation || { lat: currentCity?.lat || 30.8926, lng: currentCity?.lng || 75.8415, city: currentCity?.name || 'Ludhiana' };
-    let calculatedDist = calculateDistanceKm(workerGps.lat, workerGps.lng, jobLat, jobLng);
-    if (calculatedDist > 25.0 && (workerGps.city === resolvedCity || !workerGps.city)) {
-      // Re-center around worker in same city so it's always in 10km radar range
+    const jobLat =
+      custGps && custGps.lat && (!custGps.city || custGps.city === resolvedCity)
+        ? custGps.lat
+        : areaCoords.lat;
+    const jobLng =
+      custGps && custGps.lng && (!custGps.city || custGps.city === resolvedCity)
+        ? custGps.lng
+        : areaCoords.lng;
+    /* Calculate realistic distance */ const workerGps =
+      currentWorker?.gpsLocation || {
+        lat: currentCity?.lat || 30.8926,
+        lng: currentCity?.lng || 75.8415,
+        city: currentCity?.name || "Ludhiana",
+      };
+    let calculatedDist = calculateDistanceKm(
+      workerGps.lat,
+      workerGps.lng,
+      jobLat,
+      jobLng,
+    );
+    if (
+      calculatedDist > 25.0 &&
+      (workerGps.city === resolvedCity || !workerGps.city)
+    ) {
+      /* Re-center around worker */
       calculatedDist = +(0.8 + Math.random() * 2.5).toFixed(1);
     }
-
     const newJob: Job = {
       id: `job-${Date.now().toString().slice(-4)}`,
       title: jobData.title,
@@ -2214,226 +2359,237 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         city: resolvedCity,
         address: jobData.locationAddress,
         accuracyMeters: 4,
-        lastUpdated: 'Just now',
+        lastUpdated: "Just now",
       },
       dailyWage: daily,
       durationDays: days,
-      status: 'broadcast',
+      status: "broadcast",
       otpCode,
-      postedAt: 'Just now',
+      postedAt: "Just now",
       platformFee,
       workerPayout,
       isPaid: false,
       isEscrowPrepaid: false,
       escrowPrepaidAmount: totalGross,
-      escrowStatus: 'pending',
+      escrowStatus: "pending",
       escrowPrepaidAt: new Date().toISOString(),
     };
-
     setJobs((prev) => [newJob, ...prev]);
     syncJobToFirestore(newJob);
-    playSound('incoming_job');
-
-    // === AUTOMATED JOB MATCHING ENGINE ===
-    // Automatically match and suggest the top 5 most compatible workers based on Trade skills, 10km GPS Proximity, Rating, and Live Availability
+    playSound("incoming_job"); /* === AUTOMATED JOB MATCHING ENGINE === */
     const matchResult = matchJobWithWorkers(newJob);
     const topMatches = matchResult.matches;
     setLatestMatchedJob(newJob);
     setLatestTop5Matches(topMatches);
-
     if (topMatches.length > 0) {
       const topPick = topMatches[0];
       showNotification(
-        '🎯 Top 5 Matches Suggested!',
-        `Matched ${topMatches.length} verified ${newJob.trade}s nearby. Top pick: ${topPick.worker.name} (${topPick.matchScore}% Match, ${topPick.distanceKm}km away, ${topPick.worker.rating}★)`
+        "🎯 Top 5 Matches Suggested!",
+        `Matched ${topMatches.length} verified ${newJob.trade}s nearby. Top pick: ${topPick.worker.name} (${topPick.matchScore}% Match, ${topPick.distanceKm}km away, ${topPick.worker.rating}★)`,
       );
-      // Spoken voice assistant feedback
-      speak(`New ${newJob.trade} job posted. Top 5 compatible workers suggested near ${newJob.area}.`);
+      /* Spoken voice assistant feedback */ speak(
+        `New ${newJob.trade} job posted. Top 5 compatible workers suggested near ${newJob.area}.`,
+      );
     } else {
       showNotification(`New ${newJob.trade} job broadcasted.`);
     }
     return newJob;
   };
-
-  // Dispatch Job Start OTP to Customer Email & Phone
-  const dispatchJobStartOtp = async (job: Job, targetEmail?: string, targetPhone?: string): Promise<boolean> => {
-    const email = targetEmail || currentCustomer?.email || 'bhavnoorsinghkochar@gmail.com';
-    const phone = targetPhone || currentCustomer?.phone || '+91 99100 88221';
-
-    playSound('gps_ping');
-
-    // Trigger system notification
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+  /* Dispatch OTP */ const dispatchJobStartOtp = async (
+    job: Job,
+    targetEmail?: string,
+    targetPhone?: string,
+  ): Promise<boolean> => {
+    const email =
+      targetEmail || currentCustomer?.email || "bhavnoorsinghkochar@gmail.com";
+    const phone = targetPhone || currentCustomer?.phone || "+91 99100 88221";
+    playSound("gps_ping");
+    /* Trigger system notification */ if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       try {
-        new Notification('🔑 Worker Verification Start OTP', {
+        new Notification("🔑 Worker Verification Start OTP", {
           body: `Start Passcode: ${job.otpCode} for ${job.title}. Share with worker upon arrival.`,
-          icon: '/icon.png'
+          icon: "/icon.png",
         });
       } catch (e) {}
     }
-
     try {
       const res = await sendOtpToGmail({
         recipient: email,
         code: job.otpCode,
-        purpose: 'job_start_otp',
+        purpose: "job_start_otp",
         jobTitle: job.title,
         trade: job.trade,
-        workerName: job.assignedWorkerName || 'Assigned Worker',
-        customerName: job.customerName || currentCustomer?.name || 'Customer',
+        workerName: job.assignedWorkerName || "Assigned Worker",
+        customerName: job.customerName || currentCustomer?.name || "Customer",
         location: job.locationAddress || job.area,
         wage: job.dailyWage,
-        role: 'customer',
+        role: "customer",
       });
-
-      if (res.method === 'gmail_api_oauth') {
-        showNotification(`🔑 Start OTP #${job.otpCode} sent directly via Google Workspace to ${email}!`);
+      if (res.method === "gmail_api_oauth") {
+        showNotification(
+          `🔑 Start OTP #${job.otpCode} sent directly via Google Workspace to ${email}!`,
+        );
       } else {
-        showNotification(`🔑 Start OTP #${job.otpCode} dispatched to Customer Email (${email})!`);
+        showNotification(
+          `🔑 Start OTP #${job.otpCode} dispatched to Customer Email (${email})!`,
+        );
       }
       return true;
     } catch (err) {
-      console.debug('OTP dispatch note:', err);
-      showNotification(`🔑 Start OTP: ${job.otpCode} (Share with worker upon arrival)`);
+      console.debug("OTP dispatch note:", err);
+      showNotification(
+        `🔑 Start OTP: ${job.otpCode} (Share with worker upon arrival)`,
+      );
       return false;
     }
   };
-
-  // Worker accepts a broadcast job or is assigned by customer hire
-  
-  const approveWorker = (jobId: string) => {
-    const job = jobs.find(j => j.id === jobId);
+  /* Worker accepts job */ const approveWorker = (jobId: string) => {
+    const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-
-    const updated = { ...job, status: 'approved' as const };
-    setJobs(prev => prev.map(j => j.id === jobId ? updated : j));
+    const updated = { ...job, status: "approved" as const };
+    setJobs((prev) => prev.map((j) => (j.id === jobId ? updated : j)));
     syncJobToFirestore(updated);
-    
-    // Dispatch OTP now that worker is approved
-    setTimeout(() => dispatchJobStartOtp(updated), 500);
-
-    // Auto-inject OTP into in-app chat
-    if (updated.otpCode && updated.customerPhone && updated.assignedWorkerId) {
+    /* Dispatch OTP now */ setTimeout(() => dispatchJobStartOtp(updated), 500);
+    /* Auto-inject OTP into in-app chat */ if (
+      updated.otpCode &&
+      updated.customerPhone &&
+      updated.assignedWorkerId
+    ) {
       let customerId = updated.customerPhone;
       let workerId = updated.assignedWorkerId;
       let jobOtp = updated.otpCode;
       try {
-        const conversationId = [customerId, workerId].sort().join('_');
+        const conversationId = [customerId, workerId].sort().join("_");
         const storageKey = `dihadi_chat_v7_${conversationId}`;
         const existingRaw = localStorage.getItem(storageKey);
         const history = existingRaw ? JSON.parse(existingRaw) : [];
         const newMessage = {
-          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           senderId: customerId,
           text: `SYSTEM: Customer approved! Your secure Start OTP is ${jobOtp}`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
         history.push(newMessage);
         localStorage.setItem(storageKey, JSON.stringify(history));
-        
-        window.dispatchEvent(new CustomEvent('dihadi_chat_sync', { detail: { key: storageKey } }));
-        window.dispatchEvent(new CustomEvent('dihadi_chat_message_event', {
-          detail: {
-            conversationId,
-            senderId: customerId,
-            senderName: "System",
-            receiverId: workerId,
-            text: newMessage.text,
-            jobId: jobId
-          }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("dihadi_chat_sync", { detail: { key: storageKey } }),
+        );
+        window.dispatchEvent(
+          new CustomEvent("dihadi_chat_message_event", {
+            detail: {
+              conversationId,
+              senderId: customerId,
+              senderName: "System",
+              receiverId: workerId,
+              text: newMessage.text,
+              jobId: jobId,
+            },
+          }),
+        );
       } catch (err) {
-        console.warn('Could not inject OTP to chat', err);
+        console.warn("Could not inject OTP to chat", err);
       }
     }
-
     playSound("success");
-    showNotification("Worker Approved", "Worker approved! OTP automatically sent to in-app chat.");
+    showNotification(
+      "Worker Approved",
+      "Worker approved! OTP automatically sent to in-app chat.",
+    );
   };
-
   const rejectWorker = (jobId: string) => {
-    setJobs(prev => prev.map(job => {
-      if (job.id === jobId) {
-        const updated = { 
-          ...job, 
-          status: 'broadcast' as const,
-          assignedWorkerId: null,
-          assignedWorkerName: null,
-          assignedWorkerPhone: null
-        };
-        syncJobToFirestore(updated);
-        return updated;
-      }
-      return job;
-    }));
+    setJobs((prev) =>
+      prev.map((job) => {
+        if (job.id === jobId) {
+          const updated = {
+            ...job,
+            status: "broadcast" as const,
+            assignedWorkerId: null,
+            assignedWorkerName: null,
+            assignedWorkerPhone: null,
+          };
+          syncJobToFirestore(updated);
+          return updated;
+        }
+        return job;
+      }),
+    );
     playSound("alert");
-    showNotification("Worker Rejected", "Job has been re-broadcasted to other workers.");
+    showNotification(
+      "Worker Rejected",
+      "Job has been re-broadcasted to other workers.",
+    );
   };
-
   const approveAndFundEscrow = (jobId: string) => {
-    const job = jobs.find(j => j.id === jobId);
+    const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-
     const updated = {
       ...job,
-      status: 'approved' as const,
+      status: "approved" as const,
       isEscrowPrepaid: true,
       escrowStatus: "held_in_escrow" as const,
-      escrowPrepaidAt: new Date().toISOString()
+      escrowPrepaidAt: new Date().toISOString(),
     };
-
-    setJobs(prev => prev.map(j => j.id === jobId ? updated : j));
+    setJobs((prev) => prev.map((j) => (j.id === jobId ? updated : j)));
     syncJobToFirestore(updated);
-    
-    // Dispatch OTP now that worker is approved
-    setTimeout(() => dispatchJobStartOtp(updated), 500);
-
-    // Auto-inject OTP into in-app chat
-    if (updated.otpCode && updated.customerPhone && updated.assignedWorkerId) {
+    /* Dispatch OTP now */ setTimeout(() => dispatchJobStartOtp(updated), 500);
+    /* Auto-inject OTP into in-app chat */ if (
+      updated.otpCode &&
+      updated.customerPhone &&
+      updated.assignedWorkerId
+    ) {
       let customerId = updated.customerPhone;
       let workerId = updated.assignedWorkerId;
       let jobOtp = updated.otpCode;
       try {
-        const conversationId = [customerId, workerId].sort().join('_');
+        const conversationId = [customerId, workerId].sort().join("_");
         const storageKey = `dihadi_chat_v7_${conversationId}`;
         const existingRaw = localStorage.getItem(storageKey);
         const history = existingRaw ? JSON.parse(existingRaw) : [];
         const newMessage = {
-          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           senderId: customerId,
           text: `SYSTEM: Customer approved & paid escrow! Your secure Start OTP is ${jobOtp}`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
         history.push(newMessage);
         localStorage.setItem(storageKey, JSON.stringify(history));
-        
-        window.dispatchEvent(new CustomEvent('dihadi_chat_sync', { detail: { key: storageKey } }));
-        window.dispatchEvent(new CustomEvent('dihadi_chat_message_event', {
-          detail: {
-            conversationId,
-            senderId: customerId,
-            senderName: "System",
-            receiverId: workerId,
-            text: newMessage.text,
-            jobId: jobId
-          }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("dihadi_chat_sync", { detail: { key: storageKey } }),
+        );
+        window.dispatchEvent(
+          new CustomEvent("dihadi_chat_message_event", {
+            detail: {
+              conversationId,
+              senderId: customerId,
+              senderName: "System",
+              receiverId: workerId,
+              text: newMessage.text,
+              jobId: jobId,
+            },
+          }),
+        );
       } catch (err) {
-        console.warn('Could not inject OTP to chat', err);
+        console.warn("Could not inject OTP to chat", err);
       }
     }
-    
     playSound("success");
-    showNotification("Worker Approved & Escrow Funded", "Worker approved! OTP automatically sent to in-app chat.");
+    showNotification(
+      "Worker Approved & Escrow Funded",
+      "Worker approved! OTP automatically sent to in-app chat.",
+    );
   };
-
   const acceptJobByWorker = (jobId: string, workerToAssign?: WorkerProfile) => {
     const worker = workerToAssign || currentWorker;
     if (!worker) {
-      showNotification('Please select or log in as a worker to accept this job.');
+      showNotification(
+        "Please select or log in as a worker to accept this job.",
+      );
       return;
     }
-
     const targetJob = jobs.find((j) => j.id === jobId);
     if (targetJob) {
       const wLat = worker.gpsLocation?.lat || 30.8926;
@@ -2441,152 +2597,168 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const jLat = targetJob.jobGps?.lat || wLat;
       const jLng = targetJob.jobGps?.lng || wLng;
       const dist = calculateDistanceKm(wLat, wLng, jLat, jLng);
-
       if (dist > 30.0 && targetJob.jobGps?.city !== worker.gpsLocation?.city) {
-        playSound('alert');
-        showNotification(`Notice: Job is ${dist} km away in ${targetJob.jobGps?.city || 'another area'}.`);
+        playSound("alert");
+        showNotification(
+          `Notice: Job is ${dist} km away in ${targetJob.jobGps?.city || "another area"}.`,
+        );
       }
     }
-
     let updatedAcceptedJob: Job | null = null;
     const isGoldCustomer = Boolean(
-      (currentCustomer && currentCustomer.isPremiumCustomer) || 
-      (targetJob?.customerPhone && customerAccounts.some(c => c.phone === targetJob.customerPhone && c.extraData?.isPremiumCustomer))
+      (currentCustomer && currentCustomer.isPremiumCustomer) ||
+      (targetJob?.customerPhone &&
+        customerAccounts.some(
+          (c) =>
+            c.phone === targetJob.customerPhone &&
+            c.extraData?.isPremiumCustomer,
+        )),
     );
-
     setJobs((prev) =>
       prev.map((job) => {
         if (job.id === jobId) {
           const updated = {
             ...job,
-            status: 'accepted' as const,
+            status: "accepted" as const,
             assignedWorkerId: worker.id,
             assignedWorkerName: worker.name,
             assignedWorkerPhone: worker.phone,
             assignedWorkerTrade: worker.primaryTrade,
             assignedWorkerUpi: worker.upiId,
             adminFundedPayout: isGoldCustomer ? true : job.adminFundedPayout,
-            zeroCommissionApplied: isGoldCustomer ? true : job.zeroCommissionApplied,
+            zeroCommissionApplied: isGoldCustomer
+              ? true
+              : job.zeroCommissionApplied,
           };
           updatedAcceptedJob = updated;
           return updated;
         }
         return job;
-      })
+      }),
     );
-
     if (updatedAcceptedJob) {
       syncJobToFirestore(updatedAcceptedJob);
     }
-
-    // If customer has Gold Membership (₹15,000 plan), Admin automatically disburses worker wage to worker's wallet
-    if (isGoldCustomer && targetJob) {
+    /* If customer has Gold Membership, auto-disburse worker wage to worker wallet */ if (
+      isGoldCustomer &&
+      targetJob
+    ) {
       const wage = (targetJob.dailyWage || 850) * (targetJob.durationDays || 1);
-      disburseWorkerWageFromAdmin(worker.id, wage, targetJob.id, targetJob.customerName);
+      disburseWorkerWageFromAdmin(
+        worker.id,
+        wage,
+        targetJob.id,
+        targetJob.customerName,
+      );
     }
-
-    playSound('success');
-    showNotification(`Your job has been accepted by ${worker.name}. Do you want to approve or reject this worker?`);
+    playSound("success");
+    showNotification(
+      `Your job has been accepted by ${worker.name}. Do you want to approve or reject this worker?`,
+    );
   };
-
-  // Worker starts work by entering OTP
-  const startJobWithOtp = (jobId: string, inputOtp: string): boolean => {
+  /* Worker starts work */ const startJobWithOtp = (
+    jobId: string,
+    inputOtp: string,
+  ): boolean => {
     const targetJob = jobs.find((j) => j.id === jobId);
     if (!targetJob) return false;
-
     if (targetJob.otpCode === inputOtp.trim()) {
-      const updated = { ...targetJob, status: 'in_progress' as const };
-      setJobs((prev) =>
-        prev.map((j) => (j.id === jobId ? updated : j))
-      );
+      const updated = { ...targetJob, status: "in_progress" as const };
+      setJobs((prev) => prev.map((j) => (j.id === jobId ? updated : j)));
       syncJobToFirestore(updated);
-      playSound('success');
-      showNotification('OTP Verified! Job officially started.');
+      playSound("success");
+      showNotification("OTP Verified! Job officially started.");
       return true;
     } else {
-      playSound('alert');
-      showNotification('Invalid OTP. Please check with employer.');
+      playSound("alert");
+      showNotification("Invalid OTP. Please check with employer.");
       return false;
     }
   };
-
-  // Worker marks job finished
-  const completeJobByWorker = (jobId: string) => {
+  /* Worker marks job finished */ const completeJobByWorker = (
+    jobId: string,
+  ) => {
     const targetJob = jobs.find((j) => j.id === jobId);
-    const updated = targetJob ? { ...targetJob, status: 'completed_pending_payment' as const } : null;
-
+    const updated = targetJob
+      ? { ...targetJob, status: "completed_pending_payment" as const }
+      : null;
     setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? (updated || { ...j, status: 'completed_pending_payment' }) : j))
+      prev.map((j) =>
+        j.id === jobId
+          ? updated || { ...j, status: "completed_pending_payment" }
+          : j,
+      ),
     );
     if (updated) {
       syncJobToFirestore(updated);
     }
-    playSound('success');
-    showNotification('Job marked completed. Awaiting employer payout release.');
+    playSound("success");
+    showNotification("Job marked completed. Awaiting employer payout release.");
   };
-
-    // Customer releases payment via UPI and rates worker
-  const releasePaymentByCustomer = (
-    jobId: string, 
-    rating: number, 
-    review: string, 
-    paidVia: 'UPI_QR' | 'UPI_DIRECT' | 'ESCROW_WALLET' | 'CASH' = 'UPI_QR',
+  /* Customer releases payment */ const releasePaymentByCustomer = (
+    jobId: string,
+    rating: number,
+    review: string,
+    paidVia: "UPI_QR" | "UPI_DIRECT" | "ESCROW_WALLET" | "CASH" = "UPI_QR",
     txnRef?: string,
-    tags?: string[]
+    tags?: string[],
   ) => {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-
     let payout = job.workerPayout;
     let actualPlatformFee = job.platformFee;
-    let zeroCommissionUsed = false;
-
-    // Check if assigned worker has active Zero Commission VIP Pass or is a premium worker
+    let zeroCommissionUsed = false; /* Check if assigned worker has VIP Pass */
     const targetWorker = workers.find((w) => w.id === job.assignedWorkerId);
-    if (targetWorker && ((targetWorker.zeroCommissionJobsRemaining || 0) > 0 || targetWorker.isPremiumWorker)) {
+    if (
+      targetWorker &&
+      ((targetWorker.zeroCommissionJobsRemaining || 0) > 0 ||
+        targetWorker.isPremiumWorker)
+    ) {
       const fullGross = (job.dailyWage || 850) * (job.durationDays || 1);
       payout = fullGross;
       actualPlatformFee = 0;
       zeroCommissionUsed = true;
     }
-
     const updatedJob: Job = {
       ...job,
       platformFee: actualPlatformFee,
       workerPayout: payout,
       zeroCommissionApplied: zeroCommissionUsed,
-      status: 'paid_and_closed',
-      escrowStatus: 'released_to_worker',
+      status: "paid_and_closed",
+      escrowStatus: "released_to_worker",
       isPaid: true,
       rating: rating,
       review: review,
       customerRating: rating,
       customerReview: review,
-      ratingTags: tags || ['⚡ Punctual & On-Time', '🛠️ Expert Craftsmanship'],
+      ratingTags: tags || ["⚡ Punctual & On-Time", "🛠️ Expert Craftsmanship"],
       ratedAt: new Date().toISOString(),
       paidVia: paidVia,
       transactionRef: txnRef || `UPI-DIHADI-${Date.now().toString().slice(-6)}`,
     };
-
-    setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? updatedJob : j))
-    );
-    syncJobToFirestore(updatedJob);
-
-    // Update worker earnings, wallet, zero-commission counter, and compute dynamic average rating
+    setJobs((prev) => prev.map((j) => (j.id === jobId ? updatedJob : j)));
+    syncJobToFirestore(
+      updatedJob,
+    ); /* Update worker earnings & average rating */
     if (job.assignedWorkerId && targetWorker) {
       const prevReviews = targetWorker.reviewCount || 0;
       const newCount = prevReviews + 1;
-      const newRating = prevReviews === 0 ? rating : Number((((targetWorker.rating || rating) * prevReviews + rating) / newCount).toFixed(1));
-
-      const newRemainingZeroJobs = zeroCommissionUsed 
+      const newRating =
+        prevReviews === 0
+          ? rating
+          : Number(
+              (
+                ((targetWorker.rating || rating) * prevReviews + rating) /
+                newCount
+              ).toFixed(1),
+            );
+      const newRemainingZeroJobs = zeroCommissionUsed
         ? Math.max(0, (targetWorker.zeroCommissionJobsRemaining || 0) - 1)
-        : (targetWorker.zeroCommissionJobsRemaining || 0);
-
-      const savedThisJob = zeroCommissionUsed 
-        ? (job.platformFee || Math.round(((job.dailyWage || 850) * (job.durationDays || 1)) * 0.2)) 
+        : targetWorker.zeroCommissionJobsRemaining || 0;
+      const savedThisJob = zeroCommissionUsed
+        ? job.platformFee ||
+          Math.round((job.dailyWage || 850) * (job.durationDays || 1) * 0.2)
         : 0;
-
       const updatedWorker: WorkerProfile = {
         ...targetWorker,
         todayEarnings: targetWorker.todayEarnings + payout,
@@ -2594,72 +2766,73 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         walletBalance: targetWorker.walletBalance + payout,
         completedJobsCount: targetWorker.completedJobsCount + 1,
         zeroCommissionJobsRemaining: newRemainingZeroJobs,
-        commissionSavedTotal: (targetWorker.commissionSavedTotal || 0) + savedThisJob,
+        commissionSavedTotal:
+          (targetWorker.commissionSavedTotal || 0) + savedThisJob,
         reviewCount: newCount,
         rating: Math.min(5.0, Math.max(1.0, newRating)),
       };
-
-      setWorkers((prev) => prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)));
+      setWorkers((prev) =>
+        prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)),
+      );
       syncWorkerToFirestore(updatedWorker);
-
       if (currentWorker && currentWorker.id === job.assignedWorkerId) {
         setCurrentWorker(updatedWorker);
       }
     }
-
-    const isCustomerGoldMember = Boolean(currentCustomer?.isPremiumCustomer || job.adminFundedPayout);
-
+    const isCustomerGoldMember = Boolean(
+      currentCustomer?.isPremiumCustomer || job.adminFundedPayout,
+    );
     if (isCustomerGoldMember) {
-      // Deduct payout from Admin Treasury balance
-      setAdminTreasuryBalance((prev) => {
+      /* Deduct payout from Admin */ setAdminTreasuryBalance((prev) => {
         const next = Math.max(0, prev - payout);
-        localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+        localStorage.setItem("dihadi_admin_treasury_v6", String(next));
         return next;
       });
-
       setAdminWorkerPayoutsDisbursed((prev) => {
         const next = prev + payout;
-        localStorage.setItem('dihadi_admin_disbursed_v6', String(next));
+        localStorage.setItem("dihadi_admin_disbursed_v6", String(next));
         return next;
       });
-
-      // Record in Admin Transactions
-      const payoutTx: AdminTransaction = {
+      /* Record in Admin Transactions */ const payoutTx: AdminTransaction = {
         id: `tx-admin-disburse-${Date.now()}`,
-        type: 'WORKER_PAYOUT_DISBURSEMENT',
+        type: "WORKER_PAYOUT_DISBURSEMENT",
         amount: payout,
         description: `Customer Gold Membership Auto-Payout (₹${payout}) for ${job.title}`,
-        timestamp: 'Just now',
+        timestamp: "Just now",
         customerName: currentCustomer?.name || job.customerName,
-        workerName: job.assignedWorkerName || 'Worker',
+        workerName: job.assignedWorkerName || "Worker",
         jobId: job.id,
       };
-
       setAdminTransactions((prev) => {
         const updated = [payoutTx, ...prev];
-        localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+        localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
         return updated;
       });
     }
-
-    playSound('cash');
+    playSound("cash");
     if (isCustomerGoldMember) {
       showNotification(
-        '👑 Subscription Payout Complete (₹0 Paid)',
-        `Worker wage of ₹${payout} was automatically disbursed from Admin Treasury to ${job.assignedWorkerName || 'Worker'}. Rated ${rating}★.`
+        "👑 Subscription Payout Complete (₹0 Paid)",
+        `Worker wage of ₹${payout} was automatically disbursed from Admin Treasury to ${job.assignedWorkerName || "Worker"}. Rated ${rating}★.`,
       );
     } else if (zeroCommissionUsed) {
-      showNotification(`🎉 0% Commission Applied! ₹${payout} (100% Wage) credited to ${job.assignedWorkerName || 'Worker'}! Remaining VIP Jobs: ${Math.max(0, (targetWorker?.zeroCommissionJobsRemaining || 1) - 1)}`);
+      showNotification(
+        `🎉 0% Commission Applied! ₹${payout} (100% Wage) credited to ${job.assignedWorkerName || "Worker"}! Remaining VIP Jobs: ${Math.max(0, (targetWorker?.zeroCommissionJobsRemaining || 1) - 1)}`,
+      );
     } else {
-      showNotification(`₹${payout} payment released & rated ${rating}★ for ${job.assignedWorkerName || 'Worker'}!`);
+      showNotification(
+        `₹${payout} payment released & rated ${rating}★ for ${job.assignedWorkerName || "Worker"}!`,
+      );
     }
   };
-
-  // Rate or update review for any completed job
-  const rateWorkerJob = (jobId: string, rating: number, review: string, tags?: string[]) => {
+  /* Rate or update review */ const rateWorkerJob = (
+    jobId: string,
+    rating: number,
+    review: string,
+    tags?: string[],
+  ) => {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-
     const updatedJob: Job = {
       ...job,
       rating: rating,
@@ -2669,12 +2842,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ratingTags: tags || job.ratingTags,
       ratedAt: new Date().toISOString(),
     };
-
-    setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? updatedJob : j))
-    );
+    setJobs((prev) => prev.map((j) => (j.id === jobId ? updatedJob : j)));
     syncJobToFirestore(updatedJob);
-
     if (job.assignedWorkerId) {
       setWorkers((prev) =>
         prev.map((w) => {
@@ -2683,204 +2852,204 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const isNewRating = job.rating === undefined;
             let newCount = count;
             let updatedRating = w.rating;
-
             if (isNewRating) {
               newCount = count + 1;
-              updatedRating = count === 0 ? rating : Number((((w.rating * count) + rating) / newCount).toFixed(1));
+              updatedRating =
+                count === 0
+                  ? rating
+                  : Number(((w.rating * count + rating) / newCount).toFixed(1));
             } else {
               const safeCount = Math.max(1, count);
-              updatedRating = Number((((w.rating * safeCount) - (job.rating || 5.0) + rating) / safeCount).toFixed(1));
+              updatedRating = Number(
+                (
+                  (w.rating * safeCount - (job.rating || 5.0) + rating) /
+                  safeCount
+                ).toFixed(1),
+              );
             }
-
             const updatedW: WorkerProfile = {
               ...w,
               rating: Math.min(5.0, Math.max(1.0, updatedRating)),
               reviewCount: newCount,
             };
-            
             syncWorkerToFirestore(updatedW);
-            
-            // Fix: Sync the state if the currently logged-in worker is the one being updated
-            if (currentWorker && currentWorker.id === updatedW.id) {
+            /* Sync state */ if (
+              currentWorker &&
+              currentWorker.id === updatedW.id
+            ) {
               setCurrentWorker(updatedW);
             }
-            
             return updatedW;
           }
           return w;
-        })
+        }),
       );
     }
-
-    playSound('success');
+    playSound("success");
     showNotification(`Rating of ${rating}★ recorded successfully!`);
   };
-
-  // Top-up worker wallet balance (for subscription or testing)
-  const topUpWorkerWallet = (amount: number) => {
+  /* Top-up worker wallet */ const topUpWorkerWallet = (amount: number) => {
     if (!currentWorker) return;
     const updated: WorkerProfile = {
       ...currentWorker,
       walletBalance: (currentWorker.walletBalance || 0) + amount,
     };
     setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
+    setWorkers((prev) =>
+      prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+    );
     syncWorkerToFirestore(updated);
-    playSound('cash');
-    showNotification(`₹${amount} added to wallet balance! New balance: ₹${updated.walletBalance}`);
+    playSound("cash");
+    showNotification(
+      `₹${amount} added to wallet balance! New balance: ₹${updated.walletBalance}`,
+    );
   };
-
-  // Disburse Worker Wage directly from Admin Treasury into worker's wallet
-  const disburseWorkerWageFromAdmin = (workerId: string, wage: number, jobId?: string, customerName?: string): boolean => {
+  /* Disburse Worker Wage */ const disburseWorkerWageFromAdmin = (
+    workerId: string,
+    wage: number,
+    jobId?: string,
+    customerName?: string,
+  ): boolean => {
     const target = workers.find((w) => w.id === workerId);
     if (!target) return false;
-
-    // Deduct wage from Admin Treasury balance
-    setAdminTreasuryBalance((prev) => {
+    /* Deduct wage */ setAdminTreasuryBalance((prev) => {
       const next = Math.max(0, prev - wage);
-      localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+      localStorage.setItem("dihadi_admin_treasury_v6", String(next));
       return next;
     });
-
-    // Increase total disbursed to workers counter
-    setAdminWorkerPayoutsDisbursed((prev) => {
+    /* Increase total disbursed */ setAdminWorkerPayoutsDisbursed((prev) => {
       const next = prev + wage;
-      localStorage.setItem('dihadi_admin_disbursed_v6', String(next));
+      localStorage.setItem("dihadi_admin_disbursed_v6", String(next));
       return next;
     });
-
-    // Record detailed admin audit transaction
-    const newTx: AdminTransaction = {
+    /* Record detailed admin */ const newTx: AdminTransaction = {
       id: `tx-payout-${Date.now()}`,
-      type: 'WORKER_PAYOUT_DISBURSEMENT',
+      type: "WORKER_PAYOUT_DISBURSEMENT",
       amount: wage,
-      description: `Admin Treasury Auto-Disbursed ₹${wage} to ${target.name} (Hired by Gold Customer ${customerName || 'Gold Member'})`,
-      timestamp: 'Just now',
-      customerName: customerName || 'Gold Member',
+      description: `Admin Treasury Auto-Disbursed ₹${wage} to ${target.name} (Hired by Gold Customer ${customerName || "Gold Member"})`,
+      timestamp: "Just now",
+      customerName: customerName || "Gold Member",
       workerName: target.name,
-      jobId: jobId
+      jobId: jobId,
     };
-
     setAdminTransactions((prev) => {
       const updated = [newTx, ...prev];
-      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
       return updated;
     });
-
-    // Directly credit worker's wallet
-    const updatedWorker: WorkerProfile = {
+    /* Directly credit wallet */ const updatedWorker: WorkerProfile = {
       ...target,
       walletBalance: (target.walletBalance || 0) + wage,
       todayEarnings: (target.todayEarnings || 0) + wage,
       totalEarnings: (target.totalEarnings || 0) + wage,
     };
-
-    setWorkers((prev) => prev.map((w) => (w.id === target.id ? updatedWorker : w)));
+    setWorkers((prev) =>
+      prev.map((w) => (w.id === target.id ? updatedWorker : w)),
+    );
     syncWorkerToFirestore(updatedWorker);
-
     if (currentWorker && currentWorker.id === target.id) {
       setCurrentWorker(updatedWorker);
     }
-
-    playSound('cash');
+    playSound("cash");
     showNotification(
-      `💰 Admin Auto-Payout: ₹${wage} transferred directly into ${target.name}'s wallet!`
+      `💰 Admin Auto-Payout: ₹${wage} transferred directly into ${target.name}'s wallet!`,
     );
     return true;
   };
-
-  // Worker purchases 0% Commission VIP Pass (₹2,000 for 6 zero-fee jobs) & Quick Aadhaar Verification
-  const subscribeWorkerPremium = (workerId: string, paymentMethod: 'WALLET' | 'UPI' = 'WALLET'): { success: boolean; message: string } => {
-    const target = workers.find((w) => w.id === workerId) || currentWorker;
-    if (!target) {
-      return { success: false, message: 'Worker profile not found.' };
-    }
-
-    const PRICE = 2000;
-    const JOBS_ADDED = 6;
-
-    if (paymentMethod === 'WALLET') {
-      if ((target.walletBalance || 0) < PRICE) {
-        playSound('alert');
-        showNotification(`Insufficient wallet balance. You have ₹${target.walletBalance}, need ₹${PRICE}.`);
-        return { success: false, message: 'Insufficient wallet balance.' };
+  /* Worker purchases VIP Pass & Aadhaar Verification */ const subscribeWorkerPremium =
+    (
+      workerId: string,
+      paymentMethod: "WALLET" | "UPI" = "WALLET",
+    ): { success: boolean; message: string } => {
+      const target = workers.find((w) => w.id === workerId) || currentWorker;
+      if (!target) {
+        return { success: false, message: "Worker profile not found." };
       }
-    }
-
-    const newBalance = paymentMethod === 'WALLET' ? (target.walletBalance - PRICE) : target.walletBalance;
-    const newZeroJobs = (target.zeroCommissionJobsRemaining || 0) + JOBS_ADDED;
-
-    // Instant Aadhaar verification upon VIP activation
-    const updatedWorker: WorkerProfile = {
-      ...target,
-      walletBalance: newBalance,
-      isPremiumWorker: true,
-      zeroCommissionJobsRemaining: newZeroJobs,
-      isVerified: true,
-      badge: 'Aadhaar Verified',
-      premiumWorkerExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-
-    setWorkers((prev) => prev.map((w) => (w.id === target.id ? updatedWorker : w)));
-    syncWorkerToFirestore(updatedWorker);
-
-    if (currentWorker && currentWorker.id === target.id) {
-      setCurrentWorker(updatedWorker);
-    }
-
-    // Auto-approve worker's verification in the admin KYC table
-    setVerifications((prev) =>
-      prev.map((v) =>
-        v.workerName.toLowerCase() === target.name.toLowerCase() || v.phone === target.phone
-          ? { ...v, status: 'approved' }
-          : v
-      )
-    );
-
-    // Credit money to Admin Treasury & Subscription Revenue
-    setAdminTreasuryBalance((prev) => {
-      const next = prev + PRICE;
-      localStorage.setItem('dihadi_admin_treasury_v6', String(next));
-      return next;
-    });
-
-    setAdminSubscriptionRevenue((prev) => {
-      const next = prev + PRICE;
-      localStorage.setItem('dihadi_admin_sub_rev_v6', String(next));
-      return next;
-    });
-
-    // Record Admin transaction
-    const newTx: AdminTransaction = {
-      id: `tx-worker-sub-${Date.now()}`,
-      type: 'SUBSCRIPTION_CREDIT',
-      amount: PRICE,
-      description: `Worker VIP Pass & Instant Aadhaar Verification (₹${PRICE})`,
-      timestamp: 'Just now',
-      workerName: target.name,
-    };
-
-    setAdminTransactions((prev) => {
-      const updated = [newTx, ...prev];
-      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
-      return updated;
-    });
-
-    playSound('cash');
-    showNotification(
-      '🎉 VIP Pass & Quick Aadhaar Verification Activated!',
-      `₹${PRICE} received. You are now Govt. Aadhaar Verified with 6 Zero-Commission Jobs and Priority Ranking!`
-    );
-
-    return { success: true, message: 'VIP Pass & Aadhaar Verification Activated Successfully!' };
-  };
-
-  // Customer purchases Dihadi Gold Membership (₹15,000 with 1 Month Free Service & Admin Automated Worker Payouts)
-  const subscribeCustomerPremium = (customerId: string, paymentMethod: 'UPI' | 'CARD' | 'NET_BANKING' = 'UPI'): { success: boolean; message: string } => {
+      const PRICE = 2000;
+      const JOBS_ADDED = 6;
+      if (paymentMethod === "WALLET") {
+        if ((target.walletBalance || 0) < PRICE) {
+          playSound("alert");
+          showNotification(
+            `Insufficient wallet balance. You have ₹${target.walletBalance}, need ₹${PRICE}.`,
+          );
+          return { success: false, message: "Insufficient wallet balance." };
+        }
+      }
+      const newBalance =
+        paymentMethod === "WALLET"
+          ? target.walletBalance - PRICE
+          : target.walletBalance;
+      const newZeroJobs =
+        (target.zeroCommissionJobsRemaining || 0) + JOBS_ADDED;
+      /* Instant Aadhaar verification */ const updatedWorker: WorkerProfile = {
+        ...target,
+        walletBalance: newBalance,
+        isPremiumWorker: true,
+        zeroCommissionJobsRemaining: newZeroJobs,
+        isVerified: true,
+        badge: "Aadhaar Verified",
+        premiumWorkerExpiresAt: new Date(
+          Date.now() + 60 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      };
+      setWorkers((prev) =>
+        prev.map((w) => (w.id === target.id ? updatedWorker : w)),
+      );
+      syncWorkerToFirestore(updatedWorker);
+      if (currentWorker && currentWorker.id === target.id) {
+        setCurrentWorker(updatedWorker);
+      }
+      /* Auto-approve worker */ setVerifications((prev) =>
+        prev.map((v) =>
+          v.workerName.toLowerCase() === target.name.toLowerCase() ||
+          v.phone === target.phone
+            ? { ...v, status: "approved" }
+            : v,
+        ),
+      );
+      /* Credit Admin Treasury */ setAdminTreasuryBalance((prev) => {
+        const next = prev + PRICE;
+        localStorage.setItem("dihadi_admin_treasury_v6", String(next));
+        return next;
+      });
+      setAdminSubscriptionRevenue((prev) => {
+        const next = prev + PRICE;
+        localStorage.setItem("dihadi_admin_sub_rev_v6", String(next));
+        return next;
+      });
+      /* Record Admin transaction */ const newTx: AdminTransaction = {
+        id: `tx-worker-sub-${Date.now()}`,
+        type: "SUBSCRIPTION_CREDIT",
+        amount: PRICE,
+        description: `Worker VIP Pass & Instant Aadhaar Verification (₹${PRICE})`,
+        timestamp: "Just now",
+        workerName: target.name,
+      };
+      setAdminTransactions((prev) => {
+        const updated = [newTx, ...prev];
+        localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
+        return updated;
+      });
+      playSound("cash");
+      showNotification(
+        "🎉 VIP Pass & Quick Aadhaar Verification Activated!",
+        `₹${PRICE} received. You are now Govt. Aadhaar Verified with 6 Zero-Commission Jobs and Priority Ranking!`,
+      );
+      return {
+        success: true,
+        message: "VIP Pass & Aadhaar Verification Activated Successfully!",
+      };
+    }; /* Customer purchases Dihadi Gold */
+  const subscribeCustomerPremium = (
+    customerId: string,
+    paymentMethod: "UPI" | "CARD" | "NET_BANKING" = "UPI",
+  ): { success: boolean; message: string } => {
     const PRICE = 15000;
-    const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 1 Month Free Service
-
-    if (currentCustomer) {
+    const expiry = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    /* 1 Month Free Service */ if (currentCustomer) {
       const updatedCustomer: CustomerProfile = {
         ...currentCustomer,
         isPremiumCustomer: true,
@@ -2889,167 +3058,180 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         premiumCustomerExpiresAt: expiry,
       };
       setCurrentCustomer(updatedCustomer);
-      localStorage.setItem('dihadi_current_customer_v6', JSON.stringify(updatedCustomer));
+      localStorage.setItem(
+        "dihadi_current_customer_v6",
+        JSON.stringify(updatedCustomer),
+      );
     }
-
-    // Credit money to Admin Account & Treasury
-    setAdminTreasuryBalance((prev) => {
+    /* Credit Admin Account */ setAdminTreasuryBalance((prev) => {
       const next = prev + PRICE;
-      localStorage.setItem('dihadi_admin_treasury_v6', String(next));
+      localStorage.setItem("dihadi_admin_treasury_v6", String(next));
       return next;
     });
-
     setAdminSubscriptionRevenue((prev) => {
       const next = prev + PRICE;
-      localStorage.setItem('dihadi_admin_sub_rev_v6', String(next));
+      localStorage.setItem("dihadi_admin_sub_rev_v6", String(next));
       return next;
     });
-
-    // Record in Admin Transactions
-    const newTx: AdminTransaction = {
+    /* Record in Admin Transactions */ const newTx: AdminTransaction = {
       id: `tx-cust-sub-${Date.now()}`,
-      type: 'SUBSCRIPTION_CREDIT',
+      type: "SUBSCRIPTION_CREDIT",
       amount: PRICE,
-      description: `Customer Gold Membership (₹${PRICE.toLocaleString('en-IN')}) - 1 Month Free Service & Auto Worker Payouts`,
-      timestamp: 'Just now',
-      customerName: currentCustomer?.name || 'Customer'
+      description: `Customer Gold Membership (₹${PRICE.toLocaleString("en-IN")}) - 1 Month Free Service & Auto Worker Payouts`,
+      timestamp: "Just now",
+      customerName: currentCustomer?.name || "Customer",
     };
-
     setAdminTransactions((prev) => {
       const updated = [newTx, ...prev];
-      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
       return updated;
     });
-
-    playSound('success');
+    playSound("success");
     showNotification(
-      '👑 Dihadi Gold Membership Activated!',
-      `₹${PRICE.toLocaleString('en-IN')} received in Admin Account. Worker hiring wages will now be automatically disbursed directly into worker wallets by Admin!`
+      "👑 Dihadi Gold Membership Activated!",
+      `₹${PRICE.toLocaleString("en-IN")} received in Admin Account. Worker hiring wages will now be automatically disbursed directly into worker wallets by Admin!`,
     );
-
-    return { success: true, message: 'Dihadi Gold Membership Activated!' };
+    return { success: true, message: "Dihadi Gold Membership Activated!" };
   };
-
-  // Worker withdraws wallet balance to UPI bank account
-  const withdrawWorkerEarnings = (customUpi?: string) => {
+  /* Worker withdraws wallet */ const withdrawWorkerEarnings = (
+    customUpi?: string,
+  ) => {
     if (!currentWorker || currentWorker.walletBalance <= 0) {
-      showNotification('Wallet balance is ₹0.');
+      showNotification("Wallet balance is ₹0.");
       return;
     }
-
     const amount = currentWorker.walletBalance;
-    const targetUpi = customUpi || currentWorker.upiId || 'worker@upi';
-
+    const targetUpi = customUpi || currentWorker.upiId || "worker@upi";
     const updated = { ...currentWorker, walletBalance: 0 };
     setCurrentWorker(updated);
-    setWorkers((prev) => prev.map((w) => (w.id === currentWorker.id ? updated : w)));
-
-    playSound('cash');
+    setWorkers((prev) =>
+      prev.map((w) => (w.id === currentWorker.id ? updated : w)),
+    );
+    playSound("cash");
     showNotification(`₹${amount} transferred to ${targetUpi}!`);
   };
-
-  // Admin verifies a worker
-  const verifyWorkerByAdmin = (id: string, status: 'approved' | 'rejected') => {
+  /* Admin verifies worker */ const verifyWorkerByAdmin = (
+    id: string,
+    status: "approved" | "rejected",
+  ) => {
     setVerifications((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, status } : v))
+      prev.map((v) => (v.id === id ? { ...v, status } : v)),
     );
-
     const vReq = verifications.find((v) => v.id === id);
     if (vReq) {
       const updatedV: VerificationRequest = { ...vReq, status };
       syncVerificationToFirestore(updatedV);
-
-      const vReqCleanPhone = vReq.phone.replace(/[^0-9]/g, '').slice(-10);
+      const vReqCleanPhone = vReq.phone.replace(/[^0-9]/g, "").slice(-10);
       const vReqName = vReq.workerName.trim().toLowerCase();
-
       setWorkers((prev) =>
         prev.map((w) => {
-          const wCleanPhone = w.phone.replace(/[^0-9]/g, '').slice(-10);
-          const isMatch = (wCleanPhone && vReqCleanPhone && wCleanPhone === vReqCleanPhone) || 
-                          w.name.trim().toLowerCase() === vReqName;
+          const wCleanPhone = w.phone.replace(/[^0-9]/g, "").slice(-10);
+          const isMatch =
+            (wCleanPhone && vReqCleanPhone && wCleanPhone === vReqCleanPhone) ||
+            w.name.trim().toLowerCase() === vReqName;
           if (isMatch) {
             const updatedW: WorkerProfile = {
               ...w,
-              isVerified: status === 'approved',
-              badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
+              isVerified: status === "approved",
+              badge:
+                status === "approved"
+                  ? "Aadhaar Verified"
+                  : "Registered Worker",
             };
             syncWorkerToFirestore(updatedW);
             return updatedW;
           }
           return w;
-        })
+        }),
       );
-
       if (currentWorker) {
-        const currCleanPhone = currentWorker.phone.replace(/[^0-9]/g, '').slice(-10);
-        const isMatch = (currCleanPhone && vReqCleanPhone && currCleanPhone === vReqCleanPhone) || 
-                        currentWorker.name.trim().toLowerCase() === vReqName;
+        const currCleanPhone = currentWorker.phone
+          .replace(/[^0-9]/g, "")
+          .slice(-10);
+        const isMatch =
+          (currCleanPhone &&
+            vReqCleanPhone &&
+            currCleanPhone === vReqCleanPhone) ||
+          currentWorker.name.trim().toLowerCase() === vReqName;
         if (isMatch) {
           setCurrentWorker((curr) =>
             curr
               ? {
                   ...curr,
-                  isVerified: status === 'approved',
-                  badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
+                  isVerified: status === "approved",
+                  badge:
+                    status === "approved"
+                      ? "Aadhaar Verified"
+                      : "Registered Worker",
                 }
-              : null
+              : null,
           );
         }
       }
     }
-
-    playSound('click');
-    showNotification(`KYC verification for ${vReq?.workerName || 'worker'} marked ${status}.`);
+    playSound("click");
+    showNotification(
+      `KYC verification for ${vReq?.workerName || "worker"} marked ${status}.`,
+    );
   };
-
-  // Direct verification from directory
-  const verifyWorkerDirectly = (workerId: string, status: 'approved' | 'rejected' = 'approved') => {
+  /* Direct verification */ const verifyWorkerDirectly = (
+    workerId: string,
+    status: "approved" | "rejected" = "approved",
+  ) => {
     const targetWorker = workers.find((w) => w.id === workerId);
     if (!targetWorker) return;
-
-    const targetPhoneClean = targetWorker.phone.replace(/[^0-9]/g, '').slice(-10);
+    const targetPhoneClean = targetWorker.phone
+      .replace(/[^0-9]/g, "")
+      .slice(-10);
     const targetName = targetWorker.name.trim().toLowerCase();
-
     const updatedWorker: WorkerProfile = {
       ...targetWorker,
-      isVerified: status === 'approved',
-      badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
+      isVerified: status === "approved",
+      badge: status === "approved" ? "Aadhaar Verified" : "Registered Worker",
     };
     syncWorkerToFirestore(updatedWorker);
-
-    // Update workers
-    setWorkers((prev) =>
+    /* Update workers */ setWorkers((prev) =>
       prev.map((w) =>
-        w.id === workerId || (targetPhoneClean && w.phone.replace(/[^0-9]/g, '').slice(-10) === targetPhoneClean) || w.name.trim().toLowerCase() === targetName
+        w.id === workerId ||
+        (targetPhoneClean &&
+          w.phone.replace(/[^0-9]/g, "").slice(-10) === targetPhoneClean) ||
+        w.name.trim().toLowerCase() === targetName
           ? updatedWorker
-          : w
-      )
+          : w,
+      ),
     );
-
     if (currentWorker) {
-      const currCleanPhone = currentWorker.phone.replace(/[^0-9]/g, '').slice(-10);
-      const isMatch = (currentWorker.id === workerId) ||
-                      (currCleanPhone && targetPhoneClean && currCleanPhone === targetPhoneClean) || 
-                      currentWorker.name.trim().toLowerCase() === targetName;
+      const currCleanPhone = currentWorker.phone
+        .replace(/[^0-9]/g, "")
+        .slice(-10);
+      const isMatch =
+        currentWorker.id === workerId ||
+        (currCleanPhone &&
+          targetPhoneClean &&
+          currCleanPhone === targetPhoneClean) ||
+        currentWorker.name.trim().toLowerCase() === targetName;
       if (isMatch) {
         setCurrentWorker((curr) =>
           curr
             ? {
                 ...curr,
-                isVerified: status === 'approved',
-                badge: status === 'approved' ? 'Aadhaar Verified' : 'Registered Worker',
+                isVerified: status === "approved",
+                badge:
+                  status === "approved"
+                    ? "Aadhaar Verified"
+                    : "Registered Worker",
               }
-            : null
+            : null,
         );
       }
     }
-
-    // Update or create verification request record
-    setVerifications((prev) => {
+    /* Update verification */ setVerifications((prev) => {
       const match = prev.find((v) => {
-        const vClean = v.phone.replace(/[^0-9]/g, '').slice(-10);
-        return (vClean && targetPhoneClean && vClean === targetPhoneClean) || 
-               v.workerName.trim().toLowerCase() === targetName;
+        const vClean = v.phone.replace(/[^0-9]/g, "").slice(-10);
+        return (
+          (vClean && targetPhoneClean && vClean === targetPhoneClean) ||
+          v.workerName.trim().toLowerCase() === targetName
+        );
       });
       if (match) {
         const updatedV: VerificationRequest = { ...match, status };
@@ -3061,54 +3243,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           workerName: targetWorker.name,
           trade: targetWorker.primaryTrade,
           phone: targetWorker.phone,
-          aadhaarNumber: targetWorker.aadhaarNumberMasked || '7829-4412-9901',
+          aadhaarNumber: targetWorker.aadhaarNumberMasked || "7829-4412-9901",
           experienceYears: targetWorker.experienceYears || 3,
-          submittedAt: 'Just now',
+          submittedAt: "Just now",
           status,
         };
         syncVerificationToFirestore(newV);
         return [newV, ...prev];
       }
     });
-
-    playSound('click');
-    showNotification(`Worker ${targetWorker.name} verification marked ${status}.`);
+    playSound("click");
+    showNotification(
+      `Worker ${targetWorker.name} verification marked ${status}.`,
+    );
   };
-
-  // Verify currently logged in worker directly
-  const verifyCurrentWorker = (status: 'approved' | 'rejected' = 'approved') => {
+  /* Verify current worker */ const verifyCurrentWorker = (
+    status: "approved" | "rejected" = "approved",
+  ) => {
     if (!currentWorker) return;
     verifyWorkerDirectly(currentWorker.id, status);
   };
-
-  // Worker submits KYC for admin review
-  const submitWorkerKyc = (data: {
+  /* Worker submits KYC */ const submitWorkerKyc = (data: {
     workerName: string;
     trade: TradeType;
     phone: string;
     aadhaarNumber: string;
     experienceYears: number;
   }) => {
-    const cleanPhone = data.phone.replace(/[^0-9]/g, '').slice(-10);
-    const maskedAadhaar = `XXXX-XXXX-${data.aadhaarNumber.replace(/[^0-9]/g, '').slice(-4) || '9901'}`;
-
-    // Update in worker list
-    setWorkers((prev) =>
+    const cleanPhone = data.phone.replace(/[^0-9]/g, "").slice(-10);
+    const maskedAadhaar = `XXXX-XXXX-${data.aadhaarNumber.replace(/[^0-9]/g, "").slice(-4) || "9901"}`;
+    /* Update in worker list */ setWorkers((prev) =>
       prev.map((w) => {
-        const wClean = w.phone.replace(/[^0-9]/g, '').slice(-10);
-        if ((wClean && cleanPhone && wClean === cleanPhone) || w.name.trim().toLowerCase() === data.workerName.trim().toLowerCase()) {
+        const wClean = w.phone.replace(/[^0-9]/g, "").slice(-10);
+        if (
+          (wClean && cleanPhone && wClean === cleanPhone) ||
+          w.name.trim().toLowerCase() === data.workerName.trim().toLowerCase()
+        ) {
           return {
             ...w,
             primaryTrade: data.trade,
             experienceYears: data.experienceYears,
             aadhaarNumberMasked: maskedAadhaar,
-            badge: 'KYC Under Review',
+            badge: "KYC Under Review",
           };
         }
         return w;
-      })
+      }),
     );
-
     if (currentWorker) {
       setCurrentWorker((curr) =>
         curr
@@ -3117,19 +3298,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               primaryTrade: data.trade,
               experienceYears: data.experienceYears,
               aadhaarNumberMasked: maskedAadhaar,
-              badge: 'KYC Under Review',
+              badge: "KYC Under Review",
             }
-          : null
+          : null,
       );
     }
-
-    // Add or update verification in queue
-    setVerifications((prev) => {
+    /* Add verification */ setVerifications((prev) => {
       const match = prev.find((v) => {
-        const vClean = v.phone.replace(/[^0-9]/g, '').slice(-10);
-        return (vClean && cleanPhone && vClean === cleanPhone) || v.workerName.trim().toLowerCase() === data.workerName.trim().toLowerCase();
+        const vClean = v.phone.replace(/[^0-9]/g, "").slice(-10);
+        return (
+          (vClean && cleanPhone && vClean === cleanPhone) ||
+          v.workerName.trim().toLowerCase() ===
+            data.workerName.trim().toLowerCase()
+        );
       });
-
       if (match) {
         const updatedV: VerificationRequest = {
           ...match,
@@ -3138,8 +3320,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           phone: data.phone,
           aadhaarNumber: data.aadhaarNumber,
           experienceYears: data.experienceYears,
-          submittedAt: 'Just now',
-          status: 'pending',
+          submittedAt: "Just now",
+          status: "pending",
         };
         syncVerificationToFirestore(updatedV);
         return prev.map((v) => (v.id === match.id ? updatedV : v));
@@ -3151,17 +3333,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           phone: data.phone,
           aadhaarNumber: data.aadhaarNumber,
           experienceYears: data.experienceYears,
-          submittedAt: 'Just now',
-          status: 'pending',
+          submittedAt: "Just now",
+          status: "pending",
         };
         syncVerificationToFirestore(newV);
         return [newV, ...prev];
       }
     });
-
     const targetW = workers.find((w) => {
-      const wClean = w.phone.replace(/[^0-9]/g, '').slice(-10);
-      return (wClean && cleanPhone && wClean === cleanPhone) || w.name.trim().toLowerCase() === data.workerName.trim().toLowerCase();
+      const wClean = w.phone.replace(/[^0-9]/g, "").slice(-10);
+      return (
+        (wClean && cleanPhone && wClean === cleanPhone) ||
+        w.name.trim().toLowerCase() === data.workerName.trim().toLowerCase()
+      );
     });
     if (targetW) {
       syncWorkerToFirestore({
@@ -3169,58 +3353,147 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         primaryTrade: data.trade,
         experienceYears: data.experienceYears,
         aadhaarNumberMasked: maskedAadhaar,
-        badge: 'KYC Under Review',
+        badge: "KYC Under Review",
       });
     }
-
-    playSound('success');
-    showNotification(`Aadhaar KYC request for ${data.workerName} submitted to Admin queue!`);
+    playSound("success");
+    showNotification(
+      `Aadhaar KYC request for ${data.workerName} submitted to Admin queue!`,
+    );
   };
-
-  // Seed more workers for verification queue
-  const seedMoreWorkersForVerification = () => {
-    const isLudhiana = !currentCity?.name || currentCity.name.toLowerCase().includes('ludhiana');
-    const candidateNames = isLudhiana ? [
-      { name: 'Kishan Lal', trade: 'Mason' as TradeType, rate: 850, exp: 5, area: 'Model Town', phone: '+91 98101 11223', aadhaar: '8912-3344-5566' },
-      { name: 'Vijay Verma', trade: 'Electrician' as TradeType, rate: 900, exp: 6, area: 'Sarabha Nagar', phone: '+91 98101 44556', aadhaar: '7788-9900-1122' },
-      { name: 'Balwant Singh', trade: 'Carpenter' as TradeType, rate: 950, exp: 8, area: 'Civil Lines', phone: '+91 98101 66778', aadhaar: '4433-2211-9988' },
-      { name: 'Santosh Yadav', trade: 'Painter' as TradeType, rate: 850, exp: 4, area: 'Dugri Phase 1', phone: '+91 98101 88990', aadhaar: '6655-4433-2211' },
-      { name: 'Mohd Imran', trade: 'Plumber' as TradeType, rate: 900, exp: 5, area: 'Gill Road', phone: '+91 98101 33221', aadhaar: '1122-3344-5566' },
-    ] : [
-      { name: 'Kishan Lal', trade: 'Mason' as TradeType, rate: 850, exp: 5, area: currentCity.defaultArea || 'Central Market', phone: '+91 98101 11223', aadhaar: '8912-3344-5566' },
-      { name: 'Vijay Verma', trade: 'Electrician' as TradeType, rate: 900, exp: 6, area: currentCity.defaultArea || 'Main Road', phone: '+91 98101 44556', aadhaar: '7788-9900-1122' },
-      { name: 'Balwant Singh', trade: 'Carpenter' as TradeType, rate: 950, exp: 8, area: currentCity.defaultArea || 'Market Block A', phone: '+91 98101 66778', aadhaar: '4433-2211-9988' },
-      { name: 'Santosh Yadav', trade: 'Painter' as TradeType, rate: 850, exp: 4, area: currentCity.defaultArea || 'Sector 2', phone: '+91 98101 88990', aadhaar: '6655-4433-2211' },
-      { name: 'Mohd Imran', trade: 'Plumber' as TradeType, rate: 900, exp: 5, area: currentCity.defaultArea || 'Civil Area', phone: '+91 98101 33221', aadhaar: '1122-3344-5566' },
-    ];
-
-    const randomPick = candidateNames[Math.floor(Math.random() * candidateNames.length)];
+  /* Seed workers */ const seedMoreWorkersForVerification = () => {
+    const isLudhiana =
+      !currentCity?.name || currentCity.name.toLowerCase().includes("ludhiana");
+    const candidateNames = isLudhiana
+      ? [
+          {
+            name: "Kishan Lal",
+            trade: "Mason" as TradeType,
+            rate: 850,
+            exp: 5,
+            area: "Model Town",
+            phone: "+91 98101 11223",
+            aadhaar: "8912-3344-5566",
+          },
+          {
+            name: "Vijay Verma",
+            trade: "Electrician" as TradeType,
+            rate: 900,
+            exp: 6,
+            area: "Sarabha Nagar",
+            phone: "+91 98101 44556",
+            aadhaar: "7788-9900-1122",
+          },
+          {
+            name: "Balwant Singh",
+            trade: "Carpenter" as TradeType,
+            rate: 950,
+            exp: 8,
+            area: "Civil Lines",
+            phone: "+91 98101 66778",
+            aadhaar: "4433-2211-9988",
+          },
+          {
+            name: "Santosh Yadav",
+            trade: "Painter" as TradeType,
+            rate: 850,
+            exp: 4,
+            area: "Dugri Phase 1",
+            phone: "+91 98101 88990",
+            aadhaar: "6655-4433-2211",
+          },
+          {
+            name: "Mohd Imran",
+            trade: "Plumber" as TradeType,
+            rate: 900,
+            exp: 5,
+            area: "Gill Road",
+            phone: "+91 98101 33221",
+            aadhaar: "1122-3344-5566",
+          },
+        ]
+      : [
+          {
+            name: "Kishan Lal",
+            trade: "Mason" as TradeType,
+            rate: 850,
+            exp: 5,
+            area: currentCity.defaultArea || "Central Market",
+            phone: "+91 98101 11223",
+            aadhaar: "8912-3344-5566",
+          },
+          {
+            name: "Vijay Verma",
+            trade: "Electrician" as TradeType,
+            rate: 900,
+            exp: 6,
+            area: currentCity.defaultArea || "Main Road",
+            phone: "+91 98101 44556",
+            aadhaar: "7788-9900-1122",
+          },
+          {
+            name: "Balwant Singh",
+            trade: "Carpenter" as TradeType,
+            rate: 950,
+            exp: 8,
+            area: currentCity.defaultArea || "Market Block A",
+            phone: "+91 98101 66778",
+            aadhaar: "4433-2211-9988",
+          },
+          {
+            name: "Santosh Yadav",
+            trade: "Painter" as TradeType,
+            rate: 850,
+            exp: 4,
+            area: currentCity.defaultArea || "Sector 2",
+            phone: "+91 98101 88990",
+            aadhaar: "6655-4433-2211",
+          },
+          {
+            name: "Mohd Imran",
+            trade: "Plumber" as TradeType,
+            rate: 900,
+            exp: 5,
+            area: currentCity.defaultArea || "Civil Area",
+            phone: "+91 98101 33221",
+            aadhaar: "1122-3344-5566",
+          },
+        ];
+    const randomPick =
+      candidateNames[Math.floor(Math.random() * candidateNames.length)];
     const newWorkerId = `w-cand-${Date.now().toString().slice(-4)}`;
-    const areaCoords = getCoordinatesForArea(randomPick.area, currentCity?.name || 'Ludhiana');
-
+    const areaCoords = getCoordinatesForArea(
+      randomPick.area,
+      currentCity?.name || "Ludhiana",
+    );
     const newWorker: WorkerProfile = {
       id: newWorkerId,
       name: randomPick.name,
       phone: randomPick.phone,
-      avatar: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80',
+      avatar:
+        "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80",
       primaryTrade: randomPick.trade,
-      secondaryTrades: ['Construction Helper'],
+      secondaryTrades: ["Construction Helper"],
       dailyRate: randomPick.rate,
       experienceYears: randomPick.exp,
       rating: 5.0,
       reviewCount: 1,
       completedJobsCount: 0,
       isOnline: true,
-      location: { area: randomPick.area, city: currentCity?.name || 'Ludhiana', distanceKm: +(0.5 + Math.random() * 2).toFixed(1) },
+      location: {
+        area: randomPick.area,
+        city: currentCity?.name || "Ludhiana",
+        distanceKm: +(0.5 + Math.random() * 2).toFixed(1),
+      },
       gpsLocation: {
         lat: areaCoords.lat + (Math.random() - 0.5) * 0.02,
         lng: areaCoords.lng + (Math.random() - 0.5) * 0.02,
         area: randomPick.area,
-        city: currentCity?.name || 'Ludhiana',
+        city: currentCity?.name || "Ludhiana",
         accuracyMeters: 4,
         heading: Math.floor(Math.random() * 360),
         speedKmh: 0,
-        lastUpdated: 'Just now',
+        lastUpdated: "Just now",
       },
       isSharingLiveGps: true,
       aadhaarNumberMasked: `XXXX-XXXX-${randomPick.aadhaar.slice(-4)}`,
@@ -3228,13 +3501,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       todayEarnings: 0,
       totalEarnings: 0,
       walletBalance: 0,
-      badge: 'Aadhaar Pending',
-      upiId: `${randomPick.name.toLowerCase().replace(/\s+/g, '.')}@upi`,
-      bankName: 'State Bank of India',
-      accountNumberMasked: '•••• •••• 9912',
-      ifscCode: 'SBIN0001234',
+      badge: "Aadhaar Pending",
+      upiId: `${randomPick.name.toLowerCase().replace(/\s+/g, ".")}@upi`,
+      bankName: "State Bank of India",
+      accountNumberMasked: "•••• •••• 9912",
+      ifscCode: "SBIN0001234",
     };
-
     const newV: VerificationRequest = {
       id: `v-${Date.now().toString().slice(-4)}`,
       workerName: randomPick.name,
@@ -3242,30 +3514,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       phone: randomPick.phone,
       aadhaarNumber: randomPick.aadhaar,
       experienceYears: randomPick.exp,
-      submittedAt: 'Just now',
-      status: 'pending',
+      submittedAt: "Just now",
+      status: "pending",
     };
-
     setWorkers((prev) => [newWorker, ...prev]);
     setVerifications((prev) => [newV, ...prev]);
     syncWorkerToFirestore(newWorker);
     syncVerificationToFirestore(newV);
-
-    playSound('success');
-    showNotification(`New worker ${randomPick.name} (${randomPick.trade}) submitted KYC for Admin review!`);
+    playSound("success");
+    showNotification(
+      `New worker ${randomPick.name} (${randomPick.trade}) submitted KYC for Admin review!`,
+    );
   };
-
-  // Refresh Worker's real-time GPS location via navigator.geolocation and reverse geocoding
-  const refreshWorkerGpsLocation = async () => {
+  /* Refresh GPS */ const refreshWorkerGpsLocation = async () => {
     const res = await snapToRealWorldAddress();
     if (res) {
-      playSound('gps_ping');
-      showNotification(`📍 Live GPS calibrated: ${res.sublocality || res.street || res.city}!`);
+      playSound("gps_ping");
+      showNotification(
+        `📍 Live GPS calibrated: ${res.sublocality || res.street || res.city}!`,
+      );
     } else {
-      if ('geolocation' in navigator) {
+      if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            const detected = detectCityFromCoords(pos.coords.latitude, pos.coords.longitude);
+            const detected = detectCityFromCoords(
+              pos.coords.latitude,
+              pos.coords.longitude,
+            );
             updateWorkerGps({
               lat: +pos.coords.latitude.toFixed(4),
               lng: +pos.coords.longitude.toFixed(4),
@@ -3273,188 +3548,195 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               area: detected.defaultArea,
               accuracyMeters: Math.round(pos.coords.accuracy) || 4,
               heading: pos.coords.heading ? Math.round(pos.coords.heading) : 45,
-              lastUpdated: 'Just now',
+              lastUpdated: "Just now",
             });
-            playSound('gps_ping');
-            showNotification('Live GPS coordinates calibrated with high accuracy!');
+            playSound("gps_ping");
+            showNotification(
+              "Live GPS coordinates calibrated with high accuracy!",
+            );
           },
           () => {
-            const defaultCoords = getCoordinatesForArea(currentCity.defaultArea, currentCity.name);
+            const defaultCoords = getCoordinatesForArea(
+              currentCity.defaultArea,
+              currentCity.name,
+            );
             updateWorkerGps({
               lat: defaultCoords.lat,
               lng: defaultCoords.lng,
               city: currentCity.name,
               area: currentCity.defaultArea,
               accuracyMeters: 4,
-              lastUpdated: 'Just now',
+              lastUpdated: "Just now",
             });
-            playSound('gps_ping');
-            showNotification(`Live GPS coordinates locked to ${currentCity.name}.`);
-          }
+            playSound("gps_ping");
+            showNotification(
+              `Live GPS coordinates locked to ${currentCity.name}.`,
+            );
+          },
         );
       }
     }
   };
-
-  // Resolve a dispute
-  const resolveDispute = (id: string) => {
+  /* Resolve a dispute */ const resolveDispute = (id: string) => {
     const dMatch = disputes.find((d) => d.id === id);
     if (dMatch) {
-      const updatedD: DisputeItem = { ...dMatch, status: 'resolved' };
+      const updatedD: DisputeItem = { ...dMatch, status: "resolved" };
       syncDisputeToFirestore(updatedD);
     }
     setDisputes((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, status: 'resolved' } : d))
+      prev.map((d) => (d.id === id ? { ...d, status: "resolved" } : d)),
     );
-    playSound('click');
-    showNotification('Dispute marked resolved.');
+    playSound("click");
+    showNotification("Dispute marked resolved.");
   };
-
-  // Raise a Job Complaint / Worker Absent Dispute (Replaces 1-Click Direct Refund)
-  const raiseJobComplaint = (
-    jobId: string, 
-    reason: string, 
-    detailedExplanation?: string
+  /* Raise a Job Complaint */ const raiseJobComplaint = (
+    jobId: string,
+    reason: string,
+    detailedExplanation?: string,
   ): { success: boolean; disputeId?: string } => {
     const targetJob = jobs.find((j) => j.id === jobId);
     if (!targetJob) {
-      showNotification('Job not found.');
+      showNotification("Job not found.");
       return { success: false };
     }
-
     const disputeId = `DISP-${Date.now().toString().slice(-6)}`;
-    const escrowAmount = targetJob.escrowPrepaidAmount || ((targetJob.dailyWage || 850) * (targetJob.durationDays || 1));
-
+    const escrowAmount =
+      targetJob.escrowPrepaidAmount ||
+      (targetJob.dailyWage || 850) * (targetJob.durationDays || 1);
     const updatedJob: Job = {
       ...targetJob,
-      status: 'disputed',
-      escrowStatus: 'refund_requested_dispute',
+      status: "disputed",
+      escrowStatus: "refund_requested_dispute",
       disputeId: disputeId,
       disputeReason: reason,
     };
-
     setJobs((prev) => prev.map((j) => (j.id === jobId ? updatedJob : j)));
     syncJobToFirestore(updatedJob);
-
     const newDispute: DisputeItem = {
       id: disputeId,
       jobId: targetJob.id,
       jobTitle: targetJob.title,
       workerId: targetJob.assignedWorkerId,
-      workerName: targetJob.assignedWorkerName || 'Assigned Worker',
-      workerPhone: targetJob.assignedWorkerPhone || '+91 98101 55678',
-      customerName: targetJob.customerName || currentCustomer?.name || 'Customer',
-      customerPhone: targetJob.customerPhone || currentCustomer?.phone || '+91 98101 00000',
-      reason: reason || 'Worker did not arrive at site',
-      detailedReason: detailedExplanation || 'Employer reported worker absence or issue. Escrow locked for admin audit.',
-      status: 'open',
+      workerName: targetJob.assignedWorkerName || "Assigned Worker",
+      workerPhone: targetJob.assignedWorkerPhone || "+91 98101 55678",
+      customerName:
+        targetJob.customerName || currentCustomer?.name || "Customer",
+      customerPhone:
+        targetJob.customerPhone || currentCustomer?.phone || "+91 98101 00000",
+      reason: reason || "Worker did not arrive at site",
+      detailedReason:
+        detailedExplanation ||
+        "Employer reported worker absence or issue. Escrow locked for admin audit.",
+      status: "open",
       amount: escrowAmount,
-      reportedAt: 'Just now',
+      reportedAt: "Just now",
     };
-
     setDisputes((prev) => [newDispute, ...prev]);
     syncDisputeToFirestore(newDispute);
-
-    playSound('alert');
+    playSound("alert");
     showNotification(
-      '🛡️ Complaint Registered for Admin Review!',
-      `Complaint #${disputeId} logged. Escrow funds of ₹${escrowAmount} remain safely locked. Admin Ops will audit GPS logs and approve refund upon verification.`
+      "🛡️ Complaint Registered for Admin Review!",
+      `Complaint #${disputeId} logged. Escrow funds of ₹${escrowAmount} remain safely locked. Admin Ops will audit GPS logs and approve refund upon verification.`,
     );
-
     return { success: true, disputeId };
   };
-
-  // Admin Approves 100% Refund to Customer after audit
-  const adminApproveRefund = (disputeId: string, resolutionNote?: string) => {
+  /* Admin Approves Refund */ const adminApproveRefund = (
+    disputeId: string,
+    resolutionNote?: string,
+  ) => {
     const dispute = disputes.find((d) => d.id === disputeId);
     if (!dispute) return;
-
-    const note = resolutionNote || 'Complaint verified: 100% Escrow refund approved by Admin.';
+    const note =
+      resolutionNote ||
+      "Complaint verified: 100% Escrow refund approved by Admin.";
     const updatedDispute: DisputeItem = {
       ...dispute,
-      status: 'resolved',
+      status: "resolved",
       resolutionNote: note,
-      resolvedAt: 'Just now',
+      resolvedAt: "Just now",
     };
-
-    setDisputes((prev) => prev.map((d) => (d.id === disputeId ? updatedDispute : d)));
+    setDisputes((prev) =>
+      prev.map((d) => (d.id === disputeId ? updatedDispute : d)),
+    );
     syncDisputeToFirestore(updatedDispute);
-
-    // Cancel job and mark escrow refunded
-    const targetJob = jobs.find((j) => j.id === dispute.jobId);
+    /* Cancel job */ const targetJob = jobs.find((j) => j.id === dispute.jobId);
     if (targetJob) {
       const refundedJob: Job = {
         ...targetJob,
-        status: 'cancelled',
-        escrowStatus: 'refunded_to_customer',
+        status: "cancelled",
+        escrowStatus: "refunded_to_customer",
       };
-      setJobs((prev) => prev.map((j) => (j.id === targetJob.id ? refundedJob : j)));
+      setJobs((prev) =>
+        prev.map((j) => (j.id === targetJob.id ? refundedJob : j)),
+      );
       syncJobToFirestore(refundedJob);
     }
-
-    // Log in Admin Transactions
-    const refundTx: AdminTransaction = {
+    /* Log in Admin Transactions */ const refundTx: AdminTransaction = {
       id: `tx-refund-${Date.now()}`,
-      type: 'REFUND_DISBURSEMENT',
+      type: "REFUND_DISBURSEMENT",
       amount: dispute.amount,
       description: `Escrow Refund (₹${dispute.amount}) to ${dispute.customerName} - ${note}`,
-      timestamp: 'Just now',
+      timestamp: "Just now",
       customerName: dispute.customerName,
       workerName: dispute.workerName,
       jobId: dispute.jobId,
     };
-
     setAdminTransactions((prev) => {
       const updated = [refundTx, ...prev];
-      localStorage.setItem('dihadi_admin_txs_v6', JSON.stringify(updated));
+      localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
       return updated;
     });
-
-    playSound('cash');
+    playSound("cash");
     showNotification(
-      '✅ Refund Approved by Admin',
-      `₹${dispute.amount} 100% Escrow refund processed for ${dispute.customerName}.`
+      "✅ Refund Approved by Admin",
+      `₹${dispute.amount} 100% Escrow refund processed for ${dispute.customerName}.`,
     );
   };
-
-  // Admin Rejects Complaint & Releases Payment to Worker
-  const adminRejectDisputeAndReleaseToWorker = (disputeId: string, resolutionNote?: string) => {
+  /* Admin Rejects Complaint */ const adminRejectDisputeAndReleaseToWorker = (
+    disputeId: string,
+    resolutionNote?: string,
+  ) => {
     const dispute = disputes.find((d) => d.id === disputeId);
     if (!dispute) return;
-
-    const note = resolutionNote || 'Audit complete: Worker presence verified. Escrow wage released.';
+    const note =
+      resolutionNote ||
+      "Audit complete: Worker presence verified. Escrow wage released.";
     const updatedDispute: DisputeItem = {
       ...dispute,
-      status: 'rejected',
+      status: "rejected",
       resolutionNote: note,
-      resolvedAt: 'Just now',
+      resolvedAt: "Just now",
     };
-
-    setDisputes((prev) => prev.map((d) => (d.id === disputeId ? updatedDispute : d)));
+    setDisputes((prev) =>
+      prev.map((d) => (d.id === disputeId ? updatedDispute : d)),
+    );
     syncDisputeToFirestore(updatedDispute);
-
     const targetJob = jobs.find((j) => j.id === dispute.jobId);
     if (targetJob) {
       releasePaymentByCustomer(
         targetJob.id,
         5,
         `Admin resolution: ${note}`,
-        'ESCROW_WALLET',
-        `ADMIN-RES-${Date.now().toString().slice(-5)}`
+        "ESCROW_WALLET",
+        `ADMIN-RES-${Date.now().toString().slice(-5)}`,
       );
     }
-
-    playSound('success');
-    showNotification('⚖️ Complaint Dismissed: Escrow payment released to worker.');
+    playSound("success");
+    showNotification(
+      "⚖️ Complaint Dismissed: Escrow payment released to worker.",
+    );
   };
-
-  // Escrow Refund Handler (Routes into dispute workflow if safety check needed)
-  const refundEscrowToCustomer = (jobId: string): boolean => {
+  /* Escrow Refund Handler */ const refundEscrowToCustomer = (
+    jobId: string,
+  ): boolean => {
     const target = jobs.find((j) => j.id === jobId);
     if (!target) return false;
-
-    // Route to complaint / dispute for admin verification
-    raiseJobComplaint(jobId, 'Worker did not arrive / Cancelled', 'Escrow refund requested by customer.');
+    /* Route to complaint / dispute for admin verification */
+    raiseJobComplaint(
+      jobId,
+      "Worker did not arrive / Cancelled",
+      "Escrow refund requested by customer.",
+    );
     return true;
   };
 
@@ -3584,7 +3866,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
+    throw new Error("useApp must be used within an AppProvider");
   }
   return context;
 };

@@ -203,11 +203,11 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): {
   const isJobOtp = purpose === "job_start_otp" || code.length === 4;
 
   if (isJobOtp) {
-    const subject = `🔑 Dihadi Worker Verification Start Code: ${code} [${jobTitle || trade || "Daily Wage Job"}]`;
+    const subject = `🔑 Kaamzo Worker Verification Start Code: ${code} [${jobTitle || trade || "Daily Wage Job"}]`;
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; color: #0f172a;">
         <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f97316; padding-bottom: 14px;">
-          <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">DIHADI CONNECT</h2>
+          <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">KAAMZO CONNECT</h2>
           <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">Customer Worker Verification & Start Passcode</p>
         </div>
         
@@ -237,7 +237,7 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): {
         </div>
 
         <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 12px; color: #94a3b8; text-align: center;">
-          <p style="margin: 0;">Dihadi Connect • 100% Zero-Commission & Escrow Secured Platform</p>
+          <p style="margin: 0;">Kaamzo Connect • 100% Zero-Commission & Escrow Secured Platform</p>
           <p style="margin: 4px 0 0 0;">Strict 10km GPS Verification Active • Direct UPI Settlement</p>
         </div>
       </div>
@@ -246,11 +246,11 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): {
   }
 
   // Account / KYC Verification OTP
-  const subject = `Your Dihadi Security Verification Code: ${code}`;
+  const subject = `Your Kaamzo Security Verification Code: ${code}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 16px; background: #ffffff; color: #111827;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 900;">DIHADI CONNECT</h2>
+        <h2 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: 900;">KAAMZO CONNECT</h2>
         <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0 0;">Unified Daily Wage Worker & Employer Platform</p>
       </div>
       

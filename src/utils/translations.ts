@@ -8,7 +8,7 @@ export const translations = {
     choose_portal_title: "Are you a Worker or Customer / Employer?",
     choose_portal_sub:
       "Select your portal to find daily wage jobs or hire verified local workers with transparent pricing.",
-    hero_trust_badge: "300+ Verified Workers in Ludhiana • Direct Daily Payouts",
+    hero_trust_badge: "Ludhiana's Revolution • Direct Daily Payouts",
     example_worker_stat: "⭐ 4.8 avg rating · 300+ active workers in Punjab",
     example_worker_sub: "✓ Direct UPI daily payouts · Zero middlemen",
     example_customer_stat: "🛡️ 100% Upfront Escrow Protection · Aadhaar KYC",
@@ -170,7 +170,7 @@ export const translations = {
     choose_portal_title: "आप क्या हैं - श्रमिक या ग्राहक / नियोक्ता?",
     choose_portal_sub:
       "अपना पोर्टल चुनें - दैनिक काम पाएं या तय मजदूरी पर सीधे स्थानीय कारीगर खोजें।",
-    hero_trust_badge: "३००+ सत्यापित श्रमिक • सीधे दैनिक भुगतान",
+    hero_trust_badge: "लुधियाना की क्रांति • सीधे दैनिक भुगतान",
     example_worker_stat: "⭐ ४.८ औसत रेटिंग • ३००+ सक्रिय कारीगर",
     example_worker_sub: "✓ सीधे यूपीआई में दैनिक कमाई • कोई बिचौलिया नहीं",
     example_customer_stat: "🛡️ १००% सुरक्षित एस्क्रो • आधार सत्यापित कारीगर",
@@ -332,7 +332,7 @@ export const translations = {
     choose_portal_title: "ਤੁਸੀਂ ਕੌਣ ਹੋ - ਕਾਮਾ ਜਾਂ ਗਾਹਕ / ਮਾਲਕ?",
     choose_portal_sub:
       "ਆਪਣਾ ਪੋਰਟਲ ਚੁਣੋ - ਰੋਜ਼ਾਨਾ ਕੰਮ ਪ੍ਰਾਪਤ ਕਰੋ ਜਾਂ ਤੈਅ ਦਿਹਾੜੀ ਤੇ ਸਿੱਧੇ ਕਾਮੇ ਬੁੱਕ ਕਰੋ।",
-    hero_trust_badge: "੩੦੦+ ਤਸਦੀਕਸ਼ੁਦਾ ਕਾਮੇ • ਸਿੱਧੀ ਰੋਜ਼ਾਨਾ ਦਿਹਾੜੀ",
+    hero_trust_badge: "ਲੁਧਿਆਣਾ ਦੀ ਕ੍ਰਾਂਤੀ • ਸਿੱਧੀ ਰੋਜ਼ਾਨਾ ਦਿਹਾੜੀ",
     example_worker_stat: "⭐ ੪.੮ ਔਸਤ ਰੇਟਿੰਗ • ੩੦੦+ ਸਰਗਰਮ ਕਾਮੇ",
     example_worker_sub: "✓ ਸਿੱਧੀ ਯੂਪੀਆਈ ਵਿੱਚ ਰੋਜ਼ਾਨਾ ਕਮਾਈ • ਕੋਈ ਵਿਚੋਲਾ ਨਹੀਂ",
     example_customer_stat: "🛡️ ੧੦੦% ਸੁਰੱਖਿਅਤ ਐਸਕਰੋ • ਆਧਾਰ ਤਸਦੀਕਸ਼ੁਦਾ ਕਾਮੇ",

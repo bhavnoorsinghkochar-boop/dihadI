@@ -2325,7 +2325,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       () => {
         openProtectionModal({
           variant: "post_login",
-          workerName: "Verified Dihadi Worker",
+          workerName: "Verified Kaamzo Worker",
           workerAadhaarMasked: "Govt. Aadhaar Verified",
         });
       },

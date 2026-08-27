@@ -115,7 +115,7 @@ export const AppProtectionGuaranteeModal: React.FC<
                   )}{" "}
                   <strong>
                     directly in private without booking through our official
-                    Dihadi App
+                    Kaamzo App
                   </strong>
                   :{" "}
                 </p>{" "}
@@ -168,7 +168,7 @@ export const AppProtectionGuaranteeModal: React.FC<
                 </h4>{" "}
                 <p className="text-xs text-amber-900 mt-0.5 leading-relaxed font-medium">
                   {" "}
-                  Every booking created on the Dihadi platform is fully covered
+                  Every booking created on the Kaamzo platform is fully covered
                   by our comprehensive legal & financial protection shield:{" "}
                 </p>{" "}
               </div>{" "}
@@ -229,7 +229,7 @@ export const AppProtectionGuaranteeModal: React.FC<
                 </div>{" "}
                 <p className="text-[11px] text-slate-600 leading-snug">
                   {" "}
-                  Your funds stay locked in the safe Dihadi Escrow Vault and are
+                  Your funds stay locked in the safe Kaamzo Escrow Vault and are
                   only released after you confirm total job satisfaction.{" "}
                 </p>{" "}
               </div>{" "}
@@ -244,7 +244,7 @@ export const AppProtectionGuaranteeModal: React.FC<
               <span className="font-medium text-slate-300">
                 {" "}
                 Always book via{" "}
-                <span className="text-amber-400 font-bold">Dihadi App</span> for
+                <span className="text-amber-400 font-bold">Kaamzo App</span> for
                 guaranteed safety, Aadhaar tracking & refunds.{" "}
               </span>{" "}
             </div>{" "}

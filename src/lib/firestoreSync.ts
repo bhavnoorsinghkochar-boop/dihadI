@@ -245,3 +245,31 @@ export async function verifySecurityOtpInFirestore(
   }
   return false;
 }
+
+/**
+ * Permanently delete all data across all Firestore collections
+ */
+export async function clearAllFirestoreData(): Promise<void> {
+  const collectionNames = [
+    COLLECTIONS.WORKERS,
+    COLLECTIONS.JOBS,
+    COLLECTIONS.VERIFICATIONS,
+    COLLECTIONS.DISPUTES,
+    COLLECTIONS.ACCOUNTS,
+    COLLECTIONS.SECURITY_VERIFICATIONS,
+    COLLECTIONS.SOS_ALERTS,
+  ];
+
+  for (const collName of collectionNames) {
+    try {
+      const colRef = collection(db, collName);
+      const snap = await getDocs(colRef);
+      if (!snap.empty) {
+        const deleteOps = snap.docs.map((docSnap) => deleteDoc(docSnap.ref));
+        await Promise.allSettled(deleteOps);
+      }
+    } catch (err) {
+      console.warn(`Firestore clear notice for collection ${collName}:`, err);
+    }
+  }
+}

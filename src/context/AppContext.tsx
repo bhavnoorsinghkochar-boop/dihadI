@@ -37,6 +37,7 @@ import {
   syncVerificationToFirestore,
   syncDisputeToFirestore,
   syncAccountToFirestore,
+  clearAllFirestoreData,
   handleFirestoreError,
   OperationType,
 } from "../lib/firestoreSync";
@@ -487,42 +488,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   /*  Platform collections  */ const [workers, setWorkers] = useState<
     WorkerProfile[]
   >(() => {
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    if (isReset) return [];
     const saved = localStorage.getItem("dihadi_workers_zero_v6");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
     }
     return DEFAULT_INITIAL_WORKERS;
   });
   const [jobs, setJobs] = useState<Job[]>(() => {
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    if (isReset) return [];
     const saved = localStorage.getItem("dihadi_jobs_zero_v6");
-    return saved ? JSON.parse(saved) : [];
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return [];
   });
   const [verifications, setVerifications] = useState<VerificationRequest[]>(
     () => {
+      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      if (isReset) return [];
       const saved = localStorage.getItem("dihadi_verifications_zero_v6");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (saved !== null) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
       }
       return DEFAULT_INITIAL_VERIFICATIONS;
     },
   );
   const [disputes, setDisputes] = useState<DisputeItem[]>(() => {
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    if (isReset) return [];
     const saved = localStorage.getItem("dihadi_disputes_zero_v6");
-    return saved ? JSON.parse(saved) : [];
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return [];
   });
   /*  Current Logged-in Entities  */ const [currentWorker, setCurrentWorker] =
     useState<WorkerProfile | null>(() => {
+      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      if (isReset) return null;
       const saved = localStorage.getItem("dihadi_current_worker_v6");
       return saved ? JSON.parse(saved) : null;
     });
   const [currentCustomer, setCurrentCustomer] =
     useState<CustomerProfile | null>(() => {
+      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      if (isReset) return null;
       const saved = localStorage.getItem("dihadi_current_customer_v6");
       return saved ? JSON.parse(saved) : null;
     });
   const [currentAdmin, setCurrentAdmin] = useState<AdminProfile | null>(() => {
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    if (isReset) return null;
     const saved = localStorage.getItem("dihadi_current_admin_v6");
     return saved ? JSON.parse(saved) : null;
   });
@@ -632,8 +663,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }; // Subscription promo ad on app start/reopen is disabled as requested by the user /* useEffect(() => { Promo logic removed }, [currentRole]); */
   /*  Registered credentials database  */
   const [workerAccounts, setWorkerAccounts] = useState<UserAccount[]>(() => {
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    if (isReset) return [];
     const saved = localStorage.getItem("dihadi_worker_accounts_v6");
-    if (saved) return JSON.parse(saved);
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
     return [
       {
         id: "ramesh",
@@ -681,8 +719,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [customerAccounts, setCustomerAccounts] = useState<UserAccount[]>(
     () => {
+      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      if (isReset) return [];
       const saved = localStorage.getItem("dihadi_customer_accounts_v6");
-      if (saved) return JSON.parse(saved);
+      if (saved !== null) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
       return [
         {
           id: "pooja",
@@ -931,9 +976,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                 remoteWorkers.push(data);
               }
             });
-            if (remoteWorkers.length > 0) {
-              setWorkers(remoteWorkers);
-              setIsFirebaseConnected(true);
+            setWorkers(remoteWorkers);
+            setIsFirebaseConnected(true);
+          } else {
+            const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+            if (isReset) {
+              setWorkers([]);
             }
           }
         },
@@ -961,6 +1009,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             });
             setJobs(remoteJobs);
             setIsFirebaseConnected(true);
+          } else {
+            setJobs([]);
           }
         },
         (err) => {
@@ -986,6 +1036,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               }
             });
             setVerifications(remoteVerifs);
+          } else {
+            const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+            if (isReset) {
+              setVerifications([]);
+            }
           }
         },
         (err) => {
@@ -1015,6 +1070,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               }
             });
             setDisputes(remoteDisputes);
+          } else {
+            setDisputes([]);
           }
         },
         (err) => {
@@ -1082,6 +1139,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                   });
                 return updated;
               });
+            }
+          } else {
+            const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+            if (isReset) {
+              setWorkerAccounts([]);
+              setCustomerAccounts([]);
             }
           }
         },
@@ -1500,8 +1563,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     };
   }, [currentRole]);
-  /* Completely Reset All Data to ZERO */ const resetToZero = () => {
-    localStorage.clear();
+  /* Completely Reset All Data to ZERO */ const resetToZero = async () => {
+    // 1. Mark explicit persistent reset flag
+    localStorage.setItem("dihadi_is_reset_state_v6", "true");
+    localStorage.setItem("dihadi_workers_zero_v6", "[]");
+    localStorage.setItem("dihadi_jobs_zero_v6", "[]");
+    localStorage.setItem("dihadi_verifications_zero_v6", "[]");
+    localStorage.setItem("dihadi_disputes_zero_v6", "[]");
+    localStorage.setItem("dihadi_worker_accounts_v6", "[]");
+    localStorage.setItem("dihadi_customer_accounts_v6", "[]");
+    localStorage.setItem("dihadi_admin_txs_v6", "[]");
+    localStorage.removeItem("dihadi_current_worker_v6");
+    localStorage.removeItem("dihadi_current_customer_v6");
+    localStorage.removeItem("dihadi_current_admin_v6");
+    localStorage.removeItem("dihadi_pending_chat_notifs_v1");
+
+    // Clear all dynamic chat storage keys from local storage
+    try {
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith("dihadi_chat_") || k.startsWith("dihadi_otp_")) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch (e) {}
+
+    // 2. Clear all React states immediately
     setWorkers([]);
     setJobs([]);
     setCustomerAccounts([]);
@@ -1515,13 +1601,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setActiveGpsJob(null);
     setActiveUpiPaymentJob(null);
     setCurrentRole("select_role");
+
+    // 3. Clear all Firestore remote database collections permanently
+    try {
+      await clearAllFirestoreData();
+    } catch (err) {
+      console.warn("Firestore collection purge notice:", err);
+    }
+
     playSound("click");
     showNotification(
-      "Platform reset: 0 workers, 0 customers, 0 jobs, 0 admins.",
+      "Platform permanently reset: 0 workers, 0 customers, 0 jobs.",
     );
   };
   /* Seed sample demo data if explicitly requested */ const seedSampleData =
     () => {
+      localStorage.removeItem("dihadi_is_reset_state_v6");
       const demoWorker: WorkerProfile = {
         id: "w-demo-1",
         name: "Ramesh Kumar",
@@ -1625,6 +1720,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           status: "approved",
         },
       ]);
+      syncWorkerToFirestore(demoWorker);
+      syncJobToFirestore(demoJob);
+      syncAccountToFirestore({
+        id: "ramesh",
+        phone: "9810155678",
+        password: "123",
+        name: "Ramesh Kumar",
+        role: "worker",
+      });
+      syncAccountToFirestore({
+        id: "pooja",
+        phone: "9910088221",
+        password: "123",
+        name: "Pooja Verma",
+        role: "customer",
+      });
       playSound("success");
       showNotification("Demo test environment created with UPI & GPS active.");
     };
@@ -3043,7 +3154,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.map((w) => (w.id === updatedWorker.id || w.name === updatedWorker.name ? updatedWorker : w)),
       );
       setWorkerAccounts((prev) =>
-        prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)),
+        prev.map((w) => {
+          if (w.id === updatedWorker.id || w.phone === updatedWorker.phone) {
+            return {
+              ...w,
+              extraData: {
+                ...w.extraData,
+                rating: updatedWorker.rating,
+                reviewCount: updatedWorker.reviewCount,
+                completedJobsCount: updatedWorker.completedJobsCount,
+              },
+            };
+          }
+          return w;
+        }),
       );
       syncWorkerToFirestore(updatedWorker);
       if (currentWorker && (currentWorker.id === targetWorker.id || currentWorker.name === targetWorker.name)) {

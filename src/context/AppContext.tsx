@@ -2860,11 +2860,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const targetJob = jobs.find((j) => j.id === jobId);
     if (!targetJob) return false;
     if (targetJob.otpCode === inputOtp.trim()) {
-      const updated = { ...targetJob, status: "in_progress" as const };
+      const updated = {
+        ...targetJob,
+        status: "in_progress" as const,
+        escrowStatus: "released_to_worker" as const,
+      };
+
+      const fullGross = (targetJob.dailyWage || 850) * (targetJob.durationDays || 1);
+      const workerId = targetJob.assignedWorkerId;
+      const workerName = targetJob.assignedWorkerName;
+      const workerPhone = targetJob.assignedWorkerPhone;
+
+      // Find worker profile from workers state or current logged-in worker
+      const targetWorker =
+        workers.find(
+          (w) =>
+            (workerId && w.id === workerId) ||
+            (workerPhone && w.phone === workerPhone) ||
+            (workerName && w.name.trim().toLowerCase() === workerName.trim().toLowerCase()),
+        ) ||
+        (currentWorker &&
+        (currentWorker.id === workerId ||
+          currentWorker.name === workerName ||
+          currentWorker.phone === workerPhone)
+          ? currentWorker
+          : null);
+
+      let payoutAmount = targetJob.workerPayout || Math.round(fullGross * 0.8);
+      if (targetWorker) {
+        if ((targetWorker.zeroCommissionJobsRemaining || 0) > 0 || targetWorker.isPremiumWorker) {
+          payoutAmount = fullGross;
+        }
+
+        const updatedWorker: WorkerProfile = {
+          ...targetWorker,
+          walletBalance: (targetWorker.walletBalance || 0) + payoutAmount,
+          todayEarnings: (targetWorker.todayEarnings || 0) + payoutAmount,
+          totalEarnings: (targetWorker.totalEarnings || 0) + payoutAmount,
+        };
+
+        setWorkers((prev) =>
+          prev.map((w) =>
+            w.id === updatedWorker.id ||
+            (workerPhone && w.phone === workerPhone) ||
+            w.name.trim().toLowerCase() === updatedWorker.name.trim().toLowerCase()
+              ? updatedWorker
+              : w,
+          ),
+        );
+        syncWorkerToFirestore(updatedWorker);
+
+        if (
+          currentWorker &&
+          (currentWorker.id === updatedWorker.id ||
+            currentWorker.name.trim().toLowerCase() === updatedWorker.name.trim().toLowerCase() ||
+            currentWorker.phone === updatedWorker.phone)
+        ) {
+          setCurrentWorker(updatedWorker);
+        }
+      } else if (currentWorker) {
+        const updatedWorker: WorkerProfile = {
+          ...currentWorker,
+          walletBalance: (currentWorker.walletBalance || 0) + payoutAmount,
+          todayEarnings: (currentWorker.todayEarnings || 0) + payoutAmount,
+          totalEarnings: (currentWorker.totalEarnings || 0) + payoutAmount,
+        };
+        setCurrentWorker(updatedWorker);
+        setWorkers((prev) =>
+          prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)),
+        );
+        syncWorkerToFirestore(updatedWorker);
+      }
+
+      // Also update workerAccounts list
+      setWorkerAccounts((prev) =>
+        prev.map((w) => {
+          if (
+            (workerId && w.id === workerId) ||
+            (workerPhone && w.phone === workerPhone) ||
+            (workerName && w.name.trim().toLowerCase() === workerName.trim().toLowerCase())
+          ) {
+            return {
+              ...w,
+              walletBalance: ((w as any).walletBalance || 0) + payoutAmount,
+              todayEarnings: ((w as any).todayEarnings || 0) + payoutAmount,
+              totalEarnings: ((w as any).totalEarnings || 0) + payoutAmount,
+            };
+          }
+          return w;
+        }),
+      );
+
       setJobs((prev) => prev.map((j) => (j.id === jobId ? updated : j)));
       syncJobToFirestore(updated);
-      playSound("success");
-      showNotification("OTP Verified! Job officially started.");
+      playSound("cash");
+      showNotification(
+        `✓ Start OTP Verified! Prepaid wage of ₹${payoutAmount} transferred to worker wallet immediately.`,
+      );
       return true;
     } else {
       playSound("alert");
@@ -2890,8 +2982,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       syncJobToFirestore(updated);
     }
     playSound("success");
-    showNotification("Job marked completed. Awaiting employer payout release.");
+    showNotification("Job marked completed. Awaiting customer rating.");
   };
+
   /* Customer releases payment */ const releasePaymentByCustomer = (
     jobId: string,
     rating: number,
@@ -2902,27 +2995,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-    let payout = job.workerPayout;
-    let actualPlatformFee = job.platformFee;
-    let zeroCommissionUsed = false; /* Check if assigned worker has VIP Pass */
-    const targetWorker = workers.find((w) => w.id === job.assignedWorkerId);
-    if (
-      targetWorker &&
-      ((targetWorker.zeroCommissionJobsRemaining || 0) > 0 ||
-        targetWorker.isPremiumWorker)
-    ) {
-      const fullGross = (job.dailyWage || 850) * (job.durationDays || 1);
-      payout = fullGross;
-      actualPlatformFee = 0;
-      zeroCommissionUsed = true;
-    }
+    
+    // Prepaid funds were already credited to worker wallet immediately upon OTP verification.
+    
     const updatedJob: Job = {
       ...job,
-      platformFee: actualPlatformFee,
-      workerPayout: payout,
-      zeroCommissionApplied: zeroCommissionUsed,
       status: "paid_and_closed",
-      escrowStatus: "released_to_worker",
       isPaid: true,
       rating: rating,
       review: review,
@@ -2933,11 +3011,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       paidVia: paidVia,
       transactionRef: txnRef || `UPI-DIHADI-${Date.now().toString().slice(-6)}`,
     };
+
     setJobs((prev) => prev.map((j) => (j.id === jobId ? updatedJob : j)));
     syncJobToFirestore(
       updatedJob,
-    ); /* Update worker earnings & average rating */
-    if (job.assignedWorkerId && targetWorker) {
+    ); 
+
+    /* Update worker average rating */
+    const targetWorker = workers.find((w) => w.id === job.assignedWorkerId || w.name === job.assignedWorkerName);
+    if (targetWorker) {
       const prevReviews = targetWorker.reviewCount || 0;
       const newCount = prevReviews + 1;
       const newRating =
@@ -2949,78 +3031,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                 newCount
               ).toFixed(1),
             );
-      const newRemainingZeroJobs = zeroCommissionUsed
-        ? Math.max(0, (targetWorker.zeroCommissionJobsRemaining || 0) - 1)
-        : targetWorker.zeroCommissionJobsRemaining || 0;
-      const savedThisJob = zeroCommissionUsed
-        ? job.platformFee ||
-          Math.round((job.dailyWage || 850) * (job.durationDays || 1) * 0.2)
-        : 0;
+
       const updatedWorker: WorkerProfile = {
         ...targetWorker,
-        todayEarnings: targetWorker.todayEarnings + payout,
-        totalEarnings: targetWorker.totalEarnings + payout,
-        walletBalance: targetWorker.walletBalance + payout,
-        completedJobsCount: targetWorker.completedJobsCount + 1,
-        zeroCommissionJobsRemaining: newRemainingZeroJobs,
-        commissionSavedTotal:
-          (targetWorker.commissionSavedTotal || 0) + savedThisJob,
         reviewCount: newCount,
         rating: Math.min(5.0, Math.max(1.0, newRating)),
+        completedJobsCount: (targetWorker.completedJobsCount || 0) + 1,
       };
+
       setWorkers((prev) =>
+        prev.map((w) => (w.id === updatedWorker.id || w.name === updatedWorker.name ? updatedWorker : w)),
+      );
+      setWorkerAccounts((prev) =>
         prev.map((w) => (w.id === updatedWorker.id ? updatedWorker : w)),
       );
       syncWorkerToFirestore(updatedWorker);
-      if (currentWorker && currentWorker.id === job.assignedWorkerId) {
+      if (currentWorker && (currentWorker.id === targetWorker.id || currentWorker.name === targetWorker.name)) {
         setCurrentWorker(updatedWorker);
       }
     }
-    const isCustomerGoldMember = Boolean(
-      currentCustomer?.isPremiumCustomer || job.adminFundedPayout,
+
+    playSound("success");
+    showNotification(
+      `Job finalized & rated ${rating}★ for ${job.assignedWorkerName || "Worker"}!`,
     );
-    if (isCustomerGoldMember) {
-      /* Deduct payout from Admin */ setAdminTreasuryBalance((prev) => {
-        const next = Math.max(0, prev - payout);
-        localStorage.setItem("dihadi_admin_treasury_v6", String(next));
-        return next;
-      });
-      setAdminWorkerPayoutsDisbursed((prev) => {
-        const next = prev + payout;
-        localStorage.setItem("dihadi_admin_disbursed_v6", String(next));
-        return next;
-      });
-      /* Record in Admin Transactions */ const payoutTx: AdminTransaction = {
-        id: `tx-admin-disburse-${Date.now()}`,
-        type: "WORKER_PAYOUT_DISBURSEMENT",
-        amount: payout,
-        description: `Customer Gold Membership Auto-Payout (₹${payout}) for ${job.title}`,
-        timestamp: "Just now",
-        customerName: currentCustomer?.name || job.customerName,
-        workerName: job.assignedWorkerName || "Worker",
-        jobId: job.id,
-      };
-      setAdminTransactions((prev) => {
-        const updated = [payoutTx, ...prev];
-        localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
-        return updated;
-      });
-    }
-    playSound("cash");
-    if (isCustomerGoldMember) {
-      showNotification(
-        "👑 Subscription Payout Complete (₹0 Paid)",
-        `Worker wage of ₹${payout} was automatically disbursed from Admin Treasury to ${job.assignedWorkerName || "Worker"}. Rated ${rating}★.`,
-      );
-    } else if (zeroCommissionUsed) {
-      showNotification(
-        `🎉 0% Commission Applied! ₹${payout} (100% Wage) credited to ${job.assignedWorkerName || "Worker"}! Remaining VIP Jobs: ${Math.max(0, (targetWorker?.zeroCommissionJobsRemaining || 1) - 1)}`,
-      );
-    } else {
-      showNotification(
-        `₹${payout} payment released & rated ${rating}★ for ${job.assignedWorkerName || "Worker"}!`,
-      );
-    }
   };
   /* Rate or update review */ const rateWorkerJob = (
     jobId: string,

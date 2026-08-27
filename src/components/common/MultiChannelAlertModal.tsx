@@ -132,7 +132,7 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   };
 
   const getSmsMessage = () => {
-    return `[DIHADI ALERT] Naya Kaam: ${job.trade} at ${job.area || job.locationAddress}. Wage Rs.${job.dailyWage}/day. Reply YES to accept or open app. Help: 1800-DIHADI`;
+    return `[KAAMZO ALERT] Naya Kaam: ${job.trade} at ${job.area || job.locationAddress}. Wage Rs.${job.dailyWage}/day. Reply YES to accept or open app. Help: +919592221100 / bhavnoorsinghkochar@gmail.com`;
   };
 
   const getEmailSubject = () => {

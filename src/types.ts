@@ -135,6 +135,13 @@ export interface Job {
   jobGps: GpsCoordinates;
   dailyWage: number;
   durationDays: number;
+  startDate?: string;
+  endDate?: string;
+  shiftStartTime?: string;
+  shiftEndTime?: string;
+  hoursPerDay?: number;
+  hourlyRate?: number;
+  baseLabor?: number;
   status: JobStatus;
   assignedWorkerId?: string;
   assignedWorkerName?: string;

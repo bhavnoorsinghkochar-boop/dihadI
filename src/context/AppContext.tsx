@@ -248,6 +248,13 @@ interface AppContextType {
     area: string;
     dailyWage: number;
     durationDays: number;
+    startDate?: string;
+    endDate?: string;
+    shiftStartTime?: string;
+    shiftEndTime?: string;
+    hoursPerDay?: number;
+    hourlyRate?: number;
+    baseLabor?: number;
   }) => Job;
   dispatchJobStartOtp: (
     job: Job,
@@ -2606,10 +2613,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     area: string;
     dailyWage: number;
     durationDays: number;
+    startDate?: string;
+    endDate?: string;
+    shiftStartTime?: string;
+    shiftEndTime?: string;
+    hoursPerDay?: number;
+    hourlyRate?: number;
+    baseLabor?: number;
   }) => {
     const daily = Number(jobData.dailyWage) || 850;
     const days = Number(jobData.durationDays) || 1;
-    const totalGross = daily * days;
+    const baseLaborCalc = jobData.baseLabor !== undefined ? jobData.baseLabor : daily * days;
+    const totalGross = baseLaborCalc;
     const platformFee = Math.round(totalGross * 0.2);
     const workerPayout = totalGross - platformFee;
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
@@ -2671,6 +2686,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       dailyWage: daily,
       durationDays: days,
+      startDate: jobData.startDate,
+      endDate: jobData.endDate,
+      shiftStartTime: jobData.shiftStartTime,
+      shiftEndTime: jobData.shiftEndTime,
+      hoursPerDay: jobData.hoursPerDay,
+      hourlyRate: jobData.hourlyRate,
+      baseLabor: jobData.baseLabor,
       status: "broadcast",
       otpCode,
       postedAt: "Just now",

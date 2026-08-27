@@ -231,7 +231,7 @@ export function createMultiChannelAlertPayload(
   }
 
   // 3. SMS text (160 chars GSM safe for basic feature phones)
-  const smsMessage = `[DIHADI ALERT] Naya Kaam: ${job.trade} at ${job.area}. Dihadi Rs.${job.dailyWage}/day. Reply YES to accept or open app. Help: 1800-DIHADI`;
+  const smsMessage = `[KAAMZO ALERT] Naya Kaam: ${job.trade} at ${job.area}. Dihadi Rs.${job.dailyWage}/day. Reply YES to accept or open app. Help WhatsApp/Call: +919592221100`;
 
   // 4. App push notification
   const pushTitle = `⚡ New Hyperlocal Job: ${job.trade} (₹${job.dailyWage}/day)`;

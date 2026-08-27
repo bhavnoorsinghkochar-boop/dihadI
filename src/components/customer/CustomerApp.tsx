@@ -284,7 +284,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
             </div>
             <div className="grid grid-cols-2 gap-2 pt-1">
               <a
-                href="mailto:bhavnoorsinghkochar@gmail.com?subject=Kaamzo%20Customer%20Support%20Request"
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=bhavnoorsinghkochar@gmail.com&cc=danishwadhawan7@gmail.com&su=Kaamzo%20Customer%20Support%20Request" target="_blank" rel="noreferrer"
                 className="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Mail className="w-3.5 h-3.5 text-amber-400" />

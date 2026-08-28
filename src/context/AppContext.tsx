@@ -2623,10 +2623,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }) => {
     const daily = Number(jobData.dailyWage) || 850;
     const days = Number(jobData.durationDays) || 1;
-    const baseLaborCalc = jobData.baseLabor !== undefined ? jobData.baseLabor : daily * days;
-    const totalGross = baseLaborCalc;
-    const platformFee = Math.round(totalGross * 0.2);
-    const workerPayout = totalGross - platformFee;
+    const baseLabor = jobData.baseLabor !== undefined ? jobData.baseLabor : daily * days;
+    const platformFee = Math.round(baseLabor * 0.20);
+    const totalGross = baseLabor + platformFee;
+    const workerPayout = baseLabor; // Worker receives 100% of base labor rate
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
     const areaCoords = getCoordinatesForArea(
       jobData.area ||
@@ -2684,7 +2684,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         accuracyMeters: 4,
         lastUpdated: "Just now",
       },
-      dailyWage: daily,
+      dailyWage: Math.round(totalGross / days),
       durationDays: days,
       startDate: jobData.startDate,
       endDate: jobData.endDate,

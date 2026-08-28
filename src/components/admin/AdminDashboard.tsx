@@ -279,7 +279,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           {" "}
           <Coins className="w-3.5 h-3.5 text-amber-400" />{" "}
-          <span>Treasury & Payouts</span>{" "}
+          <span>Commission</span>{" "}
         </button>{" "}
         <button
           onClick={() => setAdminTab("kyc")}
@@ -323,161 +323,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Main Body */}{" "}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
         {" "}
-        {/* Top 3 Metric Cards */}{" "}
-        <div className="grid grid-cols-3 gap-2.5">
-          {" "}
+        {/* Top 2 Metric Cards */}
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
-            {" "}
             <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-              {" "}
-              <span>Admin Treasury</span>{" "}
-              <Wallet className="w-3 h-3 text-amber-400" />{" "}
-            </div>{" "}
-            <p className="text-lg font-black text-amber-400 font-mono">
-              ₹{adminTreasuryBalance.toLocaleString("en-IN")}
-            </p>{" "}
-          </div>{" "}
-          <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
-            {" "}
-            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-              {" "}
-              <span>Auto Disbursed</span>{" "}
-              <ArrowDownRight className="w-3 h-3 text-amber-400" />{" "}
-            </div>{" "}
-            <p className="text-lg font-black text-amber-400 font-mono">
-              ₹{adminWorkerPayoutsDisbursed.toLocaleString("en-IN")}
-            </p>{" "}
-            <p className="text-[9px] text-slate-400 font-mono">
-              To Worker Wallets
-            </p>{" "}
-          </div>{" "}
-          <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
-            {" "}
-            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-              {" "}
-              <span>KYC Verified</span>{" "}
-              <ShieldCheck className="w-3 h-3 text-amber-400" />{" "}
-            </div>{" "}
+              <span>KYC Verified</span>
+              <ShieldCheck className="w-3 h-3 text-amber-400" />
+            </div>
             <p className="text-lg font-black text-white font-mono">
               {verifiedWorkersCount}
-            </p>{" "}
+            </p>
             <p className="text-[9px] text-amber-400 font-mono">
               {pendingVerifications.length} Pending
-            </p>{" "}
-          </div>{" "}
-        </div>{" "}
-        {/* TAB 0: ADMIN TREASURY, SUBSCRIPTIONS & AUTOMATED WORKER PAYOUTS */}{" "}
+            </p>
+          </div>
+          <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
+              <span>Commission Earned</span>
+              <Wallet className="w-3 h-3 text-emerald-400" />
+            </div>
+            <p className="text-lg font-black text-emerald-400 font-mono">
+              ₹{jobs.reduce((sum, job) => sum + (job.platformFee || 0), 0).toLocaleString("en-IN")}
+            </p>
+            <p className="text-[9px] text-slate-400 font-mono">
+              From {jobs.filter(j => j.platformFee && j.platformFee > 0).length} jobs
+            </p>
+          </div>
+        </div>
+
+        {/* TAB 0: COMMISSION LOG */}
         {adminTab === "treasury" && (
           <div className="space-y-3">
-            {" "}
-            {/* Treasury Highlight Banner */}{" "}
-            <div className="bg-linear-to-r from-amber-500/10 via-slate-800 to-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
-              {" "}
+            {/* Commission Highlight Banner */}
+            <div className="bg-gradient-to-r from-emerald-500/10 via-slate-800 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                {" "}
                 <div className="flex items-center gap-2">
-                  {" "}
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    {" "}
-                    <Coins className="w-4 h-4" />{" "}
-                  </div>{" "}
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Coins className="w-4 h-4" />
+                  </div>
                   <div>
-                    {" "}
                     <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-                      {" "}
-                      Admin Escrow Treasury{" "}
-                    </h3>{" "}
+                      Commission Revenue
+                    </h3>
                     <p className="text-[11px] text-slate-400">
-                      {" "}
-                      Prepaid escrow funds flow through here and are disbursed
-                      to workers upon approval.{" "}
-                    </p>{" "}
-                  </div>{" "}
-                </div>{" "}
-              </div>{" "}
-            </div>{" "}
-            {/* Live Treasury Transaction Audit Log */}{" "}
+                      Record of platform fees collected from jobs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Commission Log */}
             <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-4 space-y-3">
-              {" "}
               <div className="flex items-center justify-between">
-                {" "}
                 <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                  {" "}
-                  <Coins className="w-3.5 h-3.5 text-amber-400" />{" "}
+                  <Coins className="w-3.5 h-3.5 text-emerald-400" />
                   <span>
-                    Real-Time Admin Ledger & Audit Log (
-                    {adminTransactions.length})
-                  </span>{" "}
-                </h4>{" "}
-              </div>{" "}
+                    Commission Log ({jobs.filter(j => j.platformFee && j.platformFee > 0).length})
+                  </span>
+                </h4>
+              </div>
               <div className="space-y-2">
-                {" "}
-                {adminTransactions.length === 0 ? (
+                {jobs.filter(j => j.platformFee && j.platformFee > 0).length === 0 ? (
                   <p className="text-slate-400 text-center py-4">
-                    No treasury transactions recorded yet.
+                    No commission recorded yet.
                   </p>
                 ) : (
-                  adminTransactions.map((tx) => {
-                    const isCredit = tx.type === "SUBSCRIPTION_CREDIT";
+                  jobs.filter(j => j.platformFee && j.platformFee > 0).map((job) => {
                     return (
                       <div
-                        key={tx.id}
+                        key={job.id}
                         className="bg-slate-800 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between gap-3"
                       >
-                        {" "}
                         <div className="flex items-center gap-2.5">
-                          {" "}
                           <div
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isCredit ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"}`}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                           >
-                            {" "}
-                            {isCredit ? (
-                              <ArrowUpRight className="w-4 h-4" />
-                            ) : (
-                              <ArrowDownRight className="w-4 h-4" />
-                            )}{" "}
-                          </div>{" "}
+                            <ArrowUpRight className="w-4 h-4" />
+                          </div>
                           <div>
-                            {" "}
                             <p className="font-bold text-white text-xs leading-snug">
-                              {tx.description}
-                            </p>{" "}
+                              {job.trade} Job Commission
+                            </p>
                             <p className="text-[10px] text-slate-400 mt-0.5">
-                              {" "}
-                              {tx.timestamp}{" "}
-                              {tx.customerName
-                                ? `• Customer: ${tx.customerName}`
-                                : ""}{" "}
-                              {tx.workerName
-                                ? `• Worker: ${tx.workerName}`
-                                : ""}{" "}
-                            </p>{" "}
-                          </div>{" "}
-                        </div>{" "}
-                        <div className="text-right shrink-0">
-                          {" "}
-                          <span
-                            className={`font-mono font-black text-xs ${isCredit ? "text-amber-400" : "text-amber-400"}`}
-                          >
-                            {" "}
-                            {isCredit ? "+" : "-"}₹
-                            {tx.amount.toLocaleString("en-IN")}{" "}
-                          </span>{" "}
-                          <span className="block text-[9px] text-slate-400 uppercase font-bold">
-                            {" "}
-                            {isCredit
-                              ? "Admin Inflow"
-                              : "Worker Auto-Credit"}{" "}
-                          </span>{" "}
-                        </div>{" "}
+                              {job.postedAt} • Cust: {job.customerName}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-emerald-400 text-sm font-mono">
+                            +₹{(job.platformFee || 0).toLocaleString("en-IN")}
+                          </p>
+                          <p className="text-[9px] text-slate-500 font-mono">
+                            {job.id}
+                          </p>
+                        </div>
                       </div>
                     );
                   })
-                )}{" "}
-              </div>{" "}
-            </div>{" "}
+                )}
+              </div>
+            </div>
           </div>
-        )}{" "}
+        )}
+        
         {/* TAB 1: KYC VERIFICATION QUEUE */}{" "}
         {adminTab === "kyc" && (
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 space-y-3">

@@ -108,14 +108,14 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="relative h-16 bg-white dark:bg-[#1C1C1C] border-b border-slate-200 dark:border-[#383838] flex items-center justify-between px-3 sm:px-6 lg:px-8 shadow-xs shrink-0 z-30 sticky top-0 transition-colors">
+    <header className="relative h-16 bg-white dark:bg-[#1C1C1C] border-b border-slate-200 dark:border-[#383838] flex items-center justify-between px-2 sm:px-4 md:px-6 lg:px-8 shadow-xs shrink-0 z-30 sticky top-0 transition-colors gap-2">
       {/* Left: Brand Text & Active Role Status */}
-      <div className="flex items-center gap-2 sm:gap-3 z-10">
+      <div className="flex items-center gap-1.5 sm:gap-3 z-10 shrink-0">
         <Logo
           onClick={() => setCurrentRole("select_role")}
-          className="text-2xl sm:text-[26px] tracking-tight hover:opacity-90 transition cursor-pointer"
+          className="text-xl sm:text-2xl md:text-[26px] tracking-tight hover:opacity-90 transition cursor-pointer"
         />
-        <div className="hidden sm:block">
+        <div className="hidden md:block">
           <div className="flex items-center gap-2">
             {/* Active Role Tag */}
             <span className="px-2.5 py-0.5 bg-amber-50 dark:bg-[#2A2A2A] text-amber-900 dark:text-[#FFE57F] text-xs font-bold rounded-lg border border-amber-200 dark:border-[#383838] flex items-center gap-1.5 shadow-2xs">
@@ -134,14 +134,14 @@ export const Header: React.FC = () => {
               <span>{getRoleLabel()}</span>
             </span>
           </div>
-          <p className="hidden md:block text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-none mt-1">
+          <p className="hidden lg:block text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-none mt-1">
             {getT(currentLanguage, "brand_tagline")}
           </p>
         </div>
         {currentRole !== "select_role" && (
           <button
             onClick={() => setCurrentRole("select_role")}
-            className="flex items-center gap-1.5 px-3 py-1.5 ml-1 sm:ml-2 bg-amber-50 hover:bg-amber-100 dark:bg-[#2A2A2A] dark:hover:bg-[#333333] text-amber-950 dark:text-amber-200 rounded-xl text-xs font-bold transition border border-amber-200 dark:border-[#383838] min-h-[36px]"
+            className="flex items-center gap-1 px-2 sm:px-3 py-1.5 ml-1 bg-amber-50 hover:bg-amber-100 dark:bg-[#2A2A2A] dark:hover:bg-[#333333] text-amber-950 dark:text-amber-200 rounded-xl text-xs font-bold transition border border-amber-200 dark:border-[#383838] min-h-[36px] shrink-0"
             title="Switch to another role"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 text-amber-700 dark:text-[#FCD33F]" />
@@ -153,8 +153,10 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right: City Selector, Language Dropdown & Settings Dropdown */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
-        <PWAInstallButton />
+      <div className="flex items-center gap-1 sm:gap-2 z-10 shrink-0">
+        <div className="hidden sm:block">
+          <PWAInstallButton />
+        </div>
         {/* City Location Dropdown & Calibrate GPS */}
         <div className="relative" ref={cityMenuRef}>
           <div className="flex items-center bg-amber-50/90 dark:bg-[#282828] border border-amber-200/80 dark:border-[#383838] rounded-xl p-0.5 shadow-2xs">
@@ -164,11 +166,11 @@ export const Header: React.FC = () => {
                 setShowLangMenu(false);
                 setShowSettingsMenu(false);
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[#4f4843] bg-[#ffc800] hover:bg-amber-100/70 dark:hover:bg-[#333333] rounded-lg text-xs font-bold transition min-h-[36px]"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-[#4f4843] bg-[#ffc800] hover:bg-amber-100/70 dark:hover:bg-[#333333] rounded-lg text-xs font-bold transition min-h-[36px]"
               title="Change active operating city"
             >
-              <MapPin className="w-3.5 h-3.5 text-[#1c1c1c] border-[#202020] shrink-0" />
-              <span className="max-w-[85px] sm:max-w-[120px] truncate">
+              <MapPin className="w-3.5 h-3.5 text-[#1c1c1c] shrink-0" />
+              <span className="max-w-[70px] sm:max-w-[100px] md:max-w-[120px] truncate">
                 {currentCity ? currentCity.name : "Ludhiana"}
               </span>
               <ChevronDown className="w-3 h-3 text-[#101010] opacity-80" />
@@ -176,7 +178,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => detectAndSetLiveLocation()}
               disabled={isLocating}
-              className="p-1 px-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 rounded-lg text-[11px] font-black flex items-center gap-1 transition disabled:opacity-50 min-h-[34px]"
+              className="p-1 px-1.5 sm:px-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 rounded-lg text-[11px] font-black flex items-center gap-1 transition disabled:opacity-50 min-h-[34px]"
               title="Calibrate live GPS from your device"
             >
               {isLocating ? (
@@ -184,7 +186,7 @@ export const Header: React.FC = () => {
               ) : (
                 <Compass className="w-3.5 h-3.5" />
               )}
-              <span className="hidden md:inline">
+              <span className="hidden lg:inline">
                 {isLocating ? "..." : "GPS"}
               </span>
             </button>
@@ -395,20 +397,7 @@ export const Header: React.FC = () => {
                 <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-[#FFE57F] font-bold px-1.5 py-0.5 rounded">Portals</span>
               </div>
 
-              {/* Reset Platform (0) */}
-              <div
-                className="px-3.5 py-2 flex items-center justify-between text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer border-t border-slate-100 dark:border-[#333333]"
-                onClick={() => {
-                  resetToZero();
-                  setShowSettingsMenu(false);
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <RotateCcw className="w-4 h-4 text-rose-500" />
-                  <span>Reset Platform (0)</span>
-                </div>
-                <span className="text-[10px] bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold px-1.5 py-0.5 rounded">Purge</span>
-              </div>
+
             </div>
           )}
         </div>

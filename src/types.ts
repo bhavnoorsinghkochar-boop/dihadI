@@ -72,7 +72,7 @@ export interface WorkerProfile {
   zeroCommissionJobsRemaining?: number; // 6 jobs with 0% commission
   commissionSavedTotal?: number;
   // UPI & Banking Details
-  upiId: string; // e.g. 9810155678@paytm or ramesh@upi
+  upiId: string; // e.g. 9810155678@paytm or worker@upi
   bankName: string;
   accountNumberMasked: string;
   ifscCode: string;

@@ -127,7 +127,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="bhavnoorsinghkochar@gmail.com"
+                  placeholder="bhanoorsinghochar@gmail.com"
                   value={adminId}
                   onChange={(e) => setAdminId(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-amber-500 pl-8 font-mono"

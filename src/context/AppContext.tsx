@@ -360,8 +360,13 @@ interface AppContextType {
 
   // Global Controls & SSO
   signInWithGoogleSSO: (
-    preferredRole?: "worker" | "customer" | "admin"
-  ) => Promise<{ success: boolean; user?: any; isNewUser?: boolean; error?: string }>;
+    preferredRole?: "worker" | "customer" | "admin",
+  ) => Promise<{
+    success: boolean;
+    user?: any;
+    isNewUser?: boolean;
+    error?: string;
+  }>;
   ssoGoogleUser: {
     displayName?: string | null;
     email?: string | null;
@@ -385,8 +390,8 @@ const AppContext = createContext<AppContextType | undefined>(
 ); /* Default initial workers in Ludhiana, Punjab */
 const DEFAULT_INITIAL_WORKERS: WorkerProfile[] = [
   {
-    id: "w-ramesh",
-    name: "Ramesh Kumar",
+    id: "w-harpreet",
+    name: "Harpreet Singh",
     phone: "+91 98101 55678",
     avatar:
       "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80",
@@ -416,7 +421,7 @@ const DEFAULT_INITIAL_WORKERS: WorkerProfile[] = [
     totalEarnings: 3400,
     walletBalance: 2500,
     badge: "Top Rated",
-    upiId: "ramesh.k@upi",
+    upiId: "harpreet.k@upi",
     bankName: "State Bank of India",
     accountNumberMasked: "•••• •••• 9912",
     ifscCode: "SBIN0001234",
@@ -425,7 +430,7 @@ const DEFAULT_INITIAL_WORKERS: WorkerProfile[] = [
 const DEFAULT_INITIAL_VERIFICATIONS: VerificationRequest[] = [
   {
     id: "v-101",
-    workerName: "Ramesh Kumar",
+    workerName: "Harpreet Singh",
     trade: "Mason",
     phone: "+91 98101 55678",
     aadhaarNumber: "7829-4412-9901",
@@ -495,9 +500,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   /*  Platform collections  */ const [workers, setWorkers] = useState<
     WorkerProfile[]
   >(() => {
-    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v7") === "true";
     if (isReset) return [];
-    const saved = localStorage.getItem("dihadi_workers_zero_v6");
+    const saved = localStorage.getItem("dihadi_workers_zero_v7");
     if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
@@ -507,9 +512,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return DEFAULT_INITIAL_WORKERS;
   });
   const [jobs, setJobs] = useState<Job[]>(() => {
-    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v7") === "true";
     if (isReset) return [];
-    const saved = localStorage.getItem("dihadi_jobs_zero_v6");
+    const saved = localStorage.getItem("dihadi_jobs_zero_v7");
     if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
@@ -520,9 +525,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [verifications, setVerifications] = useState<VerificationRequest[]>(
     () => {
-      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      const isReset =
+        localStorage.getItem("dihadi_is_reset_state_v7") === "true";
       if (isReset) return [];
-      const saved = localStorage.getItem("dihadi_verifications_zero_v6");
+      const saved = localStorage.getItem("dihadi_verifications_zero_v7");
       if (saved !== null) {
         try {
           const parsed = JSON.parse(saved);
@@ -533,9 +539,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   );
   const [disputes, setDisputes] = useState<DisputeItem[]>(() => {
-    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v7") === "true";
     if (isReset) return [];
-    const saved = localStorage.getItem("dihadi_disputes_zero_v6");
+    const saved = localStorage.getItem("dihadi_disputes_zero_v7");
     if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
@@ -546,22 +552,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   /*  Current Logged-in Entities  */ const [currentWorker, setCurrentWorker] =
     useState<WorkerProfile | null>(() => {
-      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      const isReset =
+        localStorage.getItem("dihadi_is_reset_state_v7") === "true";
       if (isReset) return null;
-      const saved = localStorage.getItem("dihadi_current_worker_v6");
-      return saved ? JSON.parse(saved) : null;
+      const saved = localStorage.getItem("dihadi_current_worker_v7");
+      if (!saved) return null;
+      try {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed?.id === "ramesh" ||
+          parsed?.id === "w-ramesh" ||
+          parsed?.name?.toLowerCase()?.includes("ramesh")
+        ) {
+          localStorage.removeItem("dihadi_current_worker_v7");
+          return null;
+        }
+        return parsed;
+      } catch {
+        return null;
+      }
     });
   const [currentCustomer, setCurrentCustomer] =
     useState<CustomerProfile | null>(() => {
-      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      const isReset =
+        localStorage.getItem("dihadi_is_reset_state_v7") === "true";
       if (isReset) return null;
-      const saved = localStorage.getItem("dihadi_current_customer_v6");
-      return saved ? JSON.parse(saved) : null;
+      const saved = localStorage.getItem("dihadi_current_customer_v7");
+      if (!saved) return null;
+      try {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed?.id === "pooja" ||
+          parsed?.id === "c-demo-1" ||
+          parsed?.name?.toLowerCase()?.includes("pooja")
+        ) {
+          localStorage.removeItem("dihadi_current_customer_v7");
+          return null;
+        }
+        return parsed;
+      } catch {
+        return null;
+      }
     });
   const [currentAdmin, setCurrentAdmin] = useState<AdminProfile | null>(() => {
-    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v7") === "true";
     if (isReset) return null;
-    const saved = localStorage.getItem("dihadi_current_admin_v6");
+    const saved = localStorage.getItem("dihadi_current_admin_v7");
     return saved ? JSON.parse(saved) : null;
   });
   /* SSO Google User & Role Selection Modal State */
@@ -576,23 +612,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     adminTreasuryBalance,
     setAdminTreasuryBalance,
   ] = useState<number>(() => {
-    const saved = localStorage.getItem("dihadi_admin_treasury_v6");
+    const saved = localStorage.getItem("dihadi_admin_treasury_v7");
     return saved ? Number(saved) : 65000;
   });
   const [adminSubscriptionRevenue, setAdminSubscriptionRevenue] =
     useState<number>(() => {
-      const saved = localStorage.getItem("dihadi_admin_sub_rev_v6");
+      const saved = localStorage.getItem("dihadi_admin_sub_rev_v7");
       return saved ? Number(saved) : 45000;
     });
   const [adminWorkerPayoutsDisbursed, setAdminWorkerPayoutsDisbursed] =
     useState<number>(() => {
-      const saved = localStorage.getItem("dihadi_admin_disbursed_v6");
+      const saved = localStorage.getItem("dihadi_admin_disbursed_v7");
       return saved ? Number(saved) : 18500;
     });
   const [adminTransactions, setAdminTransactions] = useState<
     AdminTransaction[]
   >(() => {
-    const saved = localStorage.getItem("dihadi_admin_txs_v6");
+    const saved = localStorage.getItem("dihadi_admin_txs_v7");
     if (saved) return JSON.parse(saved);
     return [
       {
@@ -601,7 +637,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         amount: 15000,
         description: "Customer Gold Membership (1 Month Free Service)",
         timestamp: "Today, 09:30 AM",
-        customerName: "Pooja Verma",
+        customerName: "Bhavnoor Singh",
       },
       {
         id: "tx-sub-2",
@@ -609,17 +645,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         amount: 2000,
         description: "Worker VIP Pass & Instant Aadhaar Verification",
         timestamp: "Today, 10:15 AM",
-        workerName: "Ramesh Kumar",
+        workerName: "Harpreet Singh",
       },
       {
         id: "tx-payout-1",
         type: "WORKER_PAYOUT_DISBURSEMENT",
         amount: 850,
         description:
-          "Admin Treasury Auto-Disbursed wage to Ramesh Kumar on behalf of Gold Member Pooja Verma",
+          "Admin Treasury Auto-Disbursed wage to Harpreet Singh on behalf of Gold Member Bhavnoor Singh",
         timestamp: "Today, 11:00 AM",
-        customerName: "Pooja Verma",
-        workerName: "Ramesh Kumar",
+        customerName: "Bhavnoor Singh",
+        workerName: "Harpreet Singh",
       },
     ];
   });
@@ -639,8 +675,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   const closeSubscriptionPromo = () => {
     setIsSubscriptionPromoOpen(false);
-    sessionStorage.setItem("dihadi_promo_shown_session_v6", "true");
-    sessionStorage.setItem(`dihadi_promo_shown_${promoInitialRole}_v6`, "true");
+    sessionStorage.setItem("dihadi_promo_shown_session_v7", "true");
+    sessionStorage.setItem(`dihadi_promo_shown_${promoInitialRole}_v7`, "true");
   };
   /*  Platform Safety, Direct Hiring Warning & Trust Guarantee Modal State  */ const [
     isProtectionModalOpen,
@@ -670,9 +706,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }; // Subscription promo ad on app start/reopen is disabled as requested by the user /* useEffect(() => { Promo logic removed }, [currentRole]); */
   /*  Registered credentials database  */
   const [workerAccounts, setWorkerAccounts] = useState<UserAccount[]>(() => {
-    const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+    const isReset = localStorage.getItem("dihadi_is_reset_state_v7") === "true";
     if (isReset) return [];
-    const saved = localStorage.getItem("dihadi_worker_accounts_v6");
+    const saved = localStorage.getItem("dihadi_worker_accounts_v7");
     if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
@@ -681,17 +717,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     return [
       {
-        id: "ramesh",
+        id: "harpreet",
         phone: "9810155678",
         password: "123",
-        name: "Ramesh Kumar",
+        name: "Harpreet Singh",
         role: "worker",
         extraData: {
           trade: "Mason",
           rate: 850,
           area: "Model Town, Ludhiana",
           aadhaar: "7829-4412-9901",
-          upi: "ramesh.mason@okaxis",
+          upi: "harpreet.mason@okaxis",
         },
       },
       {
@@ -726,9 +762,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [customerAccounts, setCustomerAccounts] = useState<UserAccount[]>(
     () => {
-      const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+      const isReset =
+        localStorage.getItem("dihadi_is_reset_state_v7") === "true";
       if (isReset) return [];
-      const saved = localStorage.getItem("dihadi_customer_accounts_v6");
+      const saved = localStorage.getItem("dihadi_customer_accounts_v7");
       if (saved !== null) {
         try {
           const parsed = JSON.parse(saved);
@@ -737,15 +774,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       return [
         {
-          id: "pooja",
+          id: "bhavnoor",
           phone: "9910088221",
           password: "123",
-          name: "Pooja Verma",
+          name: "Bhavnoor Singh",
           role: "customer",
           extraData: {
             area: "Model Town",
             address: "House 142, Model Town, Ludhiana, Punjab",
-            upi: "pooja.verma@okhdfcbank",
+            upi: "bhavnoor.verma@okhdfcbank",
           },
         },
         {
@@ -767,7 +804,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     currentCity,
     setCurrentCityState,
   ] = useState<CityInfo>(() => {
-    const saved = localStorage.getItem("dihadi_current_city_v6");
+    const saved = localStorage.getItem("dihadi_current_city_v7");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -778,13 +815,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [currentResolvedAddress, setCurrentResolvedAddress] =
     useState<ResolvedAddress | null>(() => {
-      const saved = localStorage.getItem("dihadi_resolved_address_v6");
+      const saved = localStorage.getItem("dihadi_resolved_address_v7");
       return saved ? JSON.parse(saved) : null;
     });
   const [isLocating, setIsLocating] = useState(false);
   const setCurrentCity = (city: CityInfo) => {
     setCurrentCityState(city);
-    localStorage.setItem("dihadi_current_city_v6", JSON.stringify(city));
+    localStorage.setItem("dihadi_current_city_v7", JSON.stringify(city));
     playSound("gps_ping");
     showNotification(`City set to ${city.name}, ${city.state}`);
     /*  Synchronize current worker location & GPS to new city  */ if (
@@ -852,7 +889,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               const resolved = await reverseGeocodeLocation(lat, lng, accuracy);
               setCurrentResolvedAddress(resolved);
               localStorage.setItem(
-                "dihadi_resolved_address_v6",
+                "dihadi_resolved_address_v7",
                 JSON.stringify(resolved),
               );
               const detectedCity = detectCityFromCoords(lat, lng);
@@ -866,7 +903,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               };
               setCurrentCityState(activeCityInfo);
               localStorage.setItem(
-                "dihadi_current_city_v6",
+                "dihadi_current_city_v7",
                 JSON.stringify(activeCityInfo),
               );
               if (currentWorker) {
@@ -986,7 +1023,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             setWorkers(remoteWorkers);
             setIsFirebaseConnected(true);
           } else {
-            const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+            const isReset =
+              localStorage.getItem("dihadi_is_reset_state_v7") === "true";
             if (isReset) {
               setWorkers([]);
             }
@@ -1044,7 +1082,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             });
             setVerifications(remoteVerifs);
           } else {
-            const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+            const isReset =
+              localStorage.getItem("dihadi_is_reset_state_v7") === "true";
             if (isReset) {
               setVerifications([]);
             }
@@ -1148,7 +1187,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               });
             }
           } else {
-            const isReset = localStorage.getItem("dihadi_is_reset_state_v6") === "true";
+            const isReset =
+              localStorage.getItem("dihadi_is_reset_state_v7") === "true";
             if (isReset) {
               setWorkerAccounts([]);
               setCustomerAccounts([]);
@@ -1166,40 +1206,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
   // Persistence hooks
   useEffect(() => {
-    localStorage.setItem("dihadi_workers_zero_v6", JSON.stringify(workers));
+    localStorage.setItem("dihadi_workers_zero_v7", JSON.stringify(workers));
   }, [workers]);
   useEffect(() => {
-    localStorage.setItem("dihadi_jobs_zero_v6", JSON.stringify(jobs));
+    localStorage.setItem("dihadi_jobs_zero_v7", JSON.stringify(jobs));
   }, [jobs]);
   useEffect(() => {
     localStorage.setItem(
-      "dihadi_verifications_zero_v6",
+      "dihadi_verifications_zero_v7",
       JSON.stringify(verifications),
     );
   }, [verifications]);
   useEffect(() => {
-    localStorage.setItem("dihadi_disputes_zero_v6", JSON.stringify(disputes));
+    localStorage.setItem("dihadi_disputes_zero_v7", JSON.stringify(disputes));
   }, [disputes]);
   useEffect(() => {
     localStorage.setItem(
-      "dihadi_worker_accounts_v6",
+      "dihadi_worker_accounts_v7",
       JSON.stringify(workerAccounts),
     );
   }, [workerAccounts]);
   useEffect(() => {
     localStorage.setItem(
-      "dihadi_customer_accounts_v6",
+      "dihadi_customer_accounts_v7",
       JSON.stringify(customerAccounts),
     );
   }, [customerAccounts]);
   useEffect(() => {
     if (currentWorker) {
       localStorage.setItem(
-        "dihadi_current_worker_v6",
+        "dihadi_current_worker_v7",
         JSON.stringify(currentWorker),
       );
     } else {
-      localStorage.removeItem("dihadi_current_worker_v6");
+      localStorage.removeItem("dihadi_current_worker_v7");
     }
   }, [currentWorker]);
   /* Keep currentWorker synchronized whenever workers list or verifications list updates */ useEffect(() => {
@@ -1279,21 +1319,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (currentCustomer) {
       localStorage.setItem(
-        "dihadi_current_customer_v6",
+        "dihadi_current_customer_v7",
         JSON.stringify(currentCustomer),
       );
     } else {
-      localStorage.removeItem("dihadi_current_customer_v6");
+      localStorage.removeItem("dihadi_current_customer_v7");
     }
   }, [currentCustomer]);
   useEffect(() => {
     if (currentAdmin) {
       localStorage.setItem(
-        "dihadi_current_admin_v6",
+        "dihadi_current_admin_v7",
         JSON.stringify(currentAdmin),
       );
     } else {
-      localStorage.removeItem("dihadi_current_admin_v6");
+      localStorage.removeItem("dihadi_current_admin_v7");
     }
   }, [currentAdmin]);
   const showNotification = (msgOrTitle: string, maybeMessage?: string) => {
@@ -1572,17 +1612,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentRole]);
   /* Completely Reset All Data to ZERO */ const resetToZero = async () => {
     // 1. Mark explicit persistent reset flag
-    localStorage.setItem("dihadi_is_reset_state_v6", "true");
-    localStorage.setItem("dihadi_workers_zero_v6", "[]");
-    localStorage.setItem("dihadi_jobs_zero_v6", "[]");
-    localStorage.setItem("dihadi_verifications_zero_v6", "[]");
-    localStorage.setItem("dihadi_disputes_zero_v6", "[]");
-    localStorage.setItem("dihadi_worker_accounts_v6", "[]");
-    localStorage.setItem("dihadi_customer_accounts_v6", "[]");
-    localStorage.setItem("dihadi_admin_txs_v6", "[]");
-    localStorage.removeItem("dihadi_current_worker_v6");
-    localStorage.removeItem("dihadi_current_customer_v6");
-    localStorage.removeItem("dihadi_current_admin_v6");
+    localStorage.setItem("dihadi_is_reset_state_v7", "true");
+    localStorage.setItem("dihadi_workers_zero_v7", "[]");
+    localStorage.setItem("dihadi_jobs_zero_v7", "[]");
+    localStorage.setItem("dihadi_verifications_zero_v7", "[]");
+    localStorage.setItem("dihadi_disputes_zero_v7", "[]");
+    localStorage.setItem("dihadi_worker_accounts_v7", "[]");
+    localStorage.setItem("dihadi_customer_accounts_v7", "[]");
+    localStorage.setItem("dihadi_admin_txs_v7", "[]");
+    localStorage.removeItem("dihadi_current_worker_v7");
+    localStorage.removeItem("dihadi_current_customer_v7");
+    localStorage.removeItem("dihadi_current_admin_v7");
     localStorage.removeItem("dihadi_pending_chat_notifs_v1");
 
     // Clear all dynamic chat storage keys from local storage
@@ -1623,10 +1663,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   /* Seed sample demo data if explicitly requested */ const seedSampleData =
     () => {
-      localStorage.removeItem("dihadi_is_reset_state_v6");
+      localStorage.removeItem("dihadi_is_reset_state_v7");
       const demoWorker: WorkerProfile = {
         id: "w-demo-1",
-        name: "Ramesh Kumar",
+        name: "Harpreet Singh",
         phone: "+91 98101 55678",
         avatar:
           "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=150&auto=format&fit=crop&q=80",
@@ -1656,14 +1696,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         totalEarnings: 0,
         walletBalance: 0,
         badge: "Verified Mason",
-        upiId: "ramesh.mason@okaxis",
+        upiId: "harpreet.mason@okaxis",
         bankName: "State Bank of India",
         accountNumberMasked: "•••• •••• 4819",
         ifscCode: "SBIN0004921",
       };
       const demoCustomer: CustomerProfile = {
         id: "c-demo-1",
-        name: "Pooja Verma",
+        name: "Bhavnoor Singh",
         phone: "+91 99100 88221",
         area: "Model Town",
         city: "Ludhiana",
@@ -1675,7 +1715,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           city: "Ludhiana",
           address: "House 142, Model Town, Ludhiana, Punjab",
         },
-        upiId: "pooja.verma@okhdfcbank",
+        upiId: "bhavnoor.verma@okhdfcbank",
       };
       const demoAdmin: AdminProfile = {
         id: "adm-demo-1",
@@ -1692,7 +1732,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         title: "Wall Plastering & Brick Repair",
         trade: "Mason",
         description: "Daily boundary wall brickwork and plastering.",
-        customerName: "Pooja Verma",
+        customerName: "Bhavnoor Singh",
         customerPhone: "+91 99100 88221",
         locationAddress: "House 142, Model Town, Ludhiana, Punjab",
         area: "Model Town",
@@ -1712,13 +1752,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         platformFee: 170,
         workerPayout: 680,
         isPaid: false,
-        assignedWorkerUpi: "ramesh.mason@okaxis",
+        assignedWorkerUpi: "harpreet.mason@okaxis",
       };
       setJobs([demoJob]);
       setVerifications([
         {
           id: "v-demo-1",
-          workerName: "Ramesh Kumar",
+          workerName: "Harpreet Singh",
           trade: "Mason",
           phone: "+91 98101 55678",
           aadhaarNumber: "7829-4412-9901",
@@ -1730,17 +1770,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       syncWorkerToFirestore(demoWorker);
       syncJobToFirestore(demoJob);
       syncAccountToFirestore({
-        id: "ramesh",
+        id: "harpreet",
         phone: "9810155678",
         password: "123",
-        name: "Ramesh Kumar",
+        name: "Harpreet Singh",
         role: "worker",
       });
       syncAccountToFirestore({
-        id: "pooja",
+        id: "bhavnoor",
         phone: "9910088221",
         password: "123",
-        name: "Pooja Verma",
+        name: "Bhavnoor Singh",
         role: "customer",
       });
       playSound("success");
@@ -1795,18 +1835,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const found = findAccountMatch(workerAccounts, cleanInput);
     if (!found) {
       /*  Auto-fallback demo match  */ if (
-        cleanInput.toLowerCase() === "ramesh" ||
+        cleanInput.toLowerCase() === "harpreet" ||
         cleanInput.replace(/[^0-9]/g, "").endsWith("55678")
       ) {
         loginWorker({
-          name: "Ramesh Kumar",
+          name: "Harpreet Singh",
           phone: "+91 98101 55678",
           primaryTrade: "Mason",
           dailyRate: 850,
           experienceYears: 6,
           area: `${currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}`,
           aadhaarNumber: "7829-4412-9901",
-          upiId: "ramesh.mason@okaxis",
+          upiId: "harpreet.mason@okaxis",
         });
         return { success: true };
       }
@@ -1890,7 +1930,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         newAcc,
       ];
       localStorage.setItem(
-        "dihadi_worker_accounts_v6",
+        "dihadi_worker_accounts_v7",
         JSON.stringify(updated),
       );
       return updated;
@@ -2174,15 +2214,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const found = findAccountMatch(customerAccounts, cleanInput);
       if (!found) {
         if (
-          cleanInput.toLowerCase() === "pooja" ||
+          cleanInput.toLowerCase() === "bhavnoor" ||
           cleanInput.replace(/[^0-9]/g, "").endsWith("88221")
         ) {
           loginCustomer({
-            name: "Pooja Verma",
+            name: "Bhavnoor Singh",
             phone: "+91 99100 88221",
             area: currentCity?.defaultArea || "Model Town",
             address: `House 142, ${currentCity?.defaultArea || "Model Town"}, ${currentCity?.name || "Ludhiana"}, ${currentCity?.state || "Punjab"}`,
-            upiId: "pooja.verma@okhdfcbank",
+            upiId: "bhavnoor.verma@okhdfcbank",
           });
           return { success: true };
         }
@@ -2257,7 +2297,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         newAcc,
       ];
       localStorage.setItem(
-        "dihadi_customer_accounts_v6",
+        "dihadi_customer_accounts_v7",
         JSON.stringify(updated),
       );
       return updated;
@@ -2390,13 +2430,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     // Strict Gmail Verification for Admin Access
     if (clean.includes("@gmail.com")) {
       const isAllowed =
-        clean === "bhavnoorsinghkochar@gmail.com" ||
+        clean === "bhanoorsinghochar@gmail.com" ||
         clean === "bhanoorsinghkochar@gmail.com";
       if (!isAllowed) {
         return {
           success: false,
           error:
-            "Access Denied: Only bhavnoorsinghkochar@gmail.com is authorized to access the Admin Platform. No other Gmail account has admin privileges.",
+            "Access Denied: Only bhanoorsinghochar@gmail.com is authorized to access the Admin Platform. No other Gmail account has admin privileges.",
         };
       }
       loginAdmin({
@@ -2428,7 +2468,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return {
       success: false,
       error:
-        "Access Denied: Only bhavnoorsinghkochar@gmail.com is authorized to access the Admin Platform.",
+        "Access Denied: Only bhanoorsinghochar@gmail.com is authorized to access the Admin Platform.",
     };
   };
   /*  Admin Login helper  */ const loginAdmin = (data: {
@@ -2437,7 +2477,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }) => {
     const cleanEmail = (data.email || "").toLowerCase().trim();
     const isBhavnoor =
-      cleanEmail === "bhavnoorsinghkochar@gmail.com" ||
+      cleanEmail === "bhanoorsinghochar@gmail.com" ||
       cleanEmail === "bhanoorsinghkochar@gmail.com";
 
     const admin: AdminProfile = {
@@ -2445,7 +2485,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       name: isBhavnoor
         ? data.name || "Bhavnoor Singh Kochar"
         : data.name || "Dihadi Operations Admin",
-      email: data.email || "bhavnoorsinghkochar@gmail.com",
+      email: data.email || "bhanoorsinghochar@gmail.com",
       role: isBhavnoor ? "Super Admin / Platform Owner" : "Operations Lead",
     };
     setCurrentAdmin(admin);
@@ -2462,8 +2502,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
      Single Sign-On (SSO) with Google Auth Provider
      ========================================================================= */
   const signInWithGoogleSSO = async (
-    preferredRole?: "worker" | "customer" | "admin"
-  ): Promise<{ success: boolean; user?: any; isNewUser?: boolean; error?: string }> => {
+    preferredRole?: "worker" | "customer" | "admin",
+  ): Promise<{
+    success: boolean;
+    user?: any;
+    isNewUser?: boolean;
+    error?: string;
+  }> => {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
@@ -2484,7 +2529,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       // 1. If explicit role requested:
       if (preferredRole === "worker") {
         const found = workerAccounts.find(
-          (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+          (a) =>
+            a.id.toLowerCase() === email.toLowerCase() ||
+            (user.email && a.id.toLowerCase() === user.email.toLowerCase()),
         );
         if (found) {
           loginWorkerWithAuth(found.id, found.password || "google_sso_123");
@@ -2516,7 +2563,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (preferredRole === "customer") {
         const found = customerAccounts.find(
-          (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+          (a) =>
+            a.id.toLowerCase() === email.toLowerCase() ||
+            (user.email && a.id.toLowerCase() === user.email.toLowerCase()),
         );
         if (found) {
           loginCustomerWithAuth(found.id, found.password || "google_sso_123");
@@ -2543,7 +2592,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (preferredRole === "admin") {
         const cleanEmail = email.trim().toLowerCase();
         const isAuthorizedAdmin =
-          cleanEmail === "bhavnoorsinghkochar@gmail.com" ||
+          cleanEmail === "bhanoorsinghochar@gmail.com" ||
           cleanEmail === "bhanoorsinghkochar@gmail.com" ||
           cleanEmail === "ops@dihadi.co" ||
           cleanEmail === "admin@dihadi.co";
@@ -2551,7 +2600,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!isAuthorizedAdmin) {
           return {
             success: false,
-            error: `Access Denied: Only bhavnoorsinghkochar@gmail.com is authorized to access the Admin Platform. (${email} is not authorized).`,
+            error: `Access Denied: Only bhanoorsinghochar@gmail.com is authorized to access the Admin Platform. (${email} is not authorized).`,
           };
         }
 
@@ -2566,14 +2615,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // 2. Auto-detect from role selector without pre-selection
       const foundWorker = workerAccounts.find(
-        (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+        (a) =>
+          a.id.toLowerCase() === email.toLowerCase() ||
+          (user.email && a.id.toLowerCase() === user.email.toLowerCase()),
       );
       const foundCustomer = customerAccounts.find(
-        (a) => a.id.toLowerCase() === email.toLowerCase() || (user.email && a.id.toLowerCase() === user.email.toLowerCase())
+        (a) =>
+          a.id.toLowerCase() === email.toLowerCase() ||
+          (user.email && a.id.toLowerCase() === user.email.toLowerCase()),
       );
 
       if (foundWorker && !foundCustomer) {
-        loginWorkerWithAuth(foundWorker.id, foundWorker.password || "google_sso_123");
+        loginWorkerWithAuth(
+          foundWorker.id,
+          foundWorker.password || "google_sso_123",
+        );
         if (photoURL) updateWorkerAvatar(photoURL);
         setCurrentRole("worker");
         playSound("success");
@@ -2581,7 +2637,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (foundCustomer && !foundWorker) {
-        loginCustomerWithAuth(foundCustomer.id, foundCustomer.password || "google_sso_123");
+        loginCustomerWithAuth(
+          foundCustomer.id,
+          foundCustomer.password || "google_sso_123",
+        );
         setCurrentRole("customer");
         playSound("success");
         return { success: true, user: googleUserPayload, isNewUser: false };
@@ -2591,7 +2650,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsSSORoleModalOpen(true);
       return { success: true, user: googleUserPayload, isNewUser: true };
     } catch (err: any) {
-      if (err?.code === "auth/cancelled-popup-request" || err?.code === "auth/popup-closed-by-user") {
+      if (
+        err?.code === "auth/cancelled-popup-request" ||
+        err?.code === "auth/popup-closed-by-user"
+      ) {
         console.warn("User cancelled the Google popup sign-in.");
         return { success: false, error: "Popup closed by user." };
       }
@@ -2623,8 +2685,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }) => {
     const daily = Number(jobData.dailyWage) || 850;
     const days = Number(jobData.durationDays) || 1;
-    const baseLabor = jobData.baseLabor !== undefined ? jobData.baseLabor : daily * days;
-    const platformFee = Math.round(baseLabor * 0.20);
+    const baseLabor =
+      jobData.baseLabor !== undefined ? jobData.baseLabor : daily * days;
+    const platformFee = Math.round(baseLabor * 0.2);
     const totalGross = baseLabor + platformFee;
     const workerPayout = baseLabor; // Worker receives 100% of base labor rate
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
@@ -2731,7 +2794,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     targetPhone?: string,
   ): Promise<boolean> => {
     const email =
-      targetEmail || currentCustomer?.email || "bhavnoorsinghkochar@gmail.com";
+      targetEmail || currentCustomer?.email || "bhanoorsinghochar@gmail.com";
     const phone = targetPhone || currentCustomer?.phone || "+91 99100 88221";
     playSound("gps_ping");
     /* Trigger system notification */ if (
@@ -2999,7 +3062,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         escrowStatus: "released_to_worker" as const,
       };
 
-      const fullGross = (targetJob.dailyWage || 850) * (targetJob.durationDays || 1);
+      const fullGross =
+        (targetJob.dailyWage || 850) * (targetJob.durationDays || 1);
       const workerId = targetJob.assignedWorkerId;
       const workerName = targetJob.assignedWorkerName;
       const workerPhone = targetJob.assignedWorkerPhone;
@@ -3010,7 +3074,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           (w) =>
             (workerId && w.id === workerId) ||
             (workerPhone && w.phone === workerPhone) ||
-            (workerName && w.name.trim().toLowerCase() === workerName.trim().toLowerCase()),
+            (workerName &&
+              w.name.trim().toLowerCase() === workerName.trim().toLowerCase()),
         ) ||
         (currentWorker &&
         (currentWorker.id === workerId ||
@@ -3021,7 +3086,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       let payoutAmount = targetJob.workerPayout || Math.round(fullGross * 0.8);
       if (targetWorker) {
-        if ((targetWorker.zeroCommissionJobsRemaining || 0) > 0 || targetWorker.isPremiumWorker) {
+        if (
+          (targetWorker.zeroCommissionJobsRemaining || 0) > 0 ||
+          targetWorker.isPremiumWorker
+        ) {
           payoutAmount = fullGross;
         }
 
@@ -3036,7 +3104,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           prev.map((w) =>
             w.id === updatedWorker.id ||
             (workerPhone && w.phone === workerPhone) ||
-            w.name.trim().toLowerCase() === updatedWorker.name.trim().toLowerCase()
+            w.name.trim().toLowerCase() ===
+              updatedWorker.name.trim().toLowerCase()
               ? updatedWorker
               : w,
           ),
@@ -3046,7 +3115,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         if (
           currentWorker &&
           (currentWorker.id === updatedWorker.id ||
-            currentWorker.name.trim().toLowerCase() === updatedWorker.name.trim().toLowerCase() ||
+            currentWorker.name.trim().toLowerCase() ===
+              updatedWorker.name.trim().toLowerCase() ||
             currentWorker.phone === updatedWorker.phone)
         ) {
           setCurrentWorker(updatedWorker);
@@ -3071,7 +3141,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           if (
             (workerId && w.id === workerId) ||
             (workerPhone && w.phone === workerPhone) ||
-            (workerName && w.name.trim().toLowerCase() === workerName.trim().toLowerCase())
+            (workerName &&
+              w.name.trim().toLowerCase() === workerName.trim().toLowerCase())
           ) {
             return {
               ...w,
@@ -3128,9 +3199,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-    
+
     // Prepaid funds were already credited to worker wallet immediately upon OTP verification.
-    
+
     const updatedJob: Job = {
       ...job,
       status: "paid_and_closed",
@@ -3146,12 +3217,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setJobs((prev) => prev.map((j) => (j.id === jobId ? updatedJob : j)));
-    syncJobToFirestore(
-      updatedJob,
-    ); 
+    syncJobToFirestore(updatedJob);
 
     /* Update worker average rating */
-    const targetWorker = workers.find((w) => w.id === job.assignedWorkerId || w.name === job.assignedWorkerName);
+    const targetWorker = workers.find(
+      (w) => w.id === job.assignedWorkerId || w.name === job.assignedWorkerName,
+    );
     if (targetWorker) {
       const prevReviews = targetWorker.reviewCount || 0;
       const newCount = prevReviews + 1;
@@ -3173,7 +3244,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       setWorkers((prev) =>
-        prev.map((w) => (w.id === updatedWorker.id || w.name === updatedWorker.name ? updatedWorker : w)),
+        prev.map((w) =>
+          w.id === updatedWorker.id || w.name === updatedWorker.name
+            ? updatedWorker
+            : w,
+        ),
       );
       setWorkerAccounts((prev) =>
         prev.map((w) => {
@@ -3192,7 +3267,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         }),
       );
       syncWorkerToFirestore(updatedWorker);
-      if (currentWorker && (currentWorker.id === targetWorker.id || currentWorker.name === targetWorker.name)) {
+      if (
+        currentWorker &&
+        (currentWorker.id === targetWorker.id ||
+          currentWorker.name === targetWorker.name)
+      ) {
         setCurrentWorker(updatedWorker);
       }
     }
@@ -3291,12 +3370,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!target) return false;
     /* Deduct wage */ setAdminTreasuryBalance((prev) => {
       const next = Math.max(0, prev - wage);
-      localStorage.setItem("dihadi_admin_treasury_v6", String(next));
+      localStorage.setItem("dihadi_admin_treasury_v7", String(next));
       return next;
     });
     /* Increase total disbursed */ setAdminWorkerPayoutsDisbursed((prev) => {
       const next = prev + wage;
-      localStorage.setItem("dihadi_admin_disbursed_v6", String(next));
+      localStorage.setItem("dihadi_admin_disbursed_v7", String(next));
       return next;
     });
     /* Record detailed admin */ const newTx: AdminTransaction = {
@@ -3311,7 +3390,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setAdminTransactions((prev) => {
       const updated = [newTx, ...prev];
-      localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
+      localStorage.setItem("dihadi_admin_txs_v7", JSON.stringify(updated));
       return updated;
     });
     /* Directly credit wallet */ const updatedWorker: WorkerProfile = {
@@ -3387,12 +3466,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       /* Credit Admin Treasury */ setAdminTreasuryBalance((prev) => {
         const next = prev + PRICE;
-        localStorage.setItem("dihadi_admin_treasury_v6", String(next));
+        localStorage.setItem("dihadi_admin_treasury_v7", String(next));
         return next;
       });
       setAdminSubscriptionRevenue((prev) => {
         const next = prev + PRICE;
-        localStorage.setItem("dihadi_admin_sub_rev_v6", String(next));
+        localStorage.setItem("dihadi_admin_sub_rev_v7", String(next));
         return next;
       });
       /* Record Admin transaction */ const newTx: AdminTransaction = {
@@ -3405,7 +3484,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       setAdminTransactions((prev) => {
         const updated = [newTx, ...prev];
-        localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
+        localStorage.setItem("dihadi_admin_txs_v7", JSON.stringify(updated));
         return updated;
       });
       playSound("cash");
@@ -3436,18 +3515,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       setCurrentCustomer(updatedCustomer);
       localStorage.setItem(
-        "dihadi_current_customer_v6",
+        "dihadi_current_customer_v7",
         JSON.stringify(updatedCustomer),
       );
     }
     /* Credit Admin Account */ setAdminTreasuryBalance((prev) => {
       const next = prev + PRICE;
-      localStorage.setItem("dihadi_admin_treasury_v6", String(next));
+      localStorage.setItem("dihadi_admin_treasury_v7", String(next));
       return next;
     });
     setAdminSubscriptionRevenue((prev) => {
       const next = prev + PRICE;
-      localStorage.setItem("dihadi_admin_sub_rev_v6", String(next));
+      localStorage.setItem("dihadi_admin_sub_rev_v7", String(next));
       return next;
     });
     /* Record in Admin Transactions */ const newTx: AdminTransaction = {
@@ -3460,7 +3539,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setAdminTransactions((prev) => {
       const updated = [newTx, ...prev];
-      localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
+      localStorage.setItem("dihadi_admin_txs_v7", JSON.stringify(updated));
       return updated;
     });
     playSound("success");
@@ -4060,7 +4139,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setAdminTransactions((prev) => {
       const updated = [refundTx, ...prev];
-      localStorage.setItem("dihadi_admin_txs_v6", JSON.stringify(updated));
+      localStorage.setItem("dihadi_admin_txs_v7", JSON.stringify(updated));
       return updated;
     });
     playSound("cash");

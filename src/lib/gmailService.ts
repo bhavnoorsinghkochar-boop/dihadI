@@ -278,7 +278,7 @@ export function generateOtpEmailHtml(options: SendEmailOtpOptions): {
 
       <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
         <p style="margin: 0;">Connected Portals: Kaamzo Hyperlocal Workforce Portal</p>
-        <p style="margin: 4px 0 0 0;">If you did not request this OTP, please contact <a href="mailto:bhavnoorsinghkochar@gmail.com?cc=danishwadhawan7@gmail.com" style="color: #d97706; text-decoration: none; font-weight: bold;">bhavnoorsinghkochar@gmail.com</a> or WhatsApp/Call <strong>+91 95922 21100</strong> immediately.</p>
+        <p style="margin: 4px 0 0 0;">If you did not request this OTP, please contact <a href="mailto:bhanoorsinghochar@gmail.com?cc=danishwadhawan7@gmail.com" style="color: #d97706; text-decoration: none; font-weight: bold;">bhanoorsinghochar@gmail.com</a> or WhatsApp/Call <strong>+91 95922 21100</strong> immediately.</p>
       </div>
     </div>
   `;

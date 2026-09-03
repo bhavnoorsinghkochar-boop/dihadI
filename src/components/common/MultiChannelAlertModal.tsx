@@ -69,7 +69,7 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   // Initialize simulation sequence & auto-dispatch when opened
   useEffect(() => {
     if (isOpen && job && targetWorker) {
-      const defaultEmail = targetWorker.email || 'bhavnoorsinghkochar@gmail.com';
+      const defaultEmail = targetWorker.email || 'bhanoorsinghochar@gmail.com';
       setTargetEmail(defaultEmail);
       playSound('incoming_job');
       setCallState('dialing');
@@ -132,7 +132,7 @@ export const MultiChannelAlertModal: React.FC<MultiChannelAlertModalProps> = ({
   };
 
   const getSmsMessage = () => {
-    return `[KAAMZO ALERT] Naya Kaam: ${job.trade} at ${job.area || job.locationAddress}. Wage Rs.${job.dailyWage}/day. Reply YES to accept or open app. Help: +919592221100 / bhavnoorsinghkochar@gmail.com`;
+    return `[KAAMZO ALERT] Naya Kaam: ${job.trade} at ${job.area || job.locationAddress}. Wage Rs.${job.dailyWage}/day. Reply YES to accept or open app. Help: +919592221100 / bhanoorsinghochar@gmail.com`;
   };
 
   const getEmailSubject = () => {

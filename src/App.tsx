@@ -260,7 +260,7 @@ const MainLayout: React.FC = () => {
                 activeGpsJob.assignedWorkerName ||
                 assignedWorker?.name ||
                 currentWorker?.name ||
-                "Ramesh Kumar"
+                "Worker"
               }
               workerTrade={activeGpsJob.trade}
               jobTitle={activeGpsJob.title}
@@ -281,10 +281,10 @@ const MainLayout: React.FC = () => {
           amount={activeUpiPaymentJob.workerPayout}
           totalWage={activeUpiPaymentJob.dailyWage}
           platformFee={activeUpiPaymentJob.platformFee}
-          workerName={activeUpiPaymentJob.assignedWorkerName || "Ramesh Kumar"}
+          workerName={activeUpiPaymentJob.assignedWorkerName || "Worker"}
           workerTrade={activeUpiPaymentJob.trade}
           workerUpiId={
-            activeUpiPaymentJob.assignedWorkerUpi || "ramesh.mason@okaxis"
+            activeUpiPaymentJob.assignedWorkerUpi || "worker@upi"
           }
           workerPhone={
             activeUpiPaymentJob.assignedWorkerPhone || "+91 98101 55678"

@@ -36,7 +36,7 @@ export const SSORolePickerModal: React.FC<SSORolePickerModalProps> = ({
   const name = googleUser.displayName || "Kaamzo User";
   const cleanEmail = email.toLowerCase().trim();
   const isAuthorizedAdmin =
-    cleanEmail === "bhavnoorsinghkochar@gmail.com" ||
+    cleanEmail === "bhanoorsinghochar@gmail.com" ||
     cleanEmail === "bhanoorsinghkochar@gmail.com";
 
   const handleSelectAdmin = () => {
@@ -154,7 +154,7 @@ export const SSORolePickerModal: React.FC<SSORolePickerModalProps> = ({
 
         {/* Role Options */}
         <div className="space-y-3">
-          {/* Platform Super Admin (Only visible for authorized admin email bhavnoorsinghkochar@gmail.com) */}
+          {/* Platform Super Admin (Only visible for authorized admin email bhanoorsinghochar@gmail.com) */}
           {isAuthorizedAdmin && (
             <button
               type="button"

@@ -252,7 +252,7 @@ export const RateEmployeeModal: React.FC<RateEmployeeModalProps> = ({
               rows={3}
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              placeholder="e.g. Ramesh was very hardworking, arrived exactly on time, and finished the brickwork flawlessly!"
+              placeholder="e.g. worker was very hardworking, arrived exactly on time, and finished the brickwork flawlessly!"
               className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3 text-xs focus:outline-amber-600 focus:bg-white transition"
             />{" "}
           </div>{" "}

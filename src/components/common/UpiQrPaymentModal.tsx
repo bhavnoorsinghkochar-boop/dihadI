@@ -113,7 +113,7 @@ export const UpiQrPaymentModal: React.FC<UpiQrPaymentModalProps> = ({
     "🛠️ Expert Craftsmanship",
   ]);
   if (!isOpen) return null;
-  const targetWorkerName = workerName || recipientName || "Ramesh Kumar";
+  const targetWorkerName = workerName || recipientName || "Worker";
   const targetUpi = workerUpiId || recipientUpiId || "dihadi.worker@upi";
   /* Real NPCI UPI payload spec */ const cleanUpi = targetUpi;
   const encodedName = encodeURIComponent(targetWorkerName);

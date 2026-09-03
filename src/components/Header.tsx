@@ -152,8 +152,6 @@ export const Header: React.FC = () => {
       {/* Right: City Selector, Language Dropdown & Settings Dropdown */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
         <PWAInstallButton />
-      </div>
-      <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
         {/* City Location Dropdown & Calibrate GPS */}
         <div className="relative" ref={cityMenuRef}>
           <div className="flex items-center bg-amber-50/90 dark:bg-[#282828] border border-amber-200/80 dark:border-[#383838] rounded-xl p-0.5 shadow-2xs">

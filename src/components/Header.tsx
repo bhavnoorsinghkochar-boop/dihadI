@@ -1,3 +1,4 @@
+import { PWAInstallButton } from "./common/PWAInstallButton";
 import React, { useState, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { Language, CityInfo } from "../types";
@@ -149,6 +150,9 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right: City Selector, Language Dropdown & Settings Dropdown */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
+        <PWAInstallButton />
+      </div>
       <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
         {/* City Location Dropdown & Calibrate GPS */}
         <div className="relative" ref={cityMenuRef}>

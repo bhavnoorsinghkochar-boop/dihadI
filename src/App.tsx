@@ -1,3 +1,4 @@
+import { OfflineIndicator } from "./components/common/OfflineIndicator";
 import React, { useEffect } from "react";
 import { AppProvider, useApp } from "./context/AppContext";
 import { Header } from "./components/Header";
@@ -367,6 +368,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
+        <OfflineIndicator />
         <MainLayout />
       </AppProvider>
     </ErrorBoundary>

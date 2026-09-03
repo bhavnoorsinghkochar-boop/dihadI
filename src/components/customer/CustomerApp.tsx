@@ -262,7 +262,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
   const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regPhone, setRegPhone] = useState("+91 99100 88221");
-  const [regEmail, setRegEmail] = useState("bhanoorsinghochar@gmail.com");
+  const [regEmail, setRegEmail] = useState("bhavnoorsinghkochar@gmail.com");
   const [regArea, setRegArea] = useState(
     () => currentCity?.defaultArea || "Model Town",
   );
@@ -295,7 +295,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
   const handleSendOtpEmail = async (job: Job) => {
     setIsDispatchingOtp((prev) => ({ ...prev, [job.id]: true }));
     try {
-      const email = currentCustomer?.email || "bhanoorsinghochar@gmail.com";
+      const email = currentCustomer?.email || "bhavnoorsinghkochar@gmail.com";
       const success = await dispatchJobStartOtp(job, email);
       setDispatchedEmailOtpJobs((prev) => ({ ...prev, [job.id]: true }));
       if (success) {
@@ -1155,7 +1155,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
     );
   }
   /*  LOGGED IN CUSTOMER VIEW  */ const myCustomerJobs = jobs.filter(
-    (j) => j.customerName === currentCustomer.name || j.customerPhone === currentCustomer.phone,
+    (j) => j.customerPhone === currentCustomer.phone,
   );
   const activeRequests = myCustomerJobs.filter(
     (j) => j.status !== "paid_and_closed",
@@ -2831,12 +2831,12 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
                       Official Email:
                     </span>
                     <span className="text-xs font-mono font-bold text-slate-900 truncate max-w-[190px]">
-                      bhanoorsinghochar@gmail.com
+                      bhavnoorsinghkochar@gmail.com
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <a
-                      href="https://mail.google.com/mail/?view=cm&fs=1&to=bhanoorsinghochar@gmail.com&cc=danishwadhawan7@gmail.com&su=Kaamzo%20Customer%20Support%20Request"
+                      href="https://mail.google.com/mail/?view=cm&fs=1&to=bhavnoorsinghkochar@gmail.com&cc=danishwadhawan7@gmail.com&su=Kaamzo%20Customer%20Support%20Request"
                       target="_blank"
                       rel="noreferrer"
                       className="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
@@ -2848,7 +2848,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
                       type="button"
                       onClick={() => {
                         navigator.clipboard?.writeText(
-                          "bhanoorsinghochar@gmail.com",
+                          "bhavnoorsinghkochar@gmail.com",
                         );
                         showNotification(
                           "Copied",
@@ -2912,7 +2912,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
             <div className="pt-2">
               <GmailOtpVerificationSection
                 initialEmail={
-                  currentCustomer?.email || "bhanoorsinghochar@gmail.com"
+                  currentCustomer?.email || "bhavnoorsinghkochar@gmail.com"
                 }
                 onVerified={(verifiedEmail) => {
                   showNotification(
@@ -3678,7 +3678,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
       <GmailOtpVerificationModal
         isOpen={showGmailVerifyModal}
         onClose={() => setShowGmailVerifyModal(false)}
-        initialEmail={currentCustomer?.email || "bhanoorsinghochar@gmail.com"}
+        initialEmail={currentCustomer?.email || "bhavnoorsinghkochar@gmail.com"}
         targetName={currentCustomer?.name || "Customer"}
         role="customer"
         onVerified={(verifiedEmail) => {

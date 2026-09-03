@@ -192,7 +192,7 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
 
     // Dispatch global chat notification event so popup appears on opposite party's screen
     try {
-      const recipientRoleType = otherPersonRole.toLowerCase() === 'worker' ? 'worker' : 'customer';
+      const recipientRoleType = otherPersonRole.toLowerCase();
       window.dispatchEvent(
         new CustomEvent('dihadi_chat_message_event', {
           detail: {
@@ -217,6 +217,27 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
           },
         })
       );
+      
+      if (recipientRoleType === 'admin') {
+        setTimeout(() => {
+          const autoMsg = {
+            id: 'msg-' + Date.now() + '-admin',
+            jobId: job?.id || conversationId,
+            senderRole: 'admin' as const,
+            senderName: 'Kaamzo Support',
+            senderPhone: '+91 95922 21100',
+            text: 'Thank you for reaching out. We have received your message. A human agent will connect with you via WhatsApp or phone call shortly. For immediate assistance, please use the WhatsApp button above.',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            createdAt: Date.now(),
+            status: 'delivered' as const,
+            isQuickReply: false,
+          };
+          const updatedWithAdmin = [...updated, autoMsg];
+          saveAndBroadcastMessages(updatedWithAdmin);
+          playSound('notification');
+        }, 1500);
+      }
+
     } catch (err) {
       console.debug('Event dispatch error:', err);
     }

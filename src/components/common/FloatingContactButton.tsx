@@ -29,7 +29,7 @@ export const FloatingContactButton: React.FC = () => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                openGlobalChat(null, { name: "Kaamzo Helpline", phone: "+91 98765 43210", role: "admin" }, "customer");
+                openGlobalChat(null, { name: "Kaamzo Helpline", phone: "+91 95922 21100", role: "admin" }, "customer");
               }}
               className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl flex items-center justify-center gap-2 transition"
             >
@@ -37,11 +37,11 @@ export const FloatingContactButton: React.FC = () => {
               Chat with Helpline
             </button>
             <a
-              href="tel:1800123456"
+              href="tel:919592221100"
               className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-[#2E2E2E] dark:hover:bg-[#383838] text-slate-800 dark:text-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 transition"
             >
               <Phone className="w-4 h-4 text-amber-500" />
-              Call Toll-Free: 1800-123-KAAMZO
+              Call Toll-Free: +91 95922 21100
             </a>
           </div>
         </div>

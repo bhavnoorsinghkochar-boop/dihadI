@@ -139,7 +139,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("+91 98101 55678");
-  const [regEmail, setRegEmail] = useState("bhanoorsinghochar@gmail.com");
+  const [regEmail, setRegEmail] = useState("bhavnoorsinghkochar@gmail.com");
   const [regTrade, setRegTrade] = useState<TradeType>("Mason");
   const [regDailyRate, setRegDailyRate] = useState<number>(850);
   const [regExperienceYears, setRegExperienceYears] = useState<number>(5);
@@ -3706,7 +3706,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
             </div>{" "}
             {/* Embedded Gmail OTP Verification Section */}{" "}
             <GmailOtpVerificationSection
-              initialEmail="bhanoorsinghochar@gmail.com"
+              initialEmail="bhavnoorsinghkochar@gmail.com"
               onVerified={(email) => {
                 showNotification(
                   "Gmail Verified",
@@ -3843,13 +3843,13 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                       </span>{" "}
                       <span className="text-xs font-mono font-bold text-amber-300 truncate max-w-[190px]">
                         {" "}
-                        bhanoorsinghochar@gmail.com{" "}
+                        bhavnoorsinghkochar@gmail.com{" "}
                       </span>{" "}
                     </div>{" "}
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       {" "}
                       <a
-                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=bhanoorsinghochar@gmail.com?cc=danishwadhawan7@gmail.com&subject=Kaamzo%20Worker%20Support%20Request%20-%20${encodeURIComponent(currentWorker.name)}`}
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=bhavnoorsinghkochar@gmail.com?cc=danishwadhawan7@gmail.com&subject=Kaamzo%20Worker%20Support%20Request%20-%20${encodeURIComponent(currentWorker.name)}`}
                         className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-700"
                       >
                         {" "}
@@ -3860,7 +3860,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                         type="button"
                         onClick={() => {
                           navigator.clipboard?.writeText(
-                            "bhanoorsinghochar@gmail.com",
+                            "bhavnoorsinghkochar@gmail.com",
                           );
                           showNotification(
                             "Copied",
@@ -3933,7 +3933,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
                 {" "}
                 <GmailOtpVerificationSection
                   initialEmail={
-                    currentWorker?.email || "bhanoorsinghochar@gmail.com"
+                    currentWorker?.email || "bhavnoorsinghkochar@gmail.com"
                   }
                   onVerified={(verifiedEmail) => {
                     showNotification(
@@ -4017,7 +4017,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
       <GmailOtpVerificationModal
         isOpen={showGmailVerifyModal}
         onClose={() => setShowGmailVerifyModal(false)}
-        initialEmail={regEmail || "bhanoorsinghochar@gmail.com"}
+        initialEmail={regEmail || "bhavnoorsinghkochar@gmail.com"}
         targetName={currentWorker.name}
         role="worker"
         onVerified={(verifiedEmail) => {

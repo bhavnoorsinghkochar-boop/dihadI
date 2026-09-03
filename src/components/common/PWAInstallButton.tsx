@@ -24,11 +24,10 @@ export const PWAInstallButton: React.FC = () => {
     );
   }
 
-  // iOS Safari flow (beforeinstallprompt is not supported by WebKit)
-  if (isIOS) {
-    return (
-      <>
-        <button
+  // Fallback for browsers/iframes where beforeinstallprompt doesnt fire
+  return (
+    <>
+      <button
           onClick={() => setShowIOSGuide(true)}
           className="flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm hover:bg-amber-400 transition ml-2"
         >
@@ -44,13 +43,13 @@ export const PWAInstallButton: React.FC = () => {
               </div>
               <h3 className="text-xl font-black text-slate-900 mb-2">Install Dihadi</h3>
               <p className="mt-2 text-sm text-slate-600 mb-6 font-medium">
-                Install this app on your iPhone or iPad for the best experience.
+                To install this app on your device:
               </p>
               
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-left space-y-3 mb-6">
                 <p className="text-sm text-slate-700 flex items-start gap-2">
                   <span className="font-bold text-slate-900">1.</span> 
-                  <span>Tap the <strong>Share</strong> button in your Safari toolbar at the bottom.</span>
+                  <span>Open this application directly in your mobile browser (Safari/Chrome), or click the Share icon in your browser menu.</span>
                 </p>
                 <p className="text-sm text-slate-700 flex items-start gap-2">
                   <span className="font-bold text-slate-900">2.</span> 
@@ -68,8 +67,5 @@ export const PWAInstallButton: React.FC = () => {
           </div>
         )}
       </>
-    );
-  }
-
-  return null;
+  );
 };

@@ -252,3 +252,23 @@
     animation: pulse-ambient 8s ease-in-out infinite;
   }
 }
+
+/* Print Stylesheet (Feature 10) */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header, footer, nav, button, .no-print, [role="region"], .fixed {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+

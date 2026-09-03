@@ -14,6 +14,12 @@ import { QuickChatModal } from "./components/common/QuickChatModal";
 import { SubscriptionPromoModal } from "./components/common/SubscriptionPromoModal";
 import { AppProtectionGuaranteeModal } from "./components/common/AppProtectionGuaranteeModal";
 import { InteractiveBackground } from "./components/common/InteractiveBackground";
+import { CookieBanner } from "./components/common/CookieBanner";
+import { BackToTopButton } from "./components/common/BackToTopButton";
+import { ScrollProgressBar } from "./components/common/ScrollProgressBar";
+import { FloatingContactButton } from "./components/common/FloatingContactButton";
+import { SkipToContent } from "./components/common/SkipToContent";
+import { captureUtmParameters } from "./utils/utm";
 import { Bell } from "lucide-react";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 
@@ -55,36 +61,49 @@ const MainLayout: React.FC = () => {
     closeProtectionModal,
   } = useApp();
 
-  // Listen to browser URL / Hash changes to support direct investor / admin / worker / customer deep-links
+  // Capture UTM parameters on initial load
+  useEffect(() => {
+    captureUtmParameters();
+  }, []);
+
+
+  // Listen to browser URL / Hash / Query changes to support direct app extensions and deep links
   useEffect(() => {
     const handleUrlRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const appParam = params.get('app')?.toLowerCase();
 
       if (
-        path.includes("investor") ||
-        path.includes("pitch") ||
-        hash.includes("investor") ||
-        hash.includes("pitch")
-      ) {
-        setCurrentRole("pitch_deck");
-      } else if (
-        path.includes("admin") ||
-        hash.includes("admin")
-      ) {
-        setCurrentRole("admin");
-      } else if (
-        path.includes("worker") ||
-        hash.includes("worker")
-      ) {
-        setCurrentRole("worker");
-      } else if (
+        appParam === "customer" ||
+        appParam === "employer" ||
         path.includes("customer") ||
         path.includes("employer") ||
         hash.includes("customer") ||
         hash.includes("employer")
       ) {
         setCurrentRole("customer");
+      } else if (
+        appParam === "worker" ||
+        path.includes("worker") ||
+        hash.includes("worker")
+      ) {
+        setCurrentRole("worker");
+      } else if (
+        appParam === "admin" ||
+        path.includes("admin") ||
+        hash.includes("admin")
+      ) {
+        setCurrentRole("admin");
+      } else if (
+        appParam === "pitch" ||
+        path.includes("pitch") ||
+        path.includes("investor") ||
+        hash.includes("investor") ||
+        hash.includes("pitch")
+      ) {
+        setCurrentRole("pitch_deck");
       }
     };
 
@@ -99,8 +118,15 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="relative w-full min-h-screen bg-slate-50 dark:bg-[#1C1C1C] flex flex-col font-sans text-slate-800 dark:text-[#FFFFFF] transition-colors duration-200 overflow-x-hidden">
+      {/* Accessibility Skip to Content Link */}
+      <SkipToContent />
+
+      {/* Scroll Progress Bar */}
+      <ScrollProgressBar />
+
       {/* Interactive Atmospheric Background */}
       <InteractiveBackground />
+
 
       {/* Toast Notification Banner */}
       {notification && (
@@ -140,7 +166,7 @@ const MainLayout: React.FC = () => {
       <Header />
 
       {/* Main Container - Main Platform & Dedicated Pitch Deck */}
-      <main className="flex-1 flex flex-col">
+      <main id="main-content" className="flex-1 flex flex-col">
         {currentRole === "pitch_deck" ? (
           <div className="p-3 sm:p-6 lg:p-8 flex items-center justify-center flex-1">
             <PitchDeckViewer />
@@ -360,6 +386,11 @@ const MainLayout: React.FC = () => {
           </button>
         </div>
       </footer>
+
+      {/* Added UI/UX Feature Components */}
+      <CookieBanner />
+      <BackToTopButton />
+      <FloatingContactButton />
     </div>
   );
 };

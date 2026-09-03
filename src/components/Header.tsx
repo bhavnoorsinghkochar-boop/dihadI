@@ -1,4 +1,5 @@
 import { PWAInstallButton } from "./common/PWAInstallButton";
+import { AppExtensionModal } from "./common/AppExtensionModal";
 import React, { useState, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { Language, CityInfo } from "../types";
@@ -22,6 +23,7 @@ import {
   Sun,
   Globe,
   Check,
+  Smartphone,
 } from "lucide-react";
 
 export const Header: React.FC = () => {
@@ -45,6 +47,7 @@ export const Header: React.FC = () => {
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [isAppExtModalOpen, setIsAppExtModalOpen] = useState(false);
 
   const cityMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
@@ -377,6 +380,21 @@ export const Header: React.FC = () => {
                 <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Sample</span>
               </div>
 
+              {/* Dedicated App Portals (Customer & Worker) */}
+              <div
+                className="px-3.5 py-2 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#2E2E2E] transition cursor-pointer"
+                onClick={() => {
+                  setIsAppExtModalOpen(true);
+                  setShowSettingsMenu(false);
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Smartphone className="w-4 h-4 text-amber-500" />
+                  <span>Customer & Worker Apps</span>
+                </div>
+                <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-[#FFE57F] font-bold px-1.5 py-0.5 rounded">Portals</span>
+              </div>
+
               {/* Reset Platform (0) */}
               <div
                 className="px-3.5 py-2 flex items-center justify-between text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer border-t border-slate-100 dark:border-[#333333]"
@@ -395,6 +413,8 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
+
+      <AppExtensionModal isOpen={isAppExtModalOpen} onClose={() => setIsAppExtModalOpen(false)} />
     </header>
   );
 };

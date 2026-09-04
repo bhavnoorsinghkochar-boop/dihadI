@@ -82,7 +82,9 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
   const startOtp = job?.otpCode || '';
 
   // Conversation storage key
-  const conversationId = job?.id ? `job_${job.id}` : `direct_${otherPersonName.replace(/\s+/g, '_').toLowerCase()}`;
+  const conversationId = job?.id 
+    ? `job_${job.id}` 
+    : `direct_${[currentUserPhone || '', otherPersonPhone || ''].map(p => p.replace(/[^0-9]/g, '')).sort().join('_')}`;
   const storageKey = `dihadi_chat_v7_${conversationId}`;
 
   // Initial welcome seed messages if conversation is empty
@@ -234,7 +236,7 @@ export const QuickChatModal: React.FC<QuickChatModalProps> = ({
           };
           const updatedWithAdmin = [...updated, autoMsg];
           saveAndBroadcastMessages(updatedWithAdmin);
-          playSound('notification');
+          playSound('message');
         }, 1500);
       }
 

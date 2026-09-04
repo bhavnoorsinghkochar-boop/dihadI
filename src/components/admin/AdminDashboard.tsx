@@ -26,7 +26,12 @@ import {
   Crown,
   ArrowDownRight,
   ArrowUpRight,
+  MessageCircle,
+  Send,
+  Clock,
 } from "lucide-react";
+import { AdminSupportChatHub } from "./AdminSupportChatHub";
+
 interface AdminDashboardProps {
   isEmbedded?: boolean;
 }
@@ -61,7 +66,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   /* Admin navigation tabs: 'treasury' | 'kyc' | 'workers' | 'jobs' */ const [
     adminTab,
     setAdminTab,
-  ] = useState<"treasury" | "kyc" | "workers" | "jobs">("treasury");
+  ] = useState<"treasury" | "kyc" | "workers" | "jobs" | "support">("treasury");
   /* KYC sub-filter: 'pending' | 'approved' | 'all' */ const [
     kycFilter,
     setKycFilter,
@@ -307,6 +312,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {workers.length}{" "}
           </span>{" "}
         </button>{" "}
+        <button
+          onClick={() => setAdminTab("support")}
+          className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${adminTab === "support" ? "bg-slate-800 text-amber-400 border-t-2 border-amber-500 shadow-xs" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"}`}
+        >
+          <MessageCircle className="w-3.5 h-3.5 text-amber-400" />
+          <span>Support Chats</span>
+        </button>
         <button
           onClick={() => setAdminTab("jobs")}
           className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-t-xl text-center transition flex items-center justify-center gap-1.5 ${adminTab === "jobs" ? "bg-slate-800 text-amber-400 border-t-2 border-amber-500" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"}`}
@@ -636,6 +648,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>{" "}
           </div>
         )}{" "}
+        {adminTab === "support" && (
+          <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4">
+             <AdminSupportChatHub />
+          </div>
+        )}
         {/* TAB 2: REGISTERED WORKERS DIRECTORY */}{" "}
         {adminTab === "workers" && (
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 space-y-3">
@@ -806,10 +823,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>{" "}
                   </div>
                 ))
-              )}{" "}
+              )}
+
             </div>{" "}
           </div>
-        )}{" "}
+        )}
+        {adminTab === "support" && (
+          <div className="shadow-xl">
+             <AdminSupportChatHub />
+          </div>
+        )}
+        {" "}
       </div>{" "}
     </div>
   );

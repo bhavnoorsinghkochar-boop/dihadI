@@ -82,6 +82,7 @@ export const Header: React.FC = () => {
   const handleLangChange = (lang: Language) => {
     setCurrentLanguage(lang);
     setShowLangMenu(false);
+
     if (lang === "hi") {
       speak("भाषा बदलकर हिंदी कर दी गई है");
     } else if (lang === "pa") {

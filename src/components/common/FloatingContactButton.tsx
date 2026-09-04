@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 
 export const FloatingContactButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { openGlobalChat } = useApp();
+  const { openGlobalChat, currentRole } = useApp();
 
   return (
     <div className="fixed bottom-6 left-6 z-40">
@@ -29,7 +29,7 @@ export const FloatingContactButton: React.FC = () => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                openGlobalChat(null, { name: "Kaamzo Helpline", phone: "+91 95922 21100", role: "admin" }, "customer");
+                openGlobalChat(null, { name: "Kaamzo Helpline", phone: "+91 95922 21100", role: "admin" }, currentRole === 'worker' ? 'worker' : 'customer');
               }}
               className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl flex items-center justify-center gap-2 transition"
             >
@@ -46,7 +46,6 @@ export const FloatingContactButton: React.FC = () => {
           </div>
         </div>
       )}
-
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Open support and contact options"

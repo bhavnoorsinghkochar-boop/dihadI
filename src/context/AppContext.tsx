@@ -483,7 +483,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [currentRole, setCurrentRole] = useState<AppRole>("select_role");
-  const [currentLanguage, setCurrentLanguage] = useState<Language>("en");
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(() => {
+    return (localStorage.getItem("kaamzo_language") as Language) || "en";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("kaamzo_language", currentLanguage);
+    
+    // Sync with Google Translate
+    const syncGoogleTranslate = () => {
+      try {
+        const targetValue = currentLanguage;
+        if (targetValue === 'en') {
+          // Check if we are currently translated via cookie
+          if (document.cookie.includes('googtrans=')) {
+            // Clear cookies and reload to restore original React DOM
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname;
+            window.location.reload();
+          }
+        } else {
+          const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+          if (select && select.value !== targetValue) {
+             select.value = targetValue;
+             select.dispatchEvent(new Event('change'));
+          }
+        }
+      } catch (e) {
+        console.error("Google Translate sync error", e);
+      }
+    };
+
+    syncGoogleTranslate();
+    // Also retry after a short delay in case the Google Translate script is still loading
+    setTimeout(syncGoogleTranslate, 1500);
+    setTimeout(syncGoogleTranslate, 3000);
+  }, [currentLanguage]);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("kaamzo_theme") === "dark";
   });

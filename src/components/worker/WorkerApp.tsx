@@ -86,6 +86,7 @@ import { WorkerAvatarUploadModal } from "./WorkerAvatarUploadModal";
 import { WorkerJobHistory } from "./WorkerJobHistory";
 import { WorkerSubscriptionModal } from "./WorkerSubscriptionModal";
 import { generateWorkerPerformancePdf } from "../../utils/pdfReportGenerator";
+import { WorkerMobileBottomNav } from "./WorkerMobileBottomNav";
 interface WorkerAppProps {
   isEmbedded?: boolean;
 }
@@ -1444,7 +1445,7 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
   }
   /* LOGGED IN WORKER VIEW */ return (
     <div
-      className={`bg-slate-50 text-slate-900 flex flex-col min-h-screen select-none ${isEmbedded ? "w-full" : "max-w-7xl mx-auto rounded-3xl border border-slate-200/80 shadow-2xl overflow-hidden"}`}
+      className={`bg-slate-50 text-slate-900 flex flex-col min-h-screen select-none ${isEmbedded ? "w-full" : "max-w-7xl mx-auto rounded-3xl border border-slate-200/80 shadow-2xl overflow-hidden"} pb-20 md:pb-6`}
     >
       {" "}
       {/* 1. Header Navigation Bar */}{" "}
@@ -1526,8 +1527,8 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
             </div>{" "}
           </div>{" "}
         </div>{" "}
-        {/* Center Portal Tabs */}{" "}
-        <div className="flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold overflow-x-auto max-w-full">
+        {/* Center Portal Tabs */}
+        <div className="hidden md:flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold overflow-x-auto max-w-full">
           {" "}
           <button
             onClick={() => {
@@ -4026,7 +4027,18 @@ export const WorkerApp: React.FC<WorkerAppProps> = ({ isEmbedded = false }) => {
             `✓ Worker email ${verifiedEmail} confirmed and verified.`,
           );
         }}
-      />{" "}
+      />
+
+      {/* Dedicated Worker Mobile Bottom Navigation Bar */}
+      <WorkerMobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        availableJobsCount={filteredBroadcastJobs.length}
+        activeJobsCount={myAssignedJobs.length}
+        walletBalance={currentWorker.walletBalance || 0}
+        isOnline={currentWorker.isOnline}
+        onToggleOnline={toggleWorkerStatus}
+      />
     </div>
   );
 };

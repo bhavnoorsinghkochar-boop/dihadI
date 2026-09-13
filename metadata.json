@@ -1,6 +1,6 @@
 {
   "name": "Kaamzo - Daily Wage Worker & Job Platform",
-  "description": "A 3-in-1 platform connecting daily-wage workers with local jobs featuring Hyperlocal 10km AI Matching, Multi-Channel Alerts (WhatsApp, Voice IVR, SMS, Push), Top-5 Shortlisting, Live GPS Radar, and UPI Escrow.",
+  "description": "A 3-in-1 platform connecting daily-wage workers with local jobs featuring Google Maps Platform routing, Hyperlocal 10km matching, live GPS tracking, multi-channel alerts, and UPI escrow.",
   "requestFramePermissions": ["geolocation", "microphone", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

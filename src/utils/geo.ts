@@ -397,7 +397,7 @@ export async function reverseGeocodeLocation(
   if (apiKey) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${roundedLat},${roundedLng}&key=${apiKey}&solution_id=gmp_git_agentskills_v1`,
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${roundedLat},${roundedLng}&key=${apiKey}&solution_id=gmp_mcp_codeassist_v1_aistudio`,
       );
       if (response.ok) {
         const data = await response.json();

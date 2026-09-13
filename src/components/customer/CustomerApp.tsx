@@ -61,6 +61,7 @@ import {
   Clock,
   Calculator,
   ShieldAlert,
+  Map as MapIcon,
 } from "lucide-react";
 import { playSound } from "../../utils/audio";
 import { Logo } from "../common/Logo";
@@ -73,6 +74,8 @@ import { RateEmployeeModal } from "../common/RateEmployeeModal";
 import { QuickChatModal, ChatTarget } from "../common/QuickChatModal";
 import { CustomerSubscriptionModal } from "./CustomerSubscriptionModal";
 import { UpiQrPaymentModal } from "../common/UpiQrPaymentModal";
+import { GoogleMapWorkersExplorer } from "../maps/GoogleMapWorkersExplorer";
+import { CustomerMobileBottomNav } from "./CustomerMobileBottomNav";
 
 export const GOV_SERVICE_CATEGORIES: {
   trade: TradeType;
@@ -227,7 +230,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
   ] = useState<"find_workers" | "my_bookings" | "support">("find_workers");
   /* Auth Tab Mode: 'login' | 'register' */ const [authTab, setAuthTab] =
     useState<"login" | "register">("login");
-  const [workerViewMode, setWorkerViewMode] = useState<"list" | "radar">(
+  const [workerViewMode, setWorkerViewMode] = useState<"list" | "map" | "radar">(
     "list",
   );
   const [selectedRadarWorker, setSelectedRadarWorker] =
@@ -1202,53 +1205,44 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
     },
   ];
   return (
-    <div className="bg-slate-50 min-h-screen flex flex-col font-sans select-none rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
-      {" "}
-      {/* 1. Customer Navigation Bar */}{" "}
-      <nav className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-xs">
-        {" "}
-        <div className="flex items-center gap-4 sm:gap-6">
-          {" "}
-          {/* Logo */}{" "}
+    <div className="bg-slate-50 min-h-screen flex flex-col font-sans select-none rounded-3xl overflow-hidden shadow-2xl border border-slate-200 pb-20 md:pb-6">
+      {/* 1. Customer Navigation Bar */}
+      <nav className="bg-white border-b border-slate-200 px-3 sm:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 sticky top-0 z-30 shadow-xs">
+        <div className="flex items-center gap-2 sm:gap-6">
+          {/* Logo */}
           <div
             onClick={() => setActiveTab("find_workers")}
-            className="flex items-center cursor-pointer group"
+            className="flex items-center cursor-pointer group shrink-0"
           >
-            {" "}
-            <Logo className="scale-[0.6] origin-left group-hover:scale-[0.65] transition-transform" />{" "}
-          </div>{" "}
-          {/* Sub Navigation Tabs */}{" "}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold overflow-x-auto">
-            {" "}
+            <Logo className="scale-[0.55] sm:scale-[0.6] origin-left group-hover:scale-[0.65] transition-transform" />
+          </div>
+          {/* Sub Navigation Tabs (Desktop only) */}
+          <div className="hidden md:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold overflow-x-auto">
             <button
               onClick={() => setActiveTab("find_workers")}
               className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${activeTab === "find_workers" ? "bg-amber-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"}`}
             >
-              {" "}
-              <Users className="w-3.5 h-3.5" /> <span>Find Workers</span>{" "}
-            </button>{" "}
+              <Users className="w-3.5 h-3.5" /> <span>Find Workers</span>
+            </button>
             <button
               onClick={() => setActiveTab("my_bookings")}
               className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${activeTab === "my_bookings" ? "bg-amber-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"}`}
             >
-              {" "}
-              <Building2 className="w-3.5 h-3.5" /> <span>My Bookings</span>{" "}
+              <Building2 className="w-3.5 h-3.5" /> <span>My Bookings</span>
               {activeRequests.length > 0 && (
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${activeTab === "my_bookings" ? "bg-amber-400 text-slate-950" : "bg-amber-600 text-white"}`}
                 >
-                  {" "}
-                  {activeRequests.length}{" "}
+                  {activeRequests.length}
                 </span>
-              )}{" "}
-            </button>{" "}
+              )}
+            </button>
             <button
               onClick={() => setActiveTab("support")}
               className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 ${activeTab === "support" ? "bg-amber-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"}`}
             >
-              {" "}
-              <HelpCircle className="w-3.5 h-3.5" /> <span>Support</span>{" "}
-            </button>{" "}
+              <HelpCircle className="w-3.5 h-3.5" /> <span>Support</span>
+            </button>
             <button
               onClick={() => {
                 setShowPostModal(true);
@@ -1257,78 +1251,67 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
               className="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-xs border border-amber-400/80 ring-2 ring-amber-400/20 hover:scale-105 cursor-pointer shrink-0"
               title="Post a new job broadcast to workers within 10km"
             >
-              {" "}
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />{" "}
-              <span>Post a Job</span>{" "}
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />{" "}
-            </button>{" "}
-          </div>{" "}
-        </div>{" "}
-        {/* Right User & Quick Post Job Actions */}{" "}
-        <div className="flex items-center gap-3">
-          {" "}
-          {/* Prominently Highlighted Post a Job Button */}{" "}
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Post a Job</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />
+            </button>
+          </div>
+        </div>
+        {/* Right User & Quick Post Job Actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Prominently Highlighted Post a Job Button (Desktop only, mobile has elevated bottom FAB) */}
           <button
             id="header-post-job-btn"
             onClick={() => {
               setShowPostModal(true);
               playSound("click");
             }}
-            className="relative group px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 rounded-xl text-xs font-black transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 shadow-lg shadow-amber-500/30 border-2 border-amber-300 ring-4 ring-amber-400/20 cursor-pointer overflow-hidden"
+            className="hidden md:flex relative group px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 rounded-xl text-xs font-black transition-all transform hover:-translate-y-0.5 active:translate-y-0 items-center gap-2 shadow-lg shadow-amber-500/30 border-2 border-amber-300 ring-4 ring-amber-400/20 cursor-pointer overflow-hidden"
             title="Post a Job & Broadcast to Workers"
           >
-            {" "}
             <div className="w-5 h-5 rounded-lg bg-slate-950 text-amber-400 flex items-center justify-center shadow-xs shrink-0">
-              {" "}
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />{" "}
-            </div>{" "}
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            </div>
             <span className="tracking-wide text-xs whitespace-nowrap">
               Post a Job
-            </span>{" "}
+            </span>
             <span className="px-1.5 py-0.5 bg-slate-950/90 text-amber-300 text-[9px] font-black rounded-md uppercase tracking-wider hidden sm:inline-block">
-              {" "}
-              10km Live{" "}
-            </span>{" "}
-          </button>{" "}
+              10km Live
+            </span>
+          </button>
           <button
             id="header-verify-gmail-btn"
             onClick={() => setShowGmailVerifyModal(true)}
-            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-amber-200 cursor-pointer"
+            className="hidden sm:flex px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-xs font-bold transition items-center gap-1.5 border border-amber-200 cursor-pointer"
             title="Verify Gmail with 6-digit OTP"
           >
-            {" "}
-            <Mail className="w-3.5 h-3.5 text-amber-600" />{" "}
-            <span className="hidden sm:inline">Verify Gmail</span>{" "}
-          </button>{" "}
-          <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />{" "}
-          {/* User Profile & Sign Out */}{" "}
-          <div className="flex items-center gap-2.5">
-            {" "}
+            <Mail className="w-3.5 h-3.5 text-amber-600" />
+            <span className="hidden sm:inline">Verify Gmail</span>
+          </button>
+          <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
+          {/* User Profile & Sign Out */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="text-right hidden md:block">
-              {" "}
               <p className="text-xs font-black text-slate-900 uppercase">
                 {currentCustomer.name}
-              </p>{" "}
+              </p>
               <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded-md border border-amber-100">
-                {" "}
-                Customer ({currentCustomer.area}){" "}
-              </span>{" "}
-            </div>{" "}
-            <div className="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700">
-              {" "}
-              {currentCustomer.name.charAt(0)}{" "}
-            </div>{" "}
+                Customer ({currentCustomer.area})
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center border border-slate-700 shrink-0">
+              {currentCustomer.name.charAt(0)}
+            </div>
             <button
               onClick={logoutCustomer}
-              className="px-2.5 py-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-200"
+              className="p-1.5 sm:px-2.5 sm:py-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-200 min-h-[36px]"
               title="Sign Out"
             >
-              {" "}
-              <LogOut className="w-3.5 h-3.5" />{" "}
-              <span className="hidden sm:inline">Sign Out</span>{" "}
-            </button>{" "}
-          </div>{" "}
-        </div>{" "}
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
+        </div>
       </nav>{" "}
       {/* 2. Main Content Area */}{" "}
       {activeTab === "find_workers" && (
@@ -1746,25 +1729,64 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
                 <div className="flex items-center gap-2">
                   {" "}
                   <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-bold">
-                    {" "}
                     <button
                       onClick={() => setWorkerViewMode("list")}
                       className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${workerViewMode === "list" ? "bg-white text-amber-600 shadow-xs" : "text-slate-600 hover:text-slate-900 "}`}
                     >
-                      {" "}
-                      <span>Grid View</span>{" "}
-                    </button>{" "}
+                      <span>Grid View</span>
+                    </button>
+                    <button
+                      onClick={() => setWorkerViewMode("map")}
+                      className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${workerViewMode === "map" ? "bg-amber-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 "}`}
+                    >
+                      <MapIcon className="w-3.5 h-3.5" />
+                      <span>Google Maps View</span>
+                    </button>
                     <button
                       onClick={() => setWorkerViewMode("radar")}
                       className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${workerViewMode === "radar" ? "bg-amber-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 "}`}
                     >
-                      {" "}
-                      <Radio className="w-3.5 h-3.5 animate-pulse text-amber-300" />{" "}
-                      <span>10km GPS Radar</span>{" "}
-                    </button>{" "}
-                  </div>{" "}
-                </div>{" "}
-              </div>{" "}
+                      <Radio className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+                      <span>10km GPS Radar</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* View: Google Maps Hyperlocal Explorer */}
+              {workerViewMode === "map" && (
+                <div className="space-y-3 animate-in fade-in duration-200">
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                        <MapIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                          <span>Google Maps Grounded Explorer</span>
+                          <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">Live Markers</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600">
+                          Interactive Google Map showing verified tradesmen within 10 km of {currentCustomer.area}. Click any pin to inspect rates and book directly.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Nearby</span>
+                      <span className="text-sm font-black text-amber-600">{filteredWorkers.length} Tradesmen</span>
+                    </div>
+                  </div>
+
+                  <GoogleMapWorkersExplorer
+                    workers={filteredWorkers}
+                    currentCustomer={currentCustomer}
+                    onBookWorker={(w) => {
+                      setBookingWorker(w);
+                      playSound("click");
+                    }}
+                    height="h-[520px]"
+                  />
+                </div>
+              )}
               {/* View 1: 10km GPS Radar View */}{" "}
               {workerViewMode === "radar" && (
                 <div className="bg-slate-950 text-white rounded-3xl p-6 border border-slate-800 space-y-4 shadow-xl">
@@ -3710,9 +3732,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
           }}
         />
       )}{" "}
-      {/* Sticky Highlighted Floating Action Button (FAB) */}{" "}
-      <div className="fixed bottom-6 right-6 z-40">
-        {" "}
+      {/* Sticky Highlighted Floating Action Button (FAB) - Desktop only */}
+      <div className="hidden md:block fixed bottom-6 right-6 z-40">
         <button
           id="fab-post-job-floating"
           type="button"
@@ -3723,30 +3744,36 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({
           className="group relative flex items-center gap-2.5 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 rounded-2xl font-black text-xs sm:text-sm shadow-2xl shadow-amber-500/50 border-2 border-amber-200 ring-4 ring-amber-400/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title="Post a Job Broadcast to 10km Verified Workers"
         >
-          {" "}
           <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
-            {" "}
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />{" "}
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-4 w-4 bg-slate-950 text-[9px] text-amber-300 items-center justify-center font-black">
               ⚡
-            </span>{" "}
-          </span>{" "}
+            </span>
+          </span>
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center shadow-inner shrink-0">
-            {" "}
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />{" "}
-          </div>{" "}
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
+          </div>
           <div className="text-left">
-            {" "}
             <span className="block leading-none font-black text-slate-950 text-xs sm:text-sm">
               Post a Job
-            </span>{" "}
+            </span>
             <span className="text-[10px] text-slate-900 font-bold block mt-0.5">
               Broadcast to 10km
-            </span>{" "}
-          </div>{" "}
-          <Sparkles className="w-4 h-4 text-slate-950 animate-pulse ml-0.5 hidden xs:block" />{" "}
-        </button>{" "}
-      </div>{" "}
+            </span>
+          </div>
+          <Sparkles className="w-4 h-4 text-slate-950 animate-pulse ml-0.5 hidden xs:block" />
+        </button>
+      </div>
+
+      {/* Dedicated Customer Mobile Bottom Navigation */}
+      <CustomerMobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        workerViewMode={workerViewMode}
+        setWorkerViewMode={setWorkerViewMode}
+        onPostJobClick={() => setShowPostModal(true)}
+        activeBookingsCount={activeRequests.length}
+      />
     </div>
   );
 };

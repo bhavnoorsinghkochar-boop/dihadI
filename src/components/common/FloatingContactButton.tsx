@@ -7,7 +7,7 @@ export const FloatingContactButton: React.FC = () => {
   const { openGlobalChat, currentRole } = useApp();
 
   return (
-    <div className="fixed bottom-6 left-6 z-40">
+    <div className="fixed bottom-20 md:bottom-6 left-4 md:left-6 z-30">
       {isOpen && (
         <div className="absolute bottom-14 left-0 mb-2 w-72 bg-white dark:bg-[#242424] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#383838] p-4 text-xs animate-in fade-in slide-in-from-bottom-2">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#333333] mb-3">

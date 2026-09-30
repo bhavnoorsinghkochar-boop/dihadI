@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#fcd33f" />
+  <title>Download Dihadi</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #fff8dc 0%, #f8fafc 50%, #fff 100%); color: #1c1c1c; display: grid; place-items: center; padding: 24px; }
+    .card { width: min(100%, 560px); background: rgba(255,255,255,.94); border: 1px solid #e2e8f0; border-radius: 28px; box-shadow: 0 22px 70px rgba(28,28,28,.12); padding: 34px; text-align: center; }
+    .logo { width: 76px; height: 76px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 22px; background: #1c1c1c; color: #fcd33f; font-size: 34px; font-weight: 900; }
+    h1 { margin: 0; font-size: clamp(30px, 8vw, 48px); letter-spacing: -1.8px; }
+    .tagline { margin: 10px 0 26px; color: #64748b; font-size: 17px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 56px; padding: 0 22px; border-radius: 16px; background: #1c1c1c; color: #fff; text-decoration: none; font-weight: 800; font-size: 17px; transition: transform .15s ease, background .15s ease; }
+    .button:hover { transform: translateY(-2px); background: #000; }
+    .secondary { background: #fef3c7; color: #8c651e; margin-top: 12px; }
+    .secondary:hover { background: #fde68a; }
+    .note { margin: 22px 0 0; padding: 16px; border-radius: 16px; background: #f8fafc; color: #475569; font-size: 14px; line-height: 1.55; text-align: left; }
+    .ios { display: none; margin-top: 18px; padding: 16px; border-radius: 16px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; font-size: 14px; line-height: 1.55; text-align: left; }
+    .ios strong { display: block; margin-bottom: 4px; }
+    footer { margin-top: 22px; color: #94a3b8; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo">D</div>
+    <h1>Download Dihadi</h1>
+    <p class="tagline">Work. Connect. Earn.</p>
+    <a class="button" href="./app-debug.apk" download="dihadi-app-debug.apk">Download Android App (APK)</a>
+    <a class="button secondary" href="./dihadi-ios-source.zip" download>Download iOS Project Source</a>
+    <div class="ios" id="ios-note">
+      <strong>On iPhone</strong>
+      iOS does not allow an unsigned app file to be installed directly from a website. The iPhone version must be distributed through TestFlight or the App Store after signing it with an Apple Developer account.
+    </div>
+    <div class="note">
+      <strong>Android installation:</strong> download the APK, open it, and allow installation from this browser when Android asks. The app is a debug build intended for testing.
+    </div>
+    <footer>Dihadi · com.kaamzo.dihadi</footer>
+  </main>
+  <script>
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) document.getElementById('ios-note').style.display = 'block';
+  </script>
+</body>
+</html>

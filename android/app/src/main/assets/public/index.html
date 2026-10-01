@@ -11,19 +11,35 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <title>Kaamzo - Daily Wage Worker & Job Platform</title>
-    <meta name="description" content="Kaamzo connects daily-wage workers with local jobs featuring Hyperlocal 10km AI Matching, Multi-Channel Alerts, Top-5 Shortlisting, Live GPS Radar, and UPI Escrow." />
+    <meta name="description" content="A 3-in-1 platform connecting daily-wage workers with local jobs featuring Google Maps Platform routing, Hyperlocal 10km matching, live GPS tracking, multi-channel alerts, and UPI escrow." />
     <meta property="og:title" content="Kaamzo - Daily Wage Worker & Job Platform" />
-    <meta property="og:description" content="Kaamzo connects daily-wage workers with local jobs featuring Hyperlocal 10km AI Matching, Multi-Channel Alerts, Top-5 Shortlisting, Live GPS Radar, and UPI Escrow." />
+    <meta property="og:description" content="A 3-in-1 platform connecting daily-wage workers with local jobs featuring Google Maps Platform routing, Hyperlocal 10km matching, live GPS tracking, multi-channel alerts, and UPI escrow." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script type="module" crossorigin src="/assets/index-BEEvCX4l.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-XDukfQYT.css">
-  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+    <style>
+      /* Hide the Google Translate toolbar and UI elements */
+      .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+      body { top: 0px !important; }
+      #google_translate_element { display: none !important; }
+      .goog-tooltip { display: none !important; }
+      .goog-tooltip:hover { display: none !important; }
+      .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
+    </style>
+    <script type="module" crossorigin src="/assets/index-B9iMKJwW.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DE5iAsbU.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
   <body class="font-sans antialiased">
+    <div id="google_translate_element"></div>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({pageLanguage: 'en', includedLanguages: 'en,hi,pa', autoDisplay: false}, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <div id="root"></div>
   </body>
 </html>

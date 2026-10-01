@@ -1,6 +1,5 @@
 {
 	"appId": "com.kaamzo.dihadi",
 	"appName": "Dihadi",
-	"webDir": "dist",
-	"bundledWebRuntime": false
+	"webDir": "dist"
 }

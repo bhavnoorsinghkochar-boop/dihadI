@@ -14,7 +14,6 @@ import {
   Volume2,
   ShieldCheck,
   Sparkles,
-  Lock,
 } from "lucide-react";
 import { playSound } from "../utils/audio";
 
@@ -33,9 +32,7 @@ export const RoleSelectScreen: React.FC = () => {
     setIsSSORoleModalOpen,
   } = useApp();
 
-  const handleSelectRole = (
-    role: "worker" | "customer" | "admin" | "pitch_deck",
-  ) => {
+  const handleSelectRole = (role: "worker" | "customer") => {
     playSound("click");
     setCurrentRole(role);
     if (role === "worker") {
@@ -243,27 +240,14 @@ export const RoleSelectScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Platform Status Bar & Subtle De-emphasized Admin Link */}
+      {/* Pilot status: keep the public entry focused on the two supported roles. */}
       <div className="w-full max-w-3xl flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#242424] px-4 py-3 rounded-2xl border border-slate-200 dark:border-[#383838] gap-3">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-          <span className="font-bold text-slate-700 dark:text-slate-200">
-            {cityName}:
-          </span>
-          <span>
-            {workers.length} {getT(currentLanguage, "workers_count_label")} active • {jobs.length} {getT(currentLanguage, "jobs_count_label")} posted
-          </span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">{cityName} pilot</span>
+          <span>{workers.length} verified workers • {jobs.length} jobs posted</span>
         </div>
-
-        {/* Muted Admin Login Button per requirement #2 & #6 */}
-        <button
-          onClick={() => handleSelectRole("admin")}
-          className="px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-amber-300 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 hover:bg-slate-200/60 dark:hover:bg-[#2A2A2A] border border-transparent hover:border-slate-300 dark:hover:border-[#383838]"
-          title="Platform administrator access"
-        >
-          <Lock className="w-3.5 h-3.5 opacity-70" />
-          <span>{getT(currentLanguage, "admin_footer_link")}</span>
-        </button>
+        <span className="font-semibold">Admin access is invite-only</span>
       </div>
       {/* SSO Role Selection Modal for New / Multi-Role Users */}
       <SSORolePickerModal

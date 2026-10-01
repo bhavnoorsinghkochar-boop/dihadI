@@ -6,7 +6,7 @@ import { CustomerApp } from "./customer/CustomerApp";
 import { AdminDashboard } from "./admin/AdminDashboard";
 export const MainPlatform: React.FC = () => {
   const { currentRole } = useApp();
-  /* If at selection stage: show the 3 role choices (Worker, Customer, Admin) */ if (
+  /* Public entry shows only the two supported user roles. */ if (
     currentRole === "select_role"
   ) {
     return (

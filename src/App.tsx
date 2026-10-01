@@ -3,7 +3,6 @@ import React, { useEffect } from "react";
 import { AppProvider, useApp } from "./context/AppContext";
 import { Header } from "./components/Header";
 import { MainPlatform } from "./components/MainPlatform";
-import { PitchDeckViewer } from "./components/deck/PitchDeckViewer";
 import { CallModal } from "./components/common/CallModal";
 import { GpsRadarModal } from "./components/common/GpsRadarModal";
 import { UpiQrPaymentModal } from "./components/common/UpiQrPaymentModal";
@@ -91,19 +90,17 @@ const MainLayout: React.FC = () => {
       ) {
         setCurrentRole("worker");
       } else if (
+        // Admin and investor surfaces are intentionally not public routes.
         appParam === "admin" ||
         path.includes("admin") ||
-        hash.includes("admin")
-      ) {
-        setCurrentRole("admin");
-      } else if (
+        hash.includes("admin") ||
         appParam === "pitch" ||
         path.includes("pitch") ||
         path.includes("investor") ||
         hash.includes("investor") ||
         hash.includes("pitch")
       ) {
-        setCurrentRole("pitch_deck");
+        setCurrentRole("select_role");
       }
     };
 
@@ -167,13 +164,7 @@ const MainLayout: React.FC = () => {
 
       {/* Main Container - Main Platform & Dedicated Pitch Deck */}
       <main id="main-content" className="flex-1 flex flex-col">
-        {currentRole === "pitch_deck" ? (
-          <div className="p-3 sm:p-6 lg:p-8 flex items-center justify-center flex-1">
-            <PitchDeckViewer />
-          </div>
-        ) : (
-          <MainPlatform />
-        )}
+        <MainPlatform />
       </main>
 
       {/* Global In-App Voice Call Simulator Modal */}
@@ -370,21 +361,7 @@ const MainLayout: React.FC = () => {
         <p>
           © 2026 Kaamzo Technologies • Empowering Bharat's Local Workforce
         </p>
-        <div className="flex items-center gap-4 text-xs">
-          <button
-            onClick={() => setCurrentRole("admin")}
-            className="text-slate-400 dark:text-slate-400 hover:text-amber-700 dark:hover:text-[#FCD33F] transition cursor-pointer"
-          >
-            Admin login
-          </button>
-          <span>•</span>
-          <button
-            onClick={() => setCurrentRole("pitch_deck")}
-            className="text-slate-400 dark:text-slate-400 hover:text-amber-700 dark:hover:text-[#FCD33F] transition cursor-pointer"
-          >
-            Investors
-          </button>
-        </div>
+        <p className="text-slate-500 dark:text-slate-400">Ludhiana pilot • Phone-first access</p>
       </footer>
 
       {/* Added UI/UX Feature Components */}
